@@ -25,6 +25,7 @@ CONTRACT buck : public contract {
   
    TABLE account {
       asset balance;
+      asset debt;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
