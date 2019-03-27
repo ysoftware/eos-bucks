@@ -40,3 +40,4 @@
 # Python
 __pycache__
 *.tmp
+buck.abi
