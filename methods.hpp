@@ -9,7 +9,7 @@ uint64_t time_ms() {
 void buck::add_debt(name owner, asset value, name ram_payer) {
   accounts_i accounts(_self, owner.value);
   
-  auto item = accounts.begin();
+  auto item = accounts.find(BUCK.code().raw());
   if (item == accounts.end()) {
     accounts.emplace(owner, [&](auto& r) {
       r.balance = value;

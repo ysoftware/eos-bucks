@@ -28,6 +28,7 @@ CONTRACT buck : public contract {
   
    TABLE account {
       asset balance;
+      asset debt;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -43,14 +44,14 @@ CONTRACT buck : public contract {
     TABLE cdp {
       uint64_t  id;
       double    acr;
-      double    ccr;
+      double    cr_sort;
       name      account;
       asset     debt;
       asset     collateral;
       uint64_t  timestamp;
       
       uint64_t primary_key() const { return id; }
-      uint64_t by_acr() const { return acr; }
+      double by_cr() const { return cr_sort; }
       uint64_t by_account() const { return account.value; }
     };
     
@@ -58,13 +59,13 @@ CONTRACT buck : public contract {
     typedef multi_index<"stat"_n, currency_stats> stats_i;
     
     typedef multi_index<"cdp"_n, cdp,
-      indexed_by<"byacr"_n, const_mem_fun<cdp, uint64_t, &cdp::by_acr>>,
+      indexed_by<"bycr"_n, const_mem_fun<cdp, double, &cdp::by_cr>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
     
     double get_eos_price();
     double get_buck_price();
     
-    void add_debt(name owner, asset value, name ram_payer);
-    void sub_debt(name owner, asset value);
+    void add_balance(name owner, asset value, name ram_payer);
+    void sub_balance(name owner, asset value);
 };

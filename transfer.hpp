@@ -4,7 +4,6 @@
 
 void buck::transfer(name from, name to, asset quantity, std::string memo) {
   require_auth(from);
-  if (to != _self || from == _self) { return; }
   
   eosio_assert(from != to, "cannot transfer to self");
   require_auth(from);
@@ -37,6 +36,8 @@ void buck::receive_transfer(name from, name to, asset quantity, std::string memo
   eosio_assert(quantity.symbol == EOS, "you have to use the system EOS token");
   eosio_assert(get_code() == "eosio.token"_n, "you have to use the system EOS token");
   
+  eosio_assert(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
+  
   // find cdp
   cdp_i positions(_self, _self.value);
   auto index = positions.get_index<"byaccount"_n>();
@@ -63,7 +64,7 @@ void buck::receive_transfer(name from, name to, asset quantity, std::string memo
     add_debt(from, debt, from);
   }
   
-  // update collateral
+  // update cdp
   index.modify(item, same_payer, [&](auto& r) {
     r.debt = debt;
     r.collateral = asset(collateral_amount, EOS);
@@ -83,10 +84,10 @@ void buck::open(name account, double ccr, double acr) {
   
   // open cdp
   cdp_i positions(_self, _self.value);
-  positions.emplace(_self, [&](auto& r) {
+  positions.emplace(account, [&](auto& r) {
     r.id = positions.available_primary_key();
     r.account = account;
-    r.ccr = ccr;
+    r.cr_sort = 0;
     r.acr = acr;
     r.debt = asset(0, BUCK);
     r.collateral = asset(0, EOS);
