@@ -3,11 +3,11 @@
 // Created by Yaroslav Erohin.
 
 #include "buck.hpp"
+#include "constants.hpp"
+#include "debug.hpp"
 #include "methods.hpp"
 #include "price.hpp"
-#include "constants.hpp"
 #include "transfer.hpp"
-#include "debug.hpp"
 
 extern "C" {
   

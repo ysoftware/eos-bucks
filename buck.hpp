@@ -7,9 +7,6 @@
 #include <eosiolib/print.hpp>
 #include <eosiolib/asset.hpp>
 
-#define PRINT(x, y) eosio::print(x); eosio::print(": "); eosio::print(y); eosio::print("\n");
-#define PRINT_(x) eosio::print(x); eosio::print("\n");
-
 using namespace eosio;
 
 CONTRACT buck : public contract {
@@ -28,7 +25,6 @@ CONTRACT buck : public contract {
   
    TABLE account {
       asset balance;
-      asset debt;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
