@@ -32,10 +32,10 @@ void buck::run_liquidation() {
       double bailable = (liquidator_collateral / (liquidator_ccr / liquidator_item->acr) - 1) * liquidation_price;
       
       uint64_t used_debt_amount = fmin(bad_debt, bailable);
-      uint64_t used_collateral_amount = ceil((CR - debtor_ccr) * debt / liquidation_price);
+      uint64_t used_collateral_amount = (CR - debtor_ccr) * debt / liquidation_price;
       
-      asset used_debt = asset(used_debt_amount, BUCK);
-      asset used_collateral = asset(used_collateral_amount, EOS);
+      asset used_debt = asset(floor(used_debt_amount), BUCK);
+      asset used_collateral = asset(ceil(used_collateral_amount), EOS);
       
       debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
         r.debt -= used_debt;
