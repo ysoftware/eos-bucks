@@ -34,6 +34,7 @@ void buck::run_liquidation() {
       uint64_t used_debt_amount = fmin(bad_debt, bailable);
       uint64_t used_collateral_amount = (CR - debtor_ccr) * debt / liquidation_price;
       
+      // to-do make sure correct rounding is in place
       asset used_debt = asset(floor(used_debt_amount), BUCK);
       asset used_collateral = asset(ceil(used_collateral_amount), EOS);
       
