@@ -23,6 +23,7 @@ void buck::run_liquidation() {
     double debt = (double) debtor_item->debt.amount;
     double debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
     
+    // loop through liquidators
     while (debtor_ccr < CR) {
     
       double liquidator_collateral = (double) liquidator_item->collateral.amount;
@@ -39,11 +40,12 @@ void buck::run_liquidation() {
       asset used_collateral = asset(ceil(used_collateral_amount), EOS);
       
       debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+        r.collateral -= used_collateral;
         r.debt -= used_debt;
       });
       
       liquidator_index.modify(liquidator_item, same_payer, [&](auto& r) {
-        r.collateral -= used_collateral;
+        r.collateral += used_collateral;
         r.debt += used_debt;
       });
       
