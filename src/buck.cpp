@@ -5,9 +5,12 @@
 #include "buck.hpp"
 #include "constants.hpp"
 #include "debug.hpp"
+#include "init.hpp"
 #include "methods.hpp"
-#include "price.hpp"
+#include "oracle.hpp"
+#include "run.hpp"
 #include "transfer.hpp"
+#include "actions.hpp"
 
 extern "C" {
   
@@ -16,12 +19,13 @@ extern "C" {
     if (code == receiver) {
   	  switch (action) {
         EOSIO_DISPATCH_HELPER(buck, 
+            (update)(init)
             (transfer)(open)
             (zdestroy))
   	  }
     }
   	else if (action == "transfer"_n.value && code != receiver) {
-  	  execute_action(name(receiver), name(code), &buck::receive_transfer);
+  	  execute_action(name(receiver), name(code), &buck::notify_transfer);
   	}
   }
 };

@@ -2,14 +2,10 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-// oracle request methods
-
-double buck::get_eos_price() {
+void buck::run_requests(uint64_t max) {
   
-  return 3.6545;
 }
 
-double buck::get_buck_price() {
+void buck::run_liquidation() {
   
-  return 1.05;
 }

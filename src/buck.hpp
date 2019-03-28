@@ -15,11 +15,19 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
       :contract(receiver, code, ds) {}
     
+    // user
     ACTION transfer(name from, name to, asset quantity, std::string memo);
     ACTION open(name account, double ccr, double acr);
+    
+    // admin
+    ACTION update(double eos_price, double buck_price);
+    ACTION init();
+    
+    // debug 
     ACTION zdestroy();
     
-    void receive_transfer(name from, name to, asset quantity, std::string memo);
+    // notify
+    void notify_transfer(name from, name to, asset quantity, std::string memo);
     
   private:
   
@@ -34,8 +42,29 @@ CONTRACT buck : public contract {
       asset     supply;
       asset     max_supply;
       name      issuer;
+      
+      uint64_t  oracle_timestamp;
+      double    oracle_eos_price;
+      double    oracle_buck_price;
     
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
+    };
+    
+    TABLE close_req {
+      uint64_t cdp_id;
+      uint64_t timestamp;
+      
+      uint64_t primary_key() const { return cdp_id; }
+    };
+    
+    TABLE reparam_req {
+      uint64_t cdp_id;
+      asset change_collateral;
+      asset change_debt;
+      uint64_t timestamp;
+      bool isPaid;
+      
+      uint64_t primary_key() const { return cdp_id; }
     };
     
     TABLE cdp {
@@ -49,20 +78,30 @@ CONTRACT buck : public contract {
       
       uint64_t primary_key() const { return id; }
       double by_cr() const { return cr_sort; }
+      double by_acr() const { return acr; }
       uint64_t by_account() const { return account.value; }
     };
     
     typedef multi_index<"accounts"_n, account> accounts_i;
     typedef multi_index<"stat"_n, currency_stats> stats_i;
     
+    typedef multi_index<"closereq"_n, close_req> close_req_i;
+    typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
+    
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"bycr"_n, const_mem_fun<cdp, double, &cdp::by_cr>>,
+      indexed_by<"byacr"_n, const_mem_fun<cdp, double, &cdp::by_acr>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
     
-    double get_eos_price();
-    double get_buck_price();
-    
+    // methods
     void add_balance(name owner, asset value, name ram_payer);
     void sub_balance(name owner, asset value);
+    void run_requests(uint64_t max);
+    void run_liquidation();
+    void inline_transfer(name account, asset quantity, std::string memo, name contract);
+    
+    // getters
+    double get_eos_price();
+    double get_buck_price();
 };

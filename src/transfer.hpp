@@ -20,7 +20,7 @@ void buck::transfer(name from, name to, asset quantity, std::string memo) {
   add_balance(to, quantity, payer);
 }
 
-void buck::receive_transfer(name from, name to, asset quantity, std::string memo) {
+void buck::notify_transfer(name from, name to, asset quantity, std::string memo) {
   if (to != _self || from == _self) { return; }
   require_auth(from);
   
@@ -57,6 +57,14 @@ void buck::receive_transfer(name from, name to, asset quantity, std::string memo
     add_balance(from, debt, from);
   }
   
+  // update supply   
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  
+  table.modify(table.begin(), same_payer, [&](auto& r) {
+    r.supply += debt;
+  });
+  
   // update cdp
   index.modify(item, same_payer, [&](auto& r) {
     r.debt = debt;
@@ -74,6 +82,10 @@ void buck::open(name account, double ccr, double acr) {
   
   eosio_assert(ccr < 1000, "ccr value is too high");
   eosio_assert(acr < 1000, "acr value is too high");
+  
+  // update supply   
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   
   // open cdp
   cdp_i positions(_self, _self.value);
