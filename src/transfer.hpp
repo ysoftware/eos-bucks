@@ -19,7 +19,7 @@ void buck::transfer(name from, name to, asset quantity, std::string memo) {
   sub_balance(from, quantity);
   add_balance(to, quantity, payer);
   
-  run(3);
+  // run(3);
 }
 
 void buck::notify_transfer(name from, name to, asset quantity, std::string memo) {
@@ -74,7 +74,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     r.timestamp = time_ms();
   });
   
-  run(3);
+  // run(3);
 }
 
 void buck::open(name account, double ccr, double acr) {
@@ -112,5 +112,5 @@ void buck::open(name account, double ccr, double acr) {
     });
   }
   
-  run(3);
+  // run(3);
 }

@@ -17,7 +17,7 @@ void buck::update(double eos_price, double buck_price) {
   });
   
   if (eos_price < previous_price) {
-    run_liquidation(UINT64_MAX);
+    run_liquidation(25);
   }
 }
 

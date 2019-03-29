@@ -81,26 +81,30 @@ CONTRACT buck : public contract {
       
       // index to search for liquidators with highest acr
       double liquidator() const {
-        if (acr == 0) {
-          return DOUBLE_MAX; // end of the table
+        const double MAX = 100;
+        
+        if (acr == 0 || collateral.amount == 0) {
+          return MAX * 2; // end of the table
         }
         
         if (debt.amount == 0) {
-          return DOUBLE_MAX - acr; // descending acr 
+          return MAX - acr; // descending acr
         }
         
         double cd = (double) collateral.amount / (double) debt.amount;
-        return DOUBLE_MAX - (cd - acr); // descending cd-acr 
+        return MAX - (cd - acr); // descending cd-acr 
       }
       
       // index to search for debtors with highest ccr
       double debtor() const {
+        const double MAX = 100;
+        
         if (debt.amount == 0) {
-          return DOUBLE_MAX; // end of the table
+          return MAX; // end of the table
         }
         
         double cd = (double) collateral.amount / (double) debt.amount;
-        return DOUBLE_MAX - cd; // descending cd
+        return cd; // ascending cd
       }
     };
     
