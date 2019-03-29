@@ -22,11 +22,17 @@ void buck::update(double eos_price, double buck_price) {
 }
 
 double buck::get_eos_price() {
-  
-  return 3.6545;
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  double price = table.begin()->oracle_eos_price;
+  eosio_assert(price != 0, "oracle prices are not yet set");
+  return table.begin()->oracle_eos_price;
 }
 
 double buck::get_buck_price() {
-  
-  return 1.05;
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  double price = table.begin()->oracle_buck_price;
+  eosio_assert(price != 0, "oracle prices are not yet set");
+  return table.begin()->oracle_buck_price;
 }
