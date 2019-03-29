@@ -73,6 +73,13 @@ def open(contract, user, ccr, acr):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
+def update(contract, eos, buck):
+	contract.push_action("update",
+		{
+			"eos_price": eos,
+			"buck_price": buck
+		},
+		permission=[(contract, Permission.ACTIVE)])
 
 def buyram(contract):
 	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])

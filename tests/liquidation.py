@@ -49,17 +49,32 @@ class Test(unittest.TestCase):
 		super().run(result)
 
 	# tests
-	
+
 	def test(self):
 		init(buck)
 
 		update(buck, 3.6545, 1)
 
-		open(buck, user1, 1.6, 0)
+		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		self.assertEqual(227.6448, balance(buck, user1))
+		open(buck, user1, 1.7, 2.0) # 1
+		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
+		open(buck, user1, 1.6, 1.5) # 2
+		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+
+		open(buck, user1, 3.0, 1.5) # 3
+		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+
+		open(buck, user1, 3.0, 0) # 4
+		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+
+		table(buck, "cdp")
+		
+		update(buck, 3.4, 1)
+		
+		# table(buck, "cdp")
 
 # main
 
