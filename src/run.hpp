@@ -72,9 +72,13 @@ void buck::run_liquidation() {
         r.debt += used_debt;
       });
       
-      // update values and continue with the next liquidator
+      // if liquidator did not bail out all of bad debt, continue with the next one  
+      if (bad_debt > bailable) { 
+        liquidator_item++;
+      }
+      
+      // update values
       bad_debt -= used_debt_amount;
-      liquidator_item++;
     }
     
     // continue to the next debtor
