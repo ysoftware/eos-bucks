@@ -9,12 +9,11 @@ void buck::run_requests(uint64_t max) {
 void buck::run_liquidation() {
   
   auto eos_price = get_eos_price();
-  double liquidation_price = eos_price * (1 + LF);
   
   cdp_i positions(_self, _self.value);
-  auto debtor_index = positions.get_index<"bycr"_n>();
+  auto debtor_index = positions.get_index<"debtor"_n>();
   auto debtor_item = debtor_index.begin();
-  auto liquidator_index = positions.get_index<"byacr"_n>();
+  auto liquidator_index = positions.get_index<"liquidator"_n>();
   auto liquidator_item = liquidator_index.begin();
   
   // loop through debtors
@@ -23,20 +22,44 @@ void buck::run_liquidation() {
     double debt = (double) debtor_item->debt.amount;
     double debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
     
+    // this and all further debtors don't have any bad debt
+    if (debtor_ccr < CR) {
+      
+      // to-do mark liquidation done for this round
+      
+      break; 
+    }
+    
+    double bad_debt = (CR - debtor_ccr) * debt;
+    
     // loop through liquidators
-    while (debtor_ccr < CR) {
+    while (bad_debt > 0) {
     
       double liquidator_collateral = (double) liquidator_item->collateral.amount;
-      double liquidator_ccr = liquidator_collateral * eos_price / (double) liquidator_item->debt.amount;
+      double liquidator_debt = (double) liquidator_item->debt.amount;
+      double liquidator_acr = liquidator_item->acr;
+      double liquidator_ccr = liquidator_collateral * eos_price / liquidator_debt;
       
-      double bad_debt = (CR - debtor_ccr) * debt;
-      double bailable = (liquidator_collateral / (liquidator_ccr / liquidator_item->acr) - 1) * liquidation_price;
+      // this and all further liquidators can not bail out anymore bad debt 
+      if (liquidator_ccr <= liquidator_acr) {
+        
+        // to-do send all remaining bad debt to bailout pool
+        
+        break;
+      }
       
-      uint64_t used_debt_amount = fmin(bad_debt, bailable);
-      uint64_t used_collateral_amount = (CR - debtor_ccr) * debt / liquidation_price;
+      double bailable;
+      if (liquidator_debt == 0) {
+        bailable = liquidator_collateral / liquidator_acr * eos_price;
+      }
+      else {
+        bailable = liquidator_collateral / (liquidator_ccr / liquidator_acr) - 1 * eos_price;
+      }
       
-      // to-do make sure correct rounding is in place
-      asset used_debt = asset(floor(used_debt_amount), BUCK);
+      double used_debt_amount = fmin(bad_debt, bailable);
+      double used_collateral_amount = used_debt_amount / (eos_price * (1 - LF));
+      
+      asset used_debt = asset(ceil(used_debt_amount), BUCK);
       asset used_collateral = asset(ceil(used_collateral_amount), EOS);
       
       debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
@@ -49,15 +72,12 @@ void buck::run_liquidation() {
         r.debt += used_debt;
       });
       
-      // no more bad debt, continue with next debtor
-      if (bad_debt <= bailable) {
-        break;
-      }
-      
       // update values and continue with the next liquidator
+      bad_debt -= used_debt_amount;
       liquidator_item++;
-      debt = (double) debtor_item->debt.amount;
-      debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
     }
+    
+    // continue to the next debtor
+    debtor_item++;
   }
 }

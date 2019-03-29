@@ -4,7 +4,7 @@
 
 void buck::update(double eos_price, double buck_price) {
   
-  // update prices   
+  // update prices
   stats_i table(_self, _self.value);
   eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   

@@ -70,16 +70,33 @@ CONTRACT buck : public contract {
     TABLE cdp {
       uint64_t  id;
       double    acr;
-      double    cr_sort;
+      double    temporary_ccr;
       name      account;
       asset     debt;
       asset     collateral;
       uint64_t  timestamp;
       
       uint64_t primary_key() const { return id; }
-      double by_cr() const { return cr_sort; }
-      double by_acr() const { return acr; }
       uint64_t by_account() const { return account.value; }
+      
+      // index to search for liquidators with highest acr
+      double liquidator() const {
+        if (acr == 0) {
+          return DOUBLE_MAX; // end of the table
+        }
+        
+        if (debt.amount == 0) {
+          return DOUBLE_MAX - acr; // descending acr 
+        }
+        
+        double cd = (double) collateral.amount / (double) debt.amount;
+        return DOUBLE_MAX - (cd - acr); // descending cd-acr 
+      }
+      
+      // index to search for debtors with highest ccr
+      double debtor() const {
+        return (double) collateral.amount / (double) debt.amount; 
+      }
     };
     
     typedef multi_index<"accounts"_n, account> accounts_i;
@@ -89,8 +106,8 @@ CONTRACT buck : public contract {
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
     
     typedef multi_index<"cdp"_n, cdp,
-      indexed_by<"bycr"_n, const_mem_fun<cdp, double, &cdp::by_cr>>,
-      indexed_by<"byacr"_n, const_mem_fun<cdp, double, &cdp::by_acr>>,
+      indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
+      indexed_by<"liquidator"_n, const_mem_fun<cdp, double, &cdp::liquidator>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
     

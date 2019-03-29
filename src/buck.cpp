@@ -2,15 +2,15 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-#include "buck.hpp"
 #include "constants.hpp"
+#include "buck.hpp"
 #include "debug.hpp"
+#include "actions.hpp"
 #include "init.hpp"
 #include "methods.hpp"
 #include "oracle.hpp"
 #include "run.hpp"
 #include "transfer.hpp"
-#include "actions.hpp"
 
 extern "C" {
   
