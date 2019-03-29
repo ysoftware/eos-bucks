@@ -2,12 +2,17 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+void buck::run(uint64_t max) {
+  run_requests(max);
+  run_liquidation(max);
+}
+
 void buck::run_requests(uint64_t max) {
   
 }
 
-void buck::run_liquidation() {
-  
+void buck::run_liquidation(uint64_t max) {
+  uint64_t processed = 0;
   auto eos_price = get_eos_price();
   
   cdp_i positions(_self, _self.value);
@@ -17,7 +22,7 @@ void buck::run_liquidation() {
   auto liquidator_item = liquidator_index.begin();
   
   // loop through debtors
-  while (debtor_item != debtor_index.end()) {
+  while (debtor_item != debtor_index.end() && processed < max) {
     
     double debt = (double) debtor_item->debt.amount;
     double debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
@@ -82,6 +87,7 @@ void buck::run_liquidation() {
     }
     
     // continue to the next debtor
+    processed++;
     debtor_item++;
   }
 }

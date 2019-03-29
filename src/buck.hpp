@@ -95,7 +95,12 @@ CONTRACT buck : public contract {
       
       // index to search for debtors with highest ccr
       double debtor() const {
-        return (double) collateral.amount / (double) debt.amount; 
+        if (debt.amount == 0) {
+          return DOUBLE_MAX; // end of the table
+        }
+        
+        double cd = (double) collateral.amount / (double) debt.amount;
+        return DOUBLE_MAX - cd; // descending cd
       }
     };
     
@@ -114,8 +119,11 @@ CONTRACT buck : public contract {
     // methods
     void add_balance(name owner, asset value, name ram_payer);
     void sub_balance(name owner, asset value);
+    
+    void run(uint64_t max);
     void run_requests(uint64_t max);
-    void run_liquidation();
+    void run_liquidation(uint64_t max);
+    
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
     
     // getters

@@ -17,10 +17,7 @@ void buck::update(double eos_price, double buck_price) {
   });
   
   if (eos_price < previous_price) {
-    run_liquidation();
-  }
-  else {
-    // to-do mark liquidation done for this round
+    run_liquidation(UINT64_MAX);
   }
 }
 

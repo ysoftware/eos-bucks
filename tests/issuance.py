@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test open cdp")
+		SCENARIO("Test init and open cdp")
 		reset()
 
 		create_master_account("master")
@@ -51,6 +51,8 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
+		init(buck)
+
 		open(buck, user1, 1.6, 0)
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 

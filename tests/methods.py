@@ -18,21 +18,21 @@ def deploy(contract):
 		contract.build()
 	contract.deploy()
 
-def perm(eosioscrugex, key):
-	eosioscrugex.set_account_permission(
+def perm(contract, key):
+	contract.set_account_permission(
 		Permission.ACTIVE,
 		{
 				"threshold" : 1,
 				"keys" : [{ "key": key.key_public, "weight": 1 }],
 				"accounts": [{
 					"permission": {
-						"actor": "eosioscrugex",
+						"actor": contract,
 						"permission": "eosio.code"
 					},
 					"weight": 1
 				}],
 			},
-		Permission.OWNER, (eosioscrugex, Permission.OWNER))
+		Permission.OWNER, (contract, Permission.OWNER))
 
 def create_issue(contract, to, symbol):
 	contract.push_action("create",
@@ -61,6 +61,9 @@ def transfer(contract, fromAccount, to, quantity, memo):
 
 # contract actions
 
+def init(contract):
+	contract.push_action("init", "[]", permission=[(contract, Permission.ACTIVE)])
+
 def open(contract, user, ccr, acr):
 	contract.push_action("open",
 		{
@@ -71,8 +74,8 @@ def open(contract, user, ccr, acr):
 		permission=[(user, Permission.ACTIVE)])
 
 
-def buyram(eosioscrugex):
-	eosioscrugex.push_action("buyram", "[]", permission=[(eosioscrugex, Permission.ACTIVE)])
+def buyram(contract):
+	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])
 
 # requests
 

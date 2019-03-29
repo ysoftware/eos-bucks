@@ -5,8 +5,6 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/asset.hpp>
 
-// to-do remove all debug values
-
 const eosio::symbol& EOS = eosio::symbol{"EOS", 4};
 const eosio::symbol& BUCK = eosio::symbol{"BUCK", 4};
 
