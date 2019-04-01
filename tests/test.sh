@@ -3,4 +3,6 @@
 # Created by Yaroslav Erohin.
 
 #!/bin/bash
-python3 issuance.py
+python3 issuance.py &&
+python3 liquidation.py &&
+python3 close.py

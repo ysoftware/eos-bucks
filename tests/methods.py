@@ -59,6 +59,9 @@ def transfer(contract, fromAccount, to, quantity, memo):
 		},
 		permission=[(fromAccount, Permission.ACTIVE)])
 
+def buyram(contract):
+	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])
+
 # contract actions
 
 def init(contract):
@@ -73,16 +76,24 @@ def open(contract, user, ccr, acr):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
-def update(contract, eos, buck):
+def update(contract, eos):
 	contract.push_action("update",
-		{
-			"eos_price": eos,
-			"buck_price": buck
-		},
+		{ "eos_price": eos },
 		permission=[(contract, Permission.ACTIVE)])
 
-def buyram(contract):
-	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])
+def close(contract, user, cdp_id):
+	contract.push_action("closecdp",
+		{
+			"cdp_id": cdp_id
+		},
+		permission=[(user, Permission.ACTIVE)])
+
+def run(contract, max=15):
+	contract.push_action("run",
+		{
+			"max": max
+		},
+		permission=[(contract, Permission.ACTIVE)])
 
 # requests
 
@@ -93,13 +104,12 @@ def amount(quantity):
 	return float(quantity.split(" ")[0])
 
 def table(contract, table, scope=None, row=0, element=None):
-	if scope == None:
-		scope = contract
-	data = contract.table(table, scope).json["rows"][row]
-	if element != None:
-		return data[element]
-	else:
-		return data
+	if scope == None: scope = contract
+	data = contract.table(table, scope).json["rows"]
+	if len(data) > 0: data = data[row] 
+
+	if element != None: return data[element]
+	else: return data
 
 # assert
 

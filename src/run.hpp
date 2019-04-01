@@ -17,8 +17,8 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
-  
   uint64_t processed = 0;
+  
   cdp_i positions(_self, _self.value);
   close_req_i closereqs(_self, _self.value);
   auto close_item = closereqs.begin();
@@ -56,6 +56,8 @@ void buck::run_requests(uint64_t max) {
     
     }
   }
+  
+  PRINT("done requests", processed)
 }
 
 void buck::run_liquidation(uint64_t max) {

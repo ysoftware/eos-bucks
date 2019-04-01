@@ -25,13 +25,13 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test init and open cdp")
+		SCENARIO("Test close cdp")
 		reset()
 
 		create_master_account("master")
 
 		create_account("eosio_token", master, "eosio.token")
-		
+
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
@@ -61,27 +61,25 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		open(buck, user1, 1.7, 2.0) # 1
+		open(buck, user1, 1.5, 0) # 1
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		open(buck, user1, 1.6, 1.5) # 2
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		close(buck, user1, 0)
 
-		open(buck, user1, 3.0, 1.5) # 3
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		update(buck, 3.7)
+		run(buck)
+		run(buck)
 
-		open(buck, user1, 3.0, 0) # 4
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		close(buck, user1, 1)
 
-		table(buck, "cdp")
-		
-		update(buck, 3.4)
-		
-		update(buck, 3.8)
+		table(buck, "closereq")
 
-		update(buck, 3.4)
-		
-		table(buck, "cdp")
+		update(buck, 3.71)
+		run(buck)
+		run(buck)
+
+		table(buck, "closereq")
+
 
 # main
 
