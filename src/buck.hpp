@@ -84,7 +84,7 @@ CONTRACT buck : public contract {
         const double MAX = 100;
         
         if (acr == 0 || collateral.amount == 0) {
-          return MAX * 2; // end of the table
+          return MAX * 3; // end of the table
         }
         
         if (debt.amount == 0) {
@@ -92,7 +92,7 @@ CONTRACT buck : public contract {
         }
         
         double cd = (double) collateral.amount / (double) debt.amount;
-        return MAX - (cd - acr); // descending cd-acr 
+        return MAX * 2 - (cd - acr); // descending cd-acr 
       }
       
       // index to search for debtors with highest ccr
