@@ -100,8 +100,13 @@ def run(contract, max=15):
 def balance(token, account):
 	return amount(token.table("accounts", account).json["rows"][0]["balance"])
 
-def amount(quantity):
-	return float(quantity.split(" ")[0])
+def amount(quantity, force=True, default=0):
+	if isinstance(quantity, list):
+		split = quantity.split(" ")
+		if len(split) > 2: return float(split[0])
+		elif force: assert("value is not an asset")
+		else: return default
+	assert("value is not an asset")
 
 def table(contract, table, scope=None, row=0, element=None):
 	if scope == None: scope = contract

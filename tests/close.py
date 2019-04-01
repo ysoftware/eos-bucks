@@ -61,27 +61,26 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		open(buck, user1, 1.5, 0) # 1
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
-
 		table(buck, "cdp")
 
 		close(buck, user1, 0)
+
+		# check close request
+		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
+
 		run(buck)
+
+		# check close request still there
+		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
 
 		update(buck, 3.7)
-		run(buck)
 		sleep(2)
 
-		close(buck, user1, 1)
+		# check close request gone
+		self.assertEqual(0, len(table(buck, "closereq")))
 
-		table(buck, "cdp")
-
-		update(buck, 3.71)
-		run(buck)
-		sleep(2)
-
-		table(buck, "cdp")
+		# check cdp
+		self.assertEqual(0, len(table(buck, "cdp")))
 
 
 # main
