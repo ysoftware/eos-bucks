@@ -44,13 +44,13 @@ void buck::run_requests(uint64_t max) {
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
       
+      PRINT("closed cdp", close_item->cdp_id)
+      
       // remove request
       close_item = closereqs.erase(close_item);
       
       // remove cdp
       positions.erase(cdp_item);
-      
-      PRINT("closed cdp", close_item->cdp_id)
     }
     
     // reparam request 
@@ -119,10 +119,20 @@ void buck::run_liquidation(uint64_t max) {
       PRINT_("")
       
       // this and all further liquidators can not bail out anymore bad debt 
-      if (liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
+      if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
         
-        // to-do send all remaining bad debt to bailout pool
         PRINT_("sending to bailout pool...")
+        
+        double used_collateral_amount = bad_debt / (eos_price * (1 - LF));
+        asset used_debt = asset(ceil(bad_debt), BUCK);
+        asset used_collateral = asset(ceil(used_collateral_amount), EOS);
+
+        debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+          r.collateral -= used_collateral;
+          r.debt -= used_debt;
+        });
+        
+        // to-do transfer to bailout pool
         
         break;
       }
