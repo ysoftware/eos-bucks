@@ -6,7 +6,7 @@ uint64_t time_ms() {
 	return current_time() / 1'000;
 }
 
-void buck::add_balance(name owner, asset value, name ram_payer) {
+void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
   accounts_i accounts(_self, owner.value);
   auto item = accounts.find(value.symbol.code().raw());
   
@@ -20,9 +20,18 @@ void buck::add_balance(name owner, asset value, name ram_payer) {
       r.balance += value;
     });
   }
+  
+  if (change_supply) {
+    stats_i stats(_self, _self.value);
+    eosio_assert(stats.begin() != stats.end(), "contract is not yet initiated");
+    
+    stats.modify(stats.begin(), same_payer, [&](auto& r) {
+      r.supply += value;
+    });
+  }
 }
 
-void buck::sub_balance(name owner, asset value) {
+void buck::sub_balance(name owner, asset value, bool change_supply) {
   accounts_i accounts(_self, owner.value);
 
   const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
@@ -31,4 +40,13 @@ void buck::sub_balance(name owner, asset value) {
   accounts.modify(item, owner, [&](auto& r) {
     r.balance -= value;
   });
+  
+  if (change_supply) {
+    stats_i stats(_self, _self.value);
+    eosio_assert(stats.begin() != stats.end(), "contract is not yet initiated");
+    
+    stats.modify(stats.begin(), same_payer, [&](auto& r) {
+      r.supply -= value;
+    });
+  }
 }

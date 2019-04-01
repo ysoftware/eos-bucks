@@ -5,17 +5,22 @@
 #define PRINT(x, y) eosio::print(x); eosio::print(": "); eosio::print(y); eosio::print("\n");
 #define PRINT_(x) eosio::print(x); eosio::print("\n");
 
+#define RM(x, scope) { x table(_self, scope); auto item = table.begin(); while (item != table.end()) { item = table.erase(item); } }
+
 void buck::zdestroy() {
+  
+  RM(stats_i, _self.value)
+  
+  RM(close_req_i, _self.value)
+  
+  RM(reparam_req_i, _self.value)
+  
 	{
     cdp_i table(_self, _self.value);
     auto item = table.begin();
     while (item != table.end()) {
       
-      accounts_i accounts(_self, item->account.value);
-      auto account_item = accounts.find(BUCK.code().raw());
-      if (account_item != accounts.end()) {
-        accounts.erase(account_item);
-      }
+      RM(accounts_i, item->account.value)
       
       item = table.erase(item);
     }

@@ -16,10 +16,10 @@ void buck::transfer(name from, name to, asset quantity, std::string memo) {
   eosio_assert(memo.size() <= 256, "memo has more than 256 bytes");
   
   auto payer = has_auth(to) ? to : from;
-  sub_balance(from, quantity);
-  add_balance(to, quantity, payer);
+  sub_balance(from, quantity, false);
+  add_balance(to, quantity, payer, false);
   
-  // run(3);
+  run(3);
 }
 
 void buck::notify_transfer(name from, name to, asset quantity, std::string memo) {
@@ -56,18 +56,10 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     // take fee and update balance
     debt_amount = debt_amount * (1 - IF);
     debt = asset(debt_amount, BUCK);
-    add_balance(from, debt, from);
+    add_balance(from, debt, from, true);
   }
   
   eosio_assert(debt > MIN_DEBT, "you have to receive a larger debt");
-  
-  // update supply   
-  stats_i table(_self, _self.value);
-  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
-  
-  table.modify(table.begin(), same_payer, [&](auto& r) {
-    r.supply += debt;
-  });
   
   // update cdp
   index.modify(item, same_payer, [&](auto& r) {
@@ -76,7 +68,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     r.timestamp = time_ms();
   });
   
-  // run(3);
+  run(3);
 }
 
 void buck::open(name account, double ccr, double acr) {
@@ -114,5 +106,5 @@ void buck::open(name account, double ccr, double acr) {
     });
   }
   
-  // run(3);
+  run(3);
 }

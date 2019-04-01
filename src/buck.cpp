@@ -11,6 +11,7 @@
 #include "oracle.hpp"
 #include "run.hpp"
 #include "transfer.hpp"
+#include "request.hpp"
 
 extern "C" {
   
@@ -19,8 +20,8 @@ extern "C" {
     if (code == receiver) {
   	  switch (action) {
         EOSIO_DISPATCH_HELPER(buck, 
-            (update)(init)
-            (transfer)(open)
+            (update)(init)(run)
+            (transfer)(open)(closecdp)(change)(changeacr)
             (zdestroy))
   	  }
     }

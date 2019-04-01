@@ -18,9 +18,13 @@ CONTRACT buck : public contract {
     // user
     ACTION transfer(name from, name to, asset quantity, std::string memo);
     ACTION open(name account, double ccr, double acr);
+    ACTION closecdp(uint64_t cdp_id);
+    ACTION change(uint64_t cdp_id, asset debt, asset collateral);
+    ACTION changeacr(uint64_t cdp_id, double acr);
+    ACTION run(uint64_t max);
     
     // admin
-    ACTION update(double eos_price, double buck_price);
+    ACTION update(double eos_price);
     ACTION init();
     
     // debug 
@@ -43,9 +47,9 @@ CONTRACT buck : public contract {
       asset     max_supply;
       name      issuer;
       
+      uint64_t  liquidation_timestamp;
       uint64_t  oracle_timestamp;
       double    oracle_eos_price;
-      double    oracle_buck_price;
     
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
@@ -121,10 +125,9 @@ CONTRACT buck : public contract {
         > cdp_i;
     
     // methods
-    void add_balance(name owner, asset value, name ram_payer);
-    void sub_balance(name owner, asset value);
+    void add_balance(name owner, asset value, name ram_payer, bool change_supply);
+    void sub_balance(name owner, asset value, bool change_supply);
     
-    void run(uint64_t max);
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     

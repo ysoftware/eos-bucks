@@ -3,12 +3,59 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint64_t max) {
-  run_requests(max);
-  run_liquidation(max);
+  
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+
+  // check if liquidation complete for this round
+  if (table.begin()->liquidation_timestamp == table.begin()->oracle_timestamp) {
+    run_requests(max);
+  }
+  else {
+    run_liquidation(max);
+  }
 }
 
 void buck::run_requests(uint64_t max) {
   
+  uint64_t processed = 0;
+  cdp_i positions(_self, _self.value);
+  close_req_i closereqs(_self, _self.value);
+  auto close_item = closereqs.begin();
+  reparam_req_i reparamreqs(_self, _self.value);
+  auto reparam_item = reparamreqs.begin();
+  
+  stats_i table(_self, _self.value);
+  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  auto oracle_timestamp = table.begin()->oracle_timestamp;
+  
+  // loop until any requests exist and not over limit 
+  while ((close_item != closereqs.end() || reparam_item != reparamreqs.end()) && processed < max) {
+    processed++;
+    
+    if (processed % 2 == 0) { // close request
+    
+      // check request time
+      if (close_item->timestamp > oracle_timestamp) { continue; }
+      
+      // find cdp
+      auto& cdp_item = positions.get(close_item->cdp_id);
+      
+      // send eos
+      inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
+      
+      // remove request
+      close_item = closereqs.erase(close_item);
+      
+      // remove cdp
+      positions.erase(cdp_item);
+    }
+    else { // reparam request   
+    
+    
+    
+    }
+  }
 }
 
 void buck::run_liquidation(uint64_t max) {
@@ -29,6 +76,13 @@ void buck::run_liquidation(uint64_t max) {
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
+      
+      stats_i table(_self, _self.value);
+      eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+      
+      table.modify(table.begin(), same_payer, [&](auto& r) {
+        r.liquidation_timestamp = table.begin()->oracle_timestamp;
+      });
       
       // to-do mark liquidation done for this round
       PRINT("liquidation complete for", processed)

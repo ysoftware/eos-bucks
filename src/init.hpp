@@ -3,6 +3,8 @@
 // Created by Yaroslav Erohin.
 
 void buck::init() {
+  require_auth(_self);
+  
   stats_i table(_self, _self.value);
   eosio_assert(table.begin() == table.end(), "contract is already initiated");
   
@@ -13,6 +15,6 @@ void buck::init() {
     
     r.oracle_timestamp = 0;
     r.oracle_eos_price = 0;
-    r.oracle_buck_price = 0;
+    r.liquidation_timestamp = 0;
   });
 }
