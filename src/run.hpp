@@ -28,7 +28,7 @@ void buck::run_liquidation(uint64_t max) {
     double debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
     
     // this and all further debtors don't have any bad debt
-    if (debtor_ccr > CR) {
+    if (debtor_ccr >= CR) {
       
       // to-do mark liquidation done for this round
       PRINT("liquidation complete for", processed)
@@ -47,6 +47,7 @@ void buck::run_liquidation(uint64_t max) {
       PRINT("bad debt", asset(ceil(bad_debt), BUCK))
       PRINT_("")
     
+      // to-do check debt not 0
       double liquidator_collateral = (double) liquidator_item->collateral.amount;
       double liquidator_debt = (double) liquidator_item->debt.amount;
       double liquidator_acr = liquidator_item->acr;
