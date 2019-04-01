@@ -29,14 +29,14 @@ void buck::run_requests(uint64_t max) {
   eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   auto oracle_timestamp = table.begin()->oracle_timestamp;
   
-  // loop until any requests exist and not over limit 
-  while ((close_item != closereqs.end() || reparam_item != reparamreqs.end()) && processed < max) {
+  // loop until any requests exist and not over limit
+  while (processed < max) {
     processed++;
     
-    if (processed % 2 == 0) { // close request
+    // close request
     
-      // check request time
-      if (close_item->timestamp > oracle_timestamp) { continue; }
+    // check request time
+    if (close_item != closereqs.end() && close_item->timestamp < oracle_timestamp) {
       
       // find cdp
       auto& cdp_item = positions.get(close_item->cdp_id);
@@ -49,11 +49,15 @@ void buck::run_requests(uint64_t max) {
       
       // remove cdp
       positions.erase(cdp_item);
+      
+      PRINT("closed cdp", close_item->cdp_id)
     }
-    else { // reparam request   
     
+    // reparam request 
     
-    
+    // check request time
+    if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
+      
     }
   }
   
@@ -89,7 +93,7 @@ void buck::run_liquidation(uint64_t max) {
       // to-do mark liquidation done for this round
       PRINT("liquidation complete for", processed)
       
-      break; 
+      break;
     }
     
     double bad_debt = (CR - debtor_ccr) * debt;
@@ -115,7 +119,7 @@ void buck::run_liquidation(uint64_t max) {
       PRINT_("")
       
       // this and all further liquidators can not bail out anymore bad debt 
-      if (liquidator_ccr <= liquidator_acr) {
+      if (liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
         
         // to-do send all remaining bad debt to bailout pool
         PRINT_("sending to bailout pool...")
@@ -167,4 +171,6 @@ void buck::run_liquidation(uint64_t max) {
     processed++;
     debtor_item++;
   }
+  
+  // deferred_run(25);
 }

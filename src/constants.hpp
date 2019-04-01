@@ -2,9 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/asset.hpp>
-
 const eosio::symbol& EOS = eosio::symbol{"EOS", 4};
 const eosio::symbol& BUCK = eosio::symbol{"BUCK", 4};
 const eosio::name& EOSIO_TOKEN = "eosio.token"_n;

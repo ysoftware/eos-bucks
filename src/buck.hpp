@@ -6,6 +6,7 @@
 #include <eosiolib/eosio.hpp>
 #include <eosiolib/print.hpp>
 #include <eosiolib/asset.hpp>
+#include <eosiolib/transaction.hpp>
 
 using namespace eosio;
 
@@ -132,6 +133,7 @@ CONTRACT buck : public contract {
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
+    void deferred_run(uint64_t max);
     
     // getters
     double get_eos_price();

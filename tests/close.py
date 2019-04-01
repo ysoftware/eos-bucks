@@ -64,21 +64,24 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1.5, 0) # 1
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
+		table(buck, "cdp")
+
 		close(buck, user1, 0)
+		run(buck)
 
 		update(buck, 3.7)
 		run(buck)
-		run(buck)
+		sleep(2)
 
 		close(buck, user1, 1)
 
-		table(buck, "closereq")
+		table(buck, "cdp")
 
 		update(buck, 3.71)
 		run(buck)
-		run(buck)
+		sleep(2)
 
-		table(buck, "closereq")
+		table(buck, "cdp")
 
 
 # main

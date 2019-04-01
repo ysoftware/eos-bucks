@@ -17,7 +17,13 @@ void buck::update(double eos_price) {
   });
   
   if (eos_price < previous_price) {
-    run_liquidation(25);
+    run_liquidation(50);
+  }
+  else {
+    table.modify(table.begin(), same_payer, [&](auto& r) {
+      r.liquidation_timestamp = table.begin()->oracle_timestamp;
+    });
+    run_requests(5);
   }
 }
 
