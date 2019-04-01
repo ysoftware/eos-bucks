@@ -49,15 +49,17 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
   
   if (ccr > 0) {
     
-    // take fee
-    collateral_amount = collateral_amount * (CR-IF) / CR;
-    
     // add debt
     auto priceEOS = get_eos_price();
     auto debt_amount = floor(priceEOS * collateral_amount / ccr);
+    
+    // take fee and update balance
+    debt_amount = debt_amount * (1 - IF);
     debt = asset(debt_amount, BUCK);
     add_balance(from, debt, from);
   }
+  
+  eosio_assert(debt > MIN_DEBT, "you have to receive a larger debt");
   
   // update supply   
   stats_i table(_self, _self.value);

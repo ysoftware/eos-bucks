@@ -13,3 +13,4 @@ const double IF = 0.005;
 const double LF = 0.005;
 
 const eosio::asset& MIN_COLLATERAL = eosio::asset(50000, EOS);
+const eosio::asset& MIN_DEBT = eosio::assert(500000, BUCK);
