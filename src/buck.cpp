@@ -6,6 +6,7 @@
 #include "constants.hpp"
 #include "debug.hpp"
 #include "actions.hpp"
+#include "redeem.hpp"
 #include "init.hpp"
 #include "methods.hpp"
 #include "oracle.hpp"
@@ -21,7 +22,7 @@ extern "C" {
   	  switch (action) {
         EOSIO_DISPATCH_HELPER(buck, 
             (update)(init)(run)
-            (transfer)(open)(closecdp)(change)(changeacr)
+            (transfer)(open)(closecdp)(change)(changeacr)(redeem)
             (zdestroy))
   	  }
     }

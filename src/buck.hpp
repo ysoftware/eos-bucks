@@ -17,11 +17,14 @@ CONTRACT buck : public contract {
       :contract(receiver, code, ds) {}
     
     // user
-    ACTION transfer(name from, name to, asset quantity, std::string memo);
     ACTION open(name account, double ccr, double acr);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, asset change_debt, asset change_collateral);
     ACTION changeacr(uint64_t cdp_id, double acr);
+    
+    ACTION transfer(name from, name to, asset quantity, std::string memo);
+    ACTION redeem(name account, asset quantity);
+    
     ACTION run(uint64_t max);
     
     // admin
