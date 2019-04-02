@@ -57,6 +57,8 @@ void buck::run_requests(uint64_t max) {
     // check request time (no reason to look further, since they are sorted by time as well)
     if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
       
+      // to-do we might want to remove old unpaid requests?
+      
       // look for a first paid request
       while (reparam_item != reparamreqs.end() && !reparam_item->isPaid) { reparam_item++; }
       if (reparam_item == reparamreqs.end() && !reparam_item->isPaid) { continue; }
