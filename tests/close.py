@@ -55,8 +55,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 		init(buck)
-
-		update(buck, 3.5)
+		update(buck)
 
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
@@ -73,7 +72,7 @@ class Test(unittest.TestCase):
 		# check close request still there
 		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
 
-		update(buck, 3.5)
+		update(buck)
 
 		# check close request gone
 		self.assertEqual(0, len(table(buck, "closereq")))

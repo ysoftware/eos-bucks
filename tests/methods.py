@@ -76,7 +76,7 @@ def open(contract, user, ccr, acr):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
-def update(contract, eos):
+def update(contract, eos=2):
 	contract.push_action("update",
 		{ "eos_price": eos },
 		permission=[(contract, Permission.ACTIVE)])
@@ -101,6 +101,14 @@ def reparam(contract, user, cdp_id, change_debt, change_collat):
 			"cdp_id": cdp_id,
 			"change_debt": change_debt,
 			"change_collateral": change_collat
+		},
+		permission=[(user, Permission.ACTIVE)])
+
+def changeacr(contract, user, cdp_id, acr):
+	contract.push_action("changeacr",
+		{
+			"cdp_id": cdp_id,
+			"acr": acr
 		},
 		permission=[(user, Permission.ACTIVE)])
 
