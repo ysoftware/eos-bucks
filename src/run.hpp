@@ -90,11 +90,6 @@ void buck::run_requests(uint64_t max) {
         auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item.collateral.amount), EOS);
         new_collateral -= change;
         
-        PRINT("ccr", ccr)
-        PRINT("cr/ccr", cr_ccr)
-        PRINT("cwe", cwe)
-        PRINT("change", change)
-        
         inline_transfer(cdp_item.account, change, "collateral return", EOSIO_TOKEN);
       }
       
