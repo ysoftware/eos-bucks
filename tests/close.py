@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "1000000.0000 EOS", "")
+		transfer(eosio_token, master, user1, "100.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 	def test(self):
 		init(buck)
 
-		update(buck, 3.6545)
+		update(buck, 3.5)
 
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
@@ -73,14 +73,21 @@ class Test(unittest.TestCase):
 		# check close request still there
 		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
 
-		update(buck, 3.7)
-		sleep(2)
+		update(buck, 3.5)
 
 		# check close request gone
 		self.assertEqual(0, len(table(buck, "closereq")))
 
 		# check cdp
 		self.assertEqual(0, len(table(buck, "cdp")))
+
+		# check collateral return
+		self.assertEqual(100, balance(eosio_token, user1))
+
+		# check debt burned
+		self.assertEqual(0, balance(buck, user1))
+
+
 
 
 # main

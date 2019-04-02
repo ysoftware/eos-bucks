@@ -97,13 +97,16 @@ def run(contract, max=15):
 
 # requests
 
-def balance(token, account):
-	return amount(token.table("accounts", account).json["rows"][0]["balance"])
+def balance(token, account, unwrap=True):
+	if unwrap:
+		return amount(token.table("accounts", account).json["rows"][0]["balance"])
+	else:
+		return token.table("accounts", account).json["rows"][0]["balance"]
 
 def amount(quantity, force=True, default=0):
-	if isinstance(quantity, list):
-		split = quantity.split(" ")
-		if len(split) > 2: return float(split[0])
+	split = quantity.split(" ")
+	if isinstance(split, list):
+		if len(split) == 2: return float(split[0])
 		elif force: assert("value is not an asset")
 		else: return default
 	assert("value is not an asset")
