@@ -17,6 +17,7 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
+  PRINT("running requests, max", max)
   uint64_t processed = 0;
   
   cdp_i positions(_self, _self.value);
@@ -44,19 +45,21 @@ void buck::run_requests(uint64_t max) {
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
       
+      PRINT_("done close request")
+      
       // remove request and cdp
       close_item = closereqs.erase(close_item);
       positions.erase(cdp_item);
     }
     
-    // reparam request 
+    // reparam request
     
-    // check request time
+    // check request time (no reason to look further, since they are sorted by time as well)
     if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
       
       // look for a first paid request
-      while (!reparam_item->isPaid) { reparam_item++; }
-      
+      while (reparam_item != reparamreqs.end() && !reparam_item->isPaid) { reparam_item++; }
+      if (reparam_item == reparamreqs.end() && !reparam_item->isPaid) { continue; }
       
       // find cdp
       auto& cdp_item = positions.get(reparam_item->cdp_id);
@@ -99,15 +102,16 @@ void buck::run_requests(uint64_t max) {
         r.debt = new_debt;
       });
       
+      PRINT_("done reparam request")
+      
       // remove request
       reparam_item = reparamreqs.erase(reparam_item);
     }
   }
-  
-  PRINT("done requests", processed)
 }
 
 void buck::run_liquidation(uint64_t max) {
+  PRINT("running liquidation, max", max)
   uint64_t processed = 0;
   auto eos_price = get_eos_price();
   
@@ -224,6 +228,4 @@ void buck::run_liquidation(uint64_t max) {
     processed++;
     debtor_item++;
   }
-  
-  // deferred_run(25);
 }
