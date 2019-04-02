@@ -6,6 +6,11 @@ uint64_t time_ms() {
 	return current_time() / 1'000;
 }
 
+double buck::get_ccr(asset collateral, asset debt) {
+  double price = get_eos_price();
+  return (double) collateral.amount * price / (double) debt.amount;
+}
+
 void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
   accounts_i accounts(_self, owner.value);
   auto item = accounts.find(value.symbol.code().raw());

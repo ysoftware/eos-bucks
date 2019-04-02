@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::change(uint64_t cdp_id, asset debt, asset collateral) {
+void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
   eosio_assert(positionItem != positions.end(), "cdp does not exist");
@@ -15,15 +15,33 @@ void buck::change(uint64_t cdp_id, asset debt, asset collateral) {
   
   // to-do validate arguments
   
+  eosio_assert(change_debt.amount != 0 || change_collateral.amount != 0, 
+    "can not create empty reparametrization request");
+  
+  eosio_assert(positionItem->debt.symbol == change_debt.symbol, "debt symbol mismatch");
+  eosio_assert(positionItem->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
+  
+  asset new_debt = positionItem->debt + change_debt;
+  asset new_collateral = positionItem->collateral + change_collateral;
+  
+  eosio_assert(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
+  eosio_assert(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
+  
+  double ccr = get_ccr(new_collateral, new_debt);
+  eosio_assert(ccr > CR, "can not reparametrize collateral ratio below the limit");
+  
+  // take away debt if negative change
+  if (change_debt.amount < 0) {
+    sub_balance(positionItem->account, -change_debt, true);
+  }
+  
   requests.emplace(positionItem->account, [&](auto& r) {
     r.cdp_id = cdp_id;
     r.timestamp = time_ms();
-    r.change_collateral = asset(0, EOS);
-    r.change_debt = debt;
-    r.isPaid = true;
+    r.change_collateral = change_collateral;
+    r.change_debt = change_debt;
+    r.isPaid = change_collateral.amount <= 0; // isPaid if not increasing collateral
   });
-  
-  // to-do do other things?
   
   run_requests(2);
 }

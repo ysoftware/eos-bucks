@@ -20,7 +20,7 @@ CONTRACT buck : public contract {
     ACTION transfer(name from, name to, asset quantity, std::string memo);
     ACTION open(name account, double ccr, double acr);
     ACTION closecdp(uint64_t cdp_id);
-    ACTION change(uint64_t cdp_id, asset debt, asset collateral);
+    ACTION change(uint64_t cdp_id, asset change_debt, asset change_collateral);
     ACTION changeacr(uint64_t cdp_id, double acr);
     ACTION run(uint64_t max);
     
@@ -137,5 +137,5 @@ CONTRACT buck : public contract {
     
     // getters
     double get_eos_price();
-    double get_buck_price();
+    double get_ccr(asset collateral, asset debt);
 };

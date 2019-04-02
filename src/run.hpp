@@ -44,12 +44,8 @@ void buck::run_requests(uint64_t max) {
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
       
-      PRINT("closed cdp", close_item->cdp_id)
-      
-      // remove request
+      // remove request and cdp
       close_item = closereqs.erase(close_item);
-      
-      // remove cdp
       positions.erase(cdp_item);
     }
     
@@ -58,6 +54,58 @@ void buck::run_requests(uint64_t max) {
     // check request time
     if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
       
+      // look for a first paid request
+      while (!reparam_item->isPaid) { reparam_item++; }
+      
+      
+      // find cdp
+      auto& cdp_item = positions.get(reparam_item->cdp_id);
+      
+      asset new_debt = cdp_item.debt;
+      asset new_collateral = cdp_item.collateral;
+      auto ccr = get_ccr(cdp_item.collateral, cdp_item.debt);
+
+      if (reparam_item->change_debt.amount > 0) { // 4
+        
+        auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
+        auto di = (double) reparam_item->change_debt.amount;
+        auto change = asset(ceil(fmin(ccr_cr, di)), BUCK);
+        new_debt += change;
+        
+        add_balance(cdp_item.account, change, same_payer, true);
+      }
+      
+      else if (reparam_item->change_debt.amount < 0) { // 1
+        new_debt += reparam_item->change_debt; // add negative value
+      }
+      
+      if (reparam_item->change_collateral.amount > 0) { // 2
+        new_collateral += reparam_item->change_collateral;
+      }
+      
+      else if (reparam_item->change_collateral.amount < 0) { // 3 
+      
+        auto cr_ccr = CR / ccr;
+        auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item.collateral.amount;
+        auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item.collateral.amount), EOS);
+        new_collateral -= change;
+        
+        PRINT("ccr", ccr)
+        PRINT("cr/ccr", cr_ccr)
+        PRINT("cwe", cwe)
+        PRINT("change", change)
+        
+        inline_transfer(cdp_item.account, change, "collateral return", EOSIO_TOKEN);
+      }
+      
+      // update cdp
+      positions.modify(cdp_item, same_payer, [&](auto& r) {
+        r.collateral = new_collateral;
+        r.debt = new_debt;
+      });
+      
+      // remove request
+      reparam_item = reparamreqs.erase(reparam_item);
     }
   }
   
