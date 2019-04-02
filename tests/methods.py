@@ -95,6 +95,15 @@ def run(contract, max=15):
 		},
 		permission=[(contract, Permission.ACTIVE)])
 
+def reparam(contract, user, cdp_id, change_debt, change_collat):
+	contract.push_action("change",
+		{
+			"cdp_id": cdp_id,
+			"change_debt": change_debt,
+			"change_collateral": change_collat
+		},
+		permission=[(user, Permission.ACTIVE)])
+
 # requests
 
 def balance(token, account, unwrap=True):
