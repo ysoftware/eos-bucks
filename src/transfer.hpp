@@ -33,40 +33,65 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
 	eosio_assert(quantity.amount > 0, "Only positive quantity allowed.");
   eosio_assert(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
   
-  // find cdp
-  cdp_i positions(_self, _self.value);
-  auto index = positions.get_index<"byaccount"_n>();
-  auto item = index.find(from.value);
-  while (item->collateral.amount != 0 && item != index.end()) {
-    item++;
-  }
-  eosio_assert(item != index.end(), "open a debt position first");
-  
-  // calculate collateral after fee
-  auto collateral_amount = (double) quantity.amount;
-  auto debt = asset(0, BUCK);
-  auto ccr = item->temporary_ccr;
-  
-  if (ccr > 0) {
+  if (memo == "") {
+    // find cdp
+    cdp_i positions(_self, _self.value);
+    auto index = positions.get_index<"byaccount"_n>();
+    auto item = index.find(from.value);
+    while (item->collateral.amount != 0 && item != index.end()) {
+      item++;
+    }
+    eosio_assert(item != index.end(), "open a debt position first");
     
-    // add debt
-    auto priceEOS = get_eos_price();
-    auto debt_amount = floor(priceEOS * collateral_amount / ccr);
+    // calculate collateral after fee
+    auto collateral_amount = (double) quantity.amount;
+    auto debt = asset(0, BUCK);
+    auto ccr = item->temporary_ccr;
     
-    // take fee and update balance
-    debt_amount = debt_amount * (1 - IF);
-    debt = asset(debt_amount, BUCK);
-    add_balance(from, debt, from, true);
+    if (ccr > 0) {
+      
+      // add debt
+      auto priceEOS = get_eos_price();
+      auto debt_amount = floor(priceEOS * collateral_amount / ccr);
+      
+      // take fee and update balance
+      debt_amount = debt_amount * (1 - IF);
+      debt = asset(debt_amount, BUCK);
+      add_balance(from, debt, from, true);
+    }
+    
+    eosio_assert(debt > MIN_DEBT, "you have to receive a larger debt");
+    
+    // update cdp
+    index.modify(item, same_payer, [&](auto& r) {
+      r.debt = debt;
+      r.collateral = asset(collateral_amount, EOS);
+      r.timestamp = time_ms();
+    });
   }
+  else if (memo == "r") {
+    
+    cdp_i positions(_self, _self.value);
+    reparam_req_i reparamreqs(_self, _self.value);
   
-  eosio_assert(debt > MIN_DEBT, "you have to receive a larger debt");
-  
-  // update cdp
-  index.modify(item, same_payer, [&](auto& r) {
-    r.debt = debt;
-    r.collateral = asset(collateral_amount, EOS);
-    r.timestamp = time_ms();
-  });
+    auto index = positions.get_index<"byaccount"_n>();
+    auto cdp_item = index.find(from.value);
+    auto reparam_item = reparamreqs.find(cdp_item->id);
+    
+    while (cdp_item != index.end()) {
+      if (!reparam_item->isPaid) { break; }
+      cdp_item++;
+      reparam_item = reparamreqs.find(cdp_item->id);
+    }
+    eosio_assert(reparam_item != reparamreqs.end(), "could not find a reparametrization request");
+
+    eosio_assert(quantity == reparam_item->change_collateral,
+      "you must transfer the exact amount of collateral you wish to increase");
+    
+    reparamreqs.modify(reparam_item, same_payer, [&](auto& r) {
+      r.isPaid = true;
+    });
+  }
   
   run(3);
 }
