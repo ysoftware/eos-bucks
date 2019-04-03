@@ -3,10 +3,10 @@
 // Created by Yaroslav Erohin.
 
 #include <cmath>
-#include <eosiolib/eosio.hpp>
-#include <eosiolib/print.hpp>
-#include <eosiolib/asset.hpp>
-#include <eosiolib/transaction.hpp>
+#include <eosio/eosio.hpp>
+#include <eosio/print.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/transaction.hpp>
 
 using namespace eosio;
 
