@@ -47,7 +47,7 @@ void buck::run_requests(uint64_t max) {
       auto& cdp_item = positions.get(close_item->cdp_id);
       
       // send eos
-      inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
+      inline_transfer(cdp_item.account, cdp_item.collateral, "closing debt position", EOSIO_TOKEN);
       
       // remove request and cdp
       close_item = closereqs.erase(close_item);

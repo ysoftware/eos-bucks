@@ -5,7 +5,7 @@
 void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "cdp does not exist");
+  eosio_assert(positionItem != positions.end(), "debt position does not exist");
   
   require_auth(positionItem->account);
   
@@ -51,7 +51,7 @@ void buck::changeacr(uint64_t cdp_id, double acr) {
   
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "cdp does not exist");
+  eosio_assert(positionItem != positions.end(), "debt position does not exist");
   eosio_assert(positionItem->acr != acr, "acr is already set to this value");
   
   require_auth(positionItem->account);
@@ -64,7 +64,7 @@ void buck::changeacr(uint64_t cdp_id, double acr) {
 void buck::closecdp(uint64_t cdp_id) {
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "cdp does not exist");
+  eosio_assert(positionItem != positions.end(), "debt position does not exist");
   
   close_req_i requests(_self, _self.value);
   auto requestItem = requests.find(cdp_id);
