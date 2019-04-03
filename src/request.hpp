@@ -9,10 +9,11 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   require_auth(positionItem->account);
   
-  // to-do modify instead of failing
   reparam_req_i requests(_self, _self.value);
-  auto requestItem = requests.find(cdp_id);
-  eosio_assert(requestItem == requests.end(), "request already exists");
+  auto request_item = requests.find(cdp_id);
+  if (request_item != request.end()) {
+    requests.erase(request_item); // remove existing request
+  }
   
   // to-do validate arguments
   
