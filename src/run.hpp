@@ -184,7 +184,6 @@ void buck::run_liquidation(uint64_t max) {
         r.liquidation_timestamp = table.begin()->oracle_timestamp;
       });
       
-      // to-do mark liquidation done for this round
       PRINT("liquidation complete for", processed)
       
       break;
@@ -215,20 +214,8 @@ void buck::run_liquidation(uint64_t max) {
       // this and all further liquidators can not bail out anymore bad debt 
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
         
-        PRINT_("sending to bailout pool...")
-        
-        double used_collateral_amount = bad_debt / (eos_price * (1 - LF));
-        asset used_debt = asset(ceil(bad_debt), BUCK);
-        asset used_collateral = asset(ceil(used_collateral_amount), EOS);
-
-        debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
-          r.collateral -= used_collateral;
-          r.debt -= used_debt;
-        });
-        
-        // to-do transfer to bailout pool
-        
-        break;
+        // no more liquidators
+        return;
       }
       
       double bailable;
