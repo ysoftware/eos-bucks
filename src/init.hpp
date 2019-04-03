@@ -6,7 +6,7 @@ void buck::init() {
   require_auth(_self);
   
   stats_i table(_self, _self.value);
-  eosio_assert(table.begin() == table.end(), "contract is already initiated");
+  check(table.begin() == table.end(), "contract is already initiated");
   
   table.emplace(_self, [&](auto& r) {
     r.supply = asset(0, BUCK);

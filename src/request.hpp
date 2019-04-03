@@ -5,7 +5,7 @@
 void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "debt position does not exist");
+  check(positionItem != positions.end(), "debt position does not exist");
   
   require_auth(positionItem->account);
   
@@ -17,17 +17,17 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   // to-do validate arguments
   
-  eosio_assert(change_debt.amount != 0 || change_collateral.amount != 0, 
+  check(change_debt.amount != 0 || change_collateral.amount != 0, 
     "can not create empty reparametrization request");
   
-  eosio_assert(positionItem->debt.symbol == change_debt.symbol, "debt symbol mismatch");
-  eosio_assert(positionItem->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
+  check(positionItem->debt.symbol == change_debt.symbol, "debt symbol mismatch");
+  check(positionItem->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
   
   asset new_debt = positionItem->debt + change_debt;
   asset new_collateral = positionItem->collateral + change_collateral;
   
-  eosio_assert(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
-  eosio_assert(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
+  check(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
+  check(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
@@ -46,13 +46,13 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
 }
 
 void buck::changeacr(uint64_t cdp_id, double acr) {
-  eosio_assert(acr >= CR || acr == 0, "acr value is too small");
-  eosio_assert(acr < 1000, "acr value is too high");
+  check(acr >= CR || acr == 0, "acr value is too small");
+  check(acr < 1000, "acr value is too high");
   
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "debt position does not exist");
-  eosio_assert(positionItem->acr != acr, "acr is already set to this value");
+  check(positionItem != positions.end(), "debt position does not exist");
+  check(positionItem->acr != acr, "acr is already set to this value");
   
   require_auth(positionItem->account);
   
@@ -64,11 +64,11 @@ void buck::changeacr(uint64_t cdp_id, double acr) {
 void buck::closecdp(uint64_t cdp_id) {
   cdp_i positions(_self, _self.value);
   auto positionItem = positions.find(cdp_id);
-  eosio_assert(positionItem != positions.end(), "debt position does not exist");
+  check(positionItem != positions.end(), "debt position does not exist");
   
   close_req_i requests(_self, _self.value);
   auto requestItem = requests.find(cdp_id);
-  eosio_assert(requestItem == requests.end(), "request already exists");
+  check(requestItem == requests.end(), "request already exists");
 
   require_auth(positionItem->account);
   
@@ -87,7 +87,7 @@ void buck::redeem(name account, asset quantity) {
   require_auth(account);
   
   // validate
-  eosio_assert(quantity.symbol == BUCK, "symbol mismatch");
+  check(quantity.symbol == BUCK, "symbol mismatch");
   
   // find previous request
   redeem_req_i requests(_self, _self.value);

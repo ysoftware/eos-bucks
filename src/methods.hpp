@@ -28,7 +28,7 @@ void buck::add_balance(name owner, asset value, name ram_payer, bool change_supp
   
   if (change_supply) {
     stats_i stats(_self, _self.value);
-    eosio_assert(stats.begin() != stats.end(), "contract is not yet initiated");
+    check(stats.begin() != stats.end(), "contract is not yet initiated");
     
     stats.modify(stats.begin(), same_payer, [&](auto& r) {
       r.supply += value;
@@ -40,7 +40,7 @@ void buck::sub_balance(name owner, asset value, bool change_supply) {
   accounts_i accounts(_self, owner.value);
 
   const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
-  eosio_assert(item.balance.amount >= value.amount, "overdrawn balance");
+  check(item.balance.amount >= value.amount, "overdrawn balance");
 
   accounts.modify(item, owner, [&](auto& r) {
     r.balance -= value;
@@ -48,7 +48,7 @@ void buck::sub_balance(name owner, asset value, bool change_supply) {
   
   if (change_supply) {
     stats_i stats(_self, _self.value);
-    eosio_assert(stats.begin() != stats.end(), "contract is not yet initiated");
+    check(stats.begin() != stats.end(), "contract is not yet initiated");
     
     stats.modify(stats.begin(), same_payer, [&](auto& r) {
       r.supply -= value;

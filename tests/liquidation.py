@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test init and open cdp")
+		SCENARIO("Test liquidation")
 		reset()
 
 		create_master_account("master")

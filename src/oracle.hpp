@@ -7,7 +7,7 @@ void buck::update(double eos_price) {
   
   // update prices
   stats_i table(_self, _self.value);
-  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  check(table.begin() != table.end(), "contract is not yet initiated");
   
   auto previous_price = table.begin()->oracle_eos_price;
   
@@ -29,8 +29,8 @@ void buck::update(double eos_price) {
 
 double buck::get_eos_price() {
   stats_i table(_self, _self.value);
-  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  check(table.begin() != table.end(), "contract is not yet initiated");
   double price = table.begin()->oracle_eos_price;
-  eosio_assert(price != 0, "oracle prices are not yet set");
+  check(price != 0, "oracle prices are not yet set");
   return table.begin()->oracle_eos_price;
 }

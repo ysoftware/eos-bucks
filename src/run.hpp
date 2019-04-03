@@ -5,7 +5,7 @@
 void buck::run(uint64_t max) {
   
   stats_i table(_self, _self.value);
-  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  check(table.begin() != table.end(), "contract is not yet initiated");
 
   // check if liquidation complete for this round
   if (table.begin()->liquidation_timestamp == table.begin()->oracle_timestamp) {
@@ -22,7 +22,7 @@ void buck::run_requests(uint64_t max) {
   auto price = get_eos_price();
   
   stats_i table(_self, _self.value);
-  eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+  check(table.begin() != table.end(), "contract is not yet initiated");
   auto oracle_timestamp = table.begin()->oracle_timestamp;
   
   cdp_i positions(_self, _self.value);
@@ -178,7 +178,7 @@ void buck::run_liquidation(uint64_t max) {
     if (debtor_ccr >= CR) {
       
       stats_i table(_self, _self.value);
-      eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
+      check(table.begin() != table.end(), "contract is not yet initiated");
       
       table.modify(table.begin(), same_payer, [&](auto& r) {
         r.liquidation_timestamp = table.begin()->oracle_timestamp;
