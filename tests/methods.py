@@ -112,6 +112,14 @@ def changeacr(contract, user, cdp_id, acr):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
+def redeem(contract, user, quantity):
+	contract.push_action("redeem",
+		{
+			"account": user,
+			"quantity": quantity
+		},
+		permission=[(user, Permission.ACTIVE)])
+
 # requests
 
 def balance(token, account, unwrap=True):
