@@ -25,7 +25,7 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test init and open cdp")
+		SCENARIO("Test transfer")
 		reset()
 
 		create_master_account("master")
@@ -45,6 +45,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
+		create_account("user2", master, "user2")
 		transfer(eosio_token, master, user1, "1000000.0000 EOS", "")
 
 	def run(self, result=None):
@@ -60,9 +61,12 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1.6, 0)
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		self.assertEqual(227.2641, balance(buck, user1))
+		balance(buck, user1)
 
-		# check all cdp values
+		transfer(buck, user1, user2, "1.0000 BUCK", "")
+
+		balance(buck, user1)
+		balance(buck, user2)
 
 
 # main

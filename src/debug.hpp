@@ -11,6 +11,8 @@ void buck::zdestroy() {
   
   RM(stats_i, _self.value)
   
+  RM(redeem_req_i, _self.value)
+  
   RM(close_req_i, _self.value)
   
   RM(reparam_req_i, _self.value)

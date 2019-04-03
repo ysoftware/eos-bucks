@@ -19,33 +19,35 @@ void buck::run(uint64_t max) {
 void buck::run_requests(uint64_t max) {
   PRINT("running requests, max", max)
   uint64_t processed = 0;
-  
-  cdp_i positions(_self, _self.value);
-  close_req_i closereqs(_self, _self.value);
-  auto close_item = closereqs.begin();
-  reparam_req_i reparamreqs(_self, _self.value);
-  auto reparam_item = reparamreqs.begin();
+  auto price = get_eos_price();
   
   stats_i table(_self, _self.value);
   eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   auto oracle_timestamp = table.begin()->oracle_timestamp;
+  
+  cdp_i positions(_self, _self.value);
+  close_req_i closereqs(_self, _self.value);
+  reparam_req_i reparamreqs(_self, _self.value);
+  redeem_req_i redeemreqs(_self, _self.value);
+  auto debtor_index = positions.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
+  
+  auto close_item = closereqs.begin();
+  auto reparam_item = reparamreqs.begin();
+  auto redeem_item = redeemreqs.begin();
+  auto debtor_item = debtor_index.begin();
   
   // loop until any requests exist and not over limit
   while (processed < max) {
     processed++;
     
     // close request
-    
-    // check request time
     if (close_item != closereqs.end() && close_item->timestamp < oracle_timestamp) {
       
-      // find cdp
+      // find cdp, should always exist
       auto& cdp_item = positions.get(close_item->cdp_id);
       
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing cdp", EOSIO_TOKEN);
-      
-      PRINT_("done close request")
       
       // remove request and cdp
       close_item = closereqs.erase(close_item);
@@ -53,61 +55,104 @@ void buck::run_requests(uint64_t max) {
     }
     
     // reparam request
-    
-    // check request time (no reason to look further, since they are sorted by time as well)
     if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
       
-      // to-do we might want to remove old unpaid requests?
+      // remove old unpaid requests in ~2 rounds. no need to return buck cuz unpaid
       
       // look for a first paid request
       while (reparam_item != reparamreqs.end() && !reparam_item->isPaid) { reparam_item++; }
       if (reparam_item == reparamreqs.end() && !reparam_item->isPaid) { continue; }
       
       // find cdp
-      auto& cdp_item = positions.get(reparam_item->cdp_id);
+      auto cdp_item = positions.find(reparam_item->cdp_id);
       
-      asset new_debt = cdp_item.debt;
-      asset new_collateral = cdp_item.collateral;
-      auto ccr = get_ccr(cdp_item.collateral, cdp_item.debt);
-
-      if (reparam_item->change_debt.amount > 0) { // 4
+      if (cdp_item != positions.end()) {
         
-        auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
-        auto di = (double) reparam_item->change_debt.amount;
-        auto change = asset(ceil(fmin(ccr_cr, di)), BUCK);
-        new_debt += change;
+        asset new_debt = cdp_item->debt;
+        asset new_collateral = cdp_item->collateral;
+        auto ccr = get_ccr(cdp_item->collateral, cdp_item->debt);
+  
+        if (reparam_item->change_debt.amount > 0) { // 4
+          
+          auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
+          auto di = (double) reparam_item->change_debt.amount;
+          auto change = asset(ceil(fmin(ccr_cr, di)), BUCK);
+          new_debt += change;
+          
+          add_balance(cdp_item->account, change, same_payer, true);
+        }
         
-        add_balance(cdp_item.account, change, same_payer, true);
-      }
-      
-      else if (reparam_item->change_debt.amount < 0) { // 1
-        new_debt += reparam_item->change_debt; // add negative value
-      }
-      
-      if (reparam_item->change_collateral.amount > 0) { // 2
-        new_collateral += reparam_item->change_collateral;
-      }
-      
-      else if (reparam_item->change_collateral.amount < 0) { // 3 
-      
-        auto cr_ccr = CR / ccr;
-        auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item.collateral.amount;
-        auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item.collateral.amount), EOS);
-        new_collateral -= change;
+        else if (reparam_item->change_debt.amount < 0) { // 1
+          new_debt += reparam_item->change_debt; // add negative value
+        }
         
-        inline_transfer(cdp_item.account, change, "collateral return", EOSIO_TOKEN);
+        if (reparam_item->change_collateral.amount > 0) { // 2
+          new_collateral += reparam_item->change_collateral;
+        }
+        
+        else if (reparam_item->change_collateral.amount < 0) { // 3 
+        
+          auto cr_ccr = CR / ccr;
+          auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item->collateral.amount;
+          auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item->collateral.amount), EOS);
+          new_collateral -= change;
+          
+          inline_transfer(cdp_item->account, change, "collateral return", EOSIO_TOKEN);
+        }
+        
+        // to-do check new ccr parameters
+        
+        // update cdp
+        positions.modify(cdp_item, same_payer, [&](auto& r) {
+          r.collateral = new_collateral;
+          r.debt = new_debt;
+        });
       }
-      
-      // update cdp
-      positions.modify(cdp_item, same_payer, [&](auto& r) {
-        r.collateral = new_collateral;
-        r.debt = new_debt;
-      });
-      
-      PRINT_("done reparam request")
       
       // remove request
       reparam_item = reparamreqs.erase(reparam_item);
+    }
+    
+    // redeem request
+    if (redeem_item != redeemreqs.end() && redeem_item->timestamp < oracle_timestamp) {
+      
+      auto redeem_quantity = redeem_item->quantity;
+      asset collateral_return = asset(0, EOS);
+      
+      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
+        
+        auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
+        auto using_collateral_amount = floor((double) using_debt_amount / price);
+        auto returning_collateral_amount = floor((double) using_debt_amount / (price + RF));
+        
+        asset using_debt = asset(using_debt_amount, BUCK);
+        asset using_collateral = asset(using_collateral_amount, EOS);
+        asset return_collateral = asset(returning_collateral_amount, EOS);
+        
+        redeem_quantity -= using_debt;
+        collateral_return += return_collateral;
+        
+        // switch to next debtor if this one is out of debt
+        if (using_debt >= debtor_item->debt) {
+          debtor_item = debtor_index.erase(debtor_item);
+        }
+        else {
+          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+            r.debt -= using_debt;
+            r.collateral -= using_collateral;
+          });
+        }
+      }
+      
+      // check if all bucks have been redeemed
+      if (redeem_quantity.amount > 0) {
+        add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
+      }
+      
+      inline_transfer(redeem_item->account, collateral_return, "redeem buck", EOSIO_TOKEN);
+      
+      // remove request
+      redeem_item = redeemreqs.erase(redeem_item);
     }
   }
 }

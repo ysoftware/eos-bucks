@@ -6,7 +6,6 @@
 #include "constants.hpp"
 #include "debug.hpp"
 #include "actions.hpp"
-#include "redeem.hpp"
 #include "init.hpp"
 #include "methods.hpp"
 #include "oracle.hpp"

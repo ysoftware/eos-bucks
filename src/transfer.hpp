@@ -19,21 +19,22 @@ void buck::transfer(name from, name to, asset quantity, std::string memo) {
   sub_balance(from, quantity, false);
   add_balance(to, quantity, payer, false);
   
-  run(3);
+  // run(3);
 }
 
 void buck::notify_transfer(name from, name to, asset quantity, std::string memo) {
   if (to != _self || from == _self) { return; }
   require_auth(from);
   
-  eosio_assert(quantity.symbol == EOS, "you have to use the system EOS token");
-  eosio_assert(get_code() == "eosio.token"_n, "you have to use the system EOS token");
+  eosio_assert(quantity.symbol == EOS, "you have to transfer EOS");
+  eosio_assert(get_code() == "eosio.token"_n, "you have to transfer EOS");
+
+  eosio_assert(quantity.symbol.is_valid(), "invalid quantity");
+	eosio_assert(quantity.amount > 0, "must transfer positive quantity");
   
-  eosio_assert(quantity.symbol.is_valid(), "Invalid quantity.");
-	eosio_assert(quantity.amount > 0, "Only positive quantity allowed.");
-  eosio_assert(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
-  
-  if (memo == "") {
+  if (memo == "") { // opening cdp 
+    eosio_assert(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
+    
     // find cdp
     cdp_i positions(_self, _self.value);
     auto index = positions.get_index<"byaccount"_n>();
@@ -43,7 +44,6 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     }
     eosio_assert(item != index.end(), "open a debt position first");
     
-    // calculate collateral after fee
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
     auto ccr = item->temporary_ccr;
@@ -69,7 +69,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       r.timestamp = time_ms();
     });
   }
-  else if (memo == "r") {
+  else if (memo == "r") { // reparametrizing cdp
     
     cdp_i positions(_self, _self.value);
     reparam_req_i reparamreqs(_self, _self.value);
@@ -106,7 +106,9 @@ void buck::open(name account, double ccr, double acr) {
   eosio_assert(ccr < 1000, "ccr value is too high");
   eosio_assert(acr < 1000, "acr value is too high");
   
-  // update supply   
+  // to-do assert no other cdp without collateral opened
+  
+  // update supply
   stats_i table(_self, _self.value);
   eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   

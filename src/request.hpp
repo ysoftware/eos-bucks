@@ -9,6 +9,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   require_auth(positionItem->account);
   
+  // to-do modify instead of failing
   reparam_req_i requests(_self, _self.value);
   auto requestItem = requests.find(cdp_id);
   eosio_assert(requestItem == requests.end(), "request already exists");
@@ -26,9 +27,6 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   eosio_assert(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
   eosio_assert(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
-  
-  double ccr = get_ccr(new_collateral, new_debt);
-  eosio_assert(ccr > CR, "can not reparametrize collateral ratio below the limit");
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
@@ -81,4 +79,36 @@ void buck::closecdp(uint64_t cdp_id) {
   });
   
   run_requests(2);
+}
+
+
+void buck::redeem(name account, asset quantity) {
+  require_auth(account);
+  
+  // validate
+  eosio_assert(quantity.symbol == BUCK, "symbol mismatch");
+  
+  // find previous request
+  redeem_req_i requests(_self, _self.value);
+  auto request_item = requests.find(account.value);
+  
+  if (request_item != requests.end()) {
+    requests.modify(request_item, same_payer, [&](auto& r) {
+      
+      r.account = account;
+      r.quantity += quantity;
+      r.timestamp = time_ms();
+    });
+  }
+  else {
+    requests.emplace(account, [&](auto& r) {
+      r.account = account;
+      r.quantity = quantity;
+      r.timestamp = time_ms();
+    });
+  }
+  
+  sub_balance(account, quantity, true);
+  
+  run(3);
 }
