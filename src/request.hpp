@@ -11,7 +11,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   reparam_req_i requests(_self, _self.value);
   auto request_item = requests.find(cdp_id);
-  if (request_item != request.end()) {
+  if (request_item != requests.end()) {
     requests.erase(request_item); // remove existing request
   }
   
