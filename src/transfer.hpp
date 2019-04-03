@@ -66,7 +66,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     index.modify(item, same_payer, [&](auto& r) {
       r.debt = debt;
       r.collateral = asset(collateral_amount, EOS);
-      r.timestamp = time_ms();
+      r.timestamp = current_time_point();
     });
   }
   else if (memo == "r") { // reparametrizing cdp
@@ -125,7 +125,7 @@ void buck::open(name account, double ccr, double acr) {
     r.acr = acr;
     r.debt = asset((uint64_t) round(ccr * 1000000), BUCK);
     r.collateral = asset(0, EOS);
-    r.timestamp = 0;
+    r.timestamp = current_time_point();
   });
   
   // open account if doesn't exist

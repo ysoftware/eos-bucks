@@ -36,7 +36,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   
   requests.emplace(positionItem->account, [&](auto& r) {
     r.cdp_id = cdp_id;
-    r.timestamp = time_ms();
+    r.timestamp = current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
     r.isPaid = change_collateral.amount <= 0; // isPaid if not increasing collateral
@@ -76,7 +76,7 @@ void buck::closecdp(uint64_t cdp_id) {
   
   requests.emplace(positionItem->account, [&](auto& r) {
     r.cdp_id = cdp_id;
-    r.timestamp = time_ms();
+    r.timestamp = current_time_point();
   });
   
   run_requests(2);
@@ -98,14 +98,14 @@ void buck::redeem(name account, asset quantity) {
       
       r.account = account;
       r.quantity += quantity;
-      r.timestamp = time_ms();
+      r.timestamp = current_time_point();
     });
   }
   else {
     requests.emplace(account, [&](auto& r) {
       r.account = account;
       r.quantity = quantity;
-      r.timestamp = time_ms();
+      r.timestamp = current_time_point();
     });
   }
   

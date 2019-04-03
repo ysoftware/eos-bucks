@@ -47,20 +47,20 @@ CONTRACT buck : public contract {
     };
     
     TABLE currency_stats {
-      asset     supply;
-      asset     max_supply;
-      name      issuer;
+      asset       supply;
+      asset       max_supply;
+      name        issuer;
       
-      uint64_t  liquidation_timestamp;
-      uint64_t  oracle_timestamp;
-      double    oracle_eos_price;
+      time_point  liquidation_timestamp;
+      time_point  oracle_timestamp;
+      double      oracle_eos_price;
     
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
     
     TABLE close_req {
       uint64_t cdp_id;
-      uint64_t timestamp;
+      time_point timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -68,7 +68,7 @@ CONTRACT buck : public contract {
     TABLE redeem_req {
       name      account;
       asset     quantity;
-      uint64_t  timestamp;
+      time_point  timestamp;
       
       uint64_t primary_key() const { return account.value; }
     };
@@ -77,7 +77,7 @@ CONTRACT buck : public contract {
       uint64_t  cdp_id;
       asset     change_collateral;
       asset     change_debt;
-      uint64_t  timestamp;
+      time_point  timestamp;
       bool      isPaid;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -89,7 +89,7 @@ CONTRACT buck : public contract {
       name      account;
       asset     debt;
       asset     collateral;
-      uint64_t  timestamp;
+      time_point  timestamp;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }

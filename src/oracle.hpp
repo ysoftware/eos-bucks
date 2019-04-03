@@ -12,7 +12,7 @@ void buck::update(double eos_price) {
   auto previous_price = table.begin()->oracle_eos_price;
   
   table.modify(table.begin(), same_payer, [&](auto& r) {
-    r.oracle_timestamp = time_ms();
+    r.oracle_timestamp = current_time_point();
     r.oracle_eos_price = eos_price;
   });
   

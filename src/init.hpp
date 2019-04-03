@@ -13,8 +13,8 @@ void buck::init() {
     r.max_supply = asset(10000000000000000, BUCK);
     r.issuer = _self;
     
-    r.oracle_timestamp = 0;
+    r.oracle_timestamp = time_point(microseconds(0));
     r.oracle_eos_price = 0;
-    r.liquidation_timestamp = 0;
+    r.liquidation_timestamp = time_point(microseconds(0));
   });
 }

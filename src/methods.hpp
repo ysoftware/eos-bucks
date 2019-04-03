@@ -2,10 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-uint64_t time_ms() {
-	return current_time() / 1'000;
-}
-
 double buck::get_ccr(asset collateral, asset debt) {
   double price = get_eos_price();
   return (double) collateral.amount * price / (double) debt.amount;
