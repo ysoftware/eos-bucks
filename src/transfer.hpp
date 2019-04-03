@@ -107,13 +107,18 @@ void buck::open(name account, double ccr, double acr) {
   eosio_assert(acr < 1000, "acr value is too high");
   
   // to-do assert no other cdp without collateral opened
+  cdp_i positions(_self, _self.value);
+  auto account_index = positions.get_index<"byaccount"_n>();
+  auto cdp_item = account_index.begin();
+  while (cdp_item != account_index.end()) {
+      eosio_assert(cdp_item->collateral.amount > 0, "you already have created a debt position created");
+  }
   
   // update supply
   stats_i table(_self, _self.value);
   eosio_assert(table.begin() != table.end(), "contract is not yet initiated");
   
   // open cdp
-  cdp_i positions(_self, _self.value);
   positions.emplace(account, [&](auto& r) {
     r.id = positions.available_primary_key();
     r.account = account;
