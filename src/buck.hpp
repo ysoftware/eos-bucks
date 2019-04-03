@@ -86,7 +86,6 @@ CONTRACT buck : public contract {
     TABLE cdp {
       uint64_t  id;
       double    acr;
-      double    temporary_ccr;
       name      account;
       asset     debt;
       asset     collateral;

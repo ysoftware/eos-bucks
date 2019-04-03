@@ -46,7 +46,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
-    auto ccr = item->temporary_ccr;
+    auto ccr = ((double) item->debt.amount) / 1000000;
     
     if (ccr > 0) {
       
@@ -122,9 +122,8 @@ void buck::open(name account, double ccr, double acr) {
   positions.emplace(account, [&](auto& r) {
     r.id = positions.available_primary_key();
     r.account = account;
-    r.temporary_ccr = ccr;
     r.acr = acr;
-    r.debt = asset(0, BUCK);
+    r.debt = asset((uint64_t) round(ccr * 1000000), BUCK);
     r.collateral = asset(0, EOS);
     r.timestamp = 0;
   });
