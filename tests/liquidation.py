@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
-		deploy(Contract(eosio_token, "02_eosio_token"))
+		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
 
 		# Distribute tokens
@@ -55,23 +55,23 @@ class Test(unittest.TestCase):
 
 	def test(self):
 		init(buck)
-
+		
 		update(buck, 3.6545)
 
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
 		open(buck, user1, 1.7, 2.0) # 1
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "100.0001 EOS", "")
 
 		open(buck, user1, 1.6, 1.5) # 2
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "100.0002 EOS", "")
 
 		open(buck, user1, 3.0, 1.5) # 3
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "100.0003 EOS", "")
 
 		open(buck, user1, 3.0, 0) # 4
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "100.0004 EOS", "")
 
 		table(buck, "cdp")
 		
@@ -79,7 +79,7 @@ class Test(unittest.TestCase):
 		
 		update(buck, 3.8)
 
-		update(buck, 3.4)
+		update(buck, 3.5)
 		
 		table(buck, "cdp")
 

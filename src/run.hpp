@@ -236,7 +236,6 @@ void buck::run_liquidation(uint64_t max) {
       
       PRINT("sending debt", used_debt)
       PRINT("sending collateral", used_collateral)
-      PRINT("collateral fee", collateral_fee)
       PRINT_("")
       
       add_fees(collateral_fee);

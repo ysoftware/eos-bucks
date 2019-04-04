@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
-		deploy(Contract(eosio_token, "02_eosio_token"))
+		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
 
 		# Distribute tokens
@@ -76,11 +76,6 @@ class Test(unittest.TestCase):
 		self.assertEqual(10, balance_buck1 - balance_buck2)
 
 		self.assertEqual(4.9875, balance_eos2 - balance_eos1)
-
-
-
-
-
 
 
 # main

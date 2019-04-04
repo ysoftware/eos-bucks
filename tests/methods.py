@@ -80,6 +80,7 @@ def update(contract, eos=2):
 	contract.push_action("update",
 		{ "eos_price": eos },
 		permission=[(contract, Permission.ACTIVE)])
+	time.sleep(1)
 
 def close(contract, user, cdp_id):
 	contract.push_action("closecdp",

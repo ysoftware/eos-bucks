@@ -59,7 +59,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       debt = asset(floor(debt_amount), BUCK);
       add_balance(from, debt, from, true);
       
-      // 
+      // to-do add fee
     }
     
     check(debt > MIN_DEBT, "you have to receive a larger debt");

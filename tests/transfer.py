@@ -35,7 +35,7 @@ class Test(unittest.TestCase):
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
-		deploy(Contract(eosio_token, "02_eosio_token"))
+		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
 
 		# Distribute tokens

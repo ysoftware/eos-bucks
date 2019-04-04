@@ -36,7 +36,7 @@ class Test(unittest.TestCase):
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
-		deploy(Contract(eosio_token, "02_eosio_token"))
+		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
 
 		# Distribute tokens
@@ -79,9 +79,6 @@ class Test(unittest.TestCase):
 		## + collateral
 		reparam(buck, user1, 0, "0.0000 BUCK", "50.0000 EOS")
 
-		assertRaisesMessage(self, "request already exists", 
-			lambda: reparam(buck, user1, 0, "0.0000 BUCK", "50.0000 EOS"))
-		
 		self.assertEqual(0, table(buck, "reparamreq", element="isPaid"))
 
 		# check does not work before collateral transfer

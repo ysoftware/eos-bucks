@@ -35,7 +35,7 @@ class Test(unittest.TestCase):
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
-		deploy(Contract(eosio_token, "02_eosio_token"))
+		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
 
 		# Distribute tokens
@@ -60,7 +60,7 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1.6, 0)
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		self.assertEqual(227.2641, balance(buck, user1))
+		self.assertEqual(227.2642, balance(buck, user1))
 
 		# check all cdp values
 
