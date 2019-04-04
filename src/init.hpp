@@ -16,5 +16,7 @@ void buck::init() {
     r.oracle_timestamp = time_point(microseconds(0));
     r.oracle_eos_price = 0;
     r.liquidation_timestamp = time_point(microseconds(0));
+    
+    r.gathered_fees = asset(0, EOS);
   });
 }

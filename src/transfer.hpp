@@ -52,12 +52,14 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       
       // add debt
       auto priceEOS = get_eos_price();
-      auto debt_amount = floor(priceEOS * collateral_amount / ccr);
+      auto debt_amount = priceEOS * collateral_amount / ccr;
       
-      // take fee and update balance
+      // take fee from debt and update balance
       debt_amount = debt_amount * (1 - IF);
-      debt = asset(debt_amount, BUCK);
+      debt = asset(floor(debt_amount), BUCK);
       add_balance(from, debt, from, true);
+      
+      // 
     }
     
     check(debt > MIN_DEBT, "you have to receive a larger debt");
@@ -112,6 +114,7 @@ void buck::open(name account, double ccr, double acr) {
   auto cdp_item = account_index.begin();
   while (cdp_item != account_index.end()) {
       check(cdp_item->collateral.amount > 0, "you already have created a debt position created");
+      cdp_item++;
   }
   
   // update supply

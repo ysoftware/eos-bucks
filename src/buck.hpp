@@ -54,41 +54,43 @@ CONTRACT buck : public contract {
       time_point  liquidation_timestamp;
       time_point  oracle_timestamp;
       double      oracle_eos_price;
+      
+      asset       gathered_fees;
     
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
     
     TABLE close_req {
-      uint64_t cdp_id;
-      time_point timestamp;
+      uint64_t    cdp_id;
+      time_point  timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
     };
     
     TABLE redeem_req {
-      name      account;
-      asset     quantity;
+      name        account;
+      asset       quantity;
       time_point  timestamp;
       
       uint64_t primary_key() const { return account.value; }
     };
     
     TABLE reparam_req {
-      uint64_t  cdp_id;
-      asset     change_collateral;
-      asset     change_debt;
+      uint64_t    cdp_id;
+      asset       change_collateral;
+      asset       change_debt;
       time_point  timestamp;
-      bool      isPaid;
+      bool        isPaid;
       
       uint64_t primary_key() const { return cdp_id; }
     };
     
     TABLE cdp {
-      uint64_t  id;
-      double    acr;
-      name      account;
-      asset     debt;
-      asset     collateral;
+      uint64_t    id;
+      double      acr;
+      name        account;
+      asset       debt;
+      asset       collateral;
       time_point  timestamp;
       
       uint64_t primary_key() const { return id; }
@@ -139,6 +141,7 @@ CONTRACT buck : public contract {
     // methods
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
     void sub_balance(name owner, asset value, bool change_supply);
+    void add_fees(asset value);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);

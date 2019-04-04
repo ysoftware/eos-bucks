@@ -227,14 +227,19 @@ void buck::run_liquidation(uint64_t max) {
       }
       
       double used_debt_amount = fmin(bad_debt, bailable);
-      double used_collateral_amount = used_debt_amount / (eos_price * (1 - LF));
+      double used_collateral_amount = used_debt_amount / eos_price * (1 - LF);
+      double collateral_fee_amount = used_debt_amount / eos_price * LF;
       
       asset used_debt = asset(ceil(used_debt_amount), BUCK);
-      asset used_collateral = asset(ceil(used_collateral_amount), EOS);
+      asset used_collateral = asset(round(used_collateral_amount), EOS);
+      asset collateral_fee = asset(round(collateral_fee_amount), EOS);
       
       PRINT("sending debt", used_debt)
       PRINT("sending collateral", used_collateral)
+      PRINT("collateral fee", collateral_fee)
       PRINT_("")
+      
+      add_fees(collateral_fee);
       
       debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
         r.collateral -= used_collateral;
