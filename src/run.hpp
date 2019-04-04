@@ -129,15 +129,12 @@ void buck::run_requests(uint64_t max) {
       while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
         
         auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
-        auto using_collateral_amount = floor((double) using_debt_amount / price);
-        auto returning_collateral_amount = floor((double) using_debt_amount / (price + RF));
+        auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
         
         asset using_debt = asset(using_debt_amount, BUCK);
         asset using_collateral = asset(using_collateral_amount, EOS);
-        asset return_collateral = asset(returning_collateral_amount, EOS);
         
         redeem_quantity -= using_debt;
-        collateral_return += return_collateral;
         
         // switch to next debtor if this one is out of debt
         if (using_debt >= debtor_item->debt) {
