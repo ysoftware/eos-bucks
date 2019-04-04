@@ -2,6 +2,8 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+static constexpr uint32_t     seconds_per_day = 24 * 3600;
+
 const symbol& EOS = eosio::symbol{"EOS", 4};
 const symbol& BUCK = eosio::symbol{"BUCK", 4};
 const symbol& REX = eosio::symbol{"REX", 4};

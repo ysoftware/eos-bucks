@@ -88,10 +88,10 @@ CONTRACT buck : public contract {
     };
     
     TABLE cdp_maturity_req {
-      uint64_t    cdp_id;
-      asset       collateral;
-      double      ccr;
-      time_point  maturity_timestamp;
+      uint64_t        cdp_id;
+      asset           collateral;
+      double          ccr;
+      time_point_sec  maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -112,7 +112,7 @@ CONTRACT buck : public contract {
       double liquidator() const {
         const double MAX = 100;
         
-        if (acr == 0 || collateral.amount == 0) {
+        if (acr == 0 || collateral.amount == 0 || rex.amount == 0) {
           return MAX * 3; // end of the table
         }
         
@@ -161,8 +161,10 @@ CONTRACT buck : public contract {
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
+    void buy_rex(name account, asset quantity);
     
     // getters
     double get_eos_price();
     double get_ccr(asset collateral, asset debt);
+    time_point_sec get_maturity();
 };

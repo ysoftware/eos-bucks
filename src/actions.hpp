@@ -9,3 +9,12 @@ void buck::inline_transfer(name account, asset quantity, std::string memo, name 
 		make_tuple(_self, account, quantity, memo)
 	).send();
 }
+
+void buck::buy_rex(name account, asset quantity) {
+  
+  // deposit
+  
+  // buy rex 
+  
+  
+}

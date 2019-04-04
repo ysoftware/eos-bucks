@@ -7,6 +7,15 @@ double buck::get_ccr(asset collateral, asset debt) {
   return (double) collateral.amount * price / (double) debt.amount;
 }
 
+time_point_sec buck::get_maturity() {
+  time_point_sec cts{ current_time_point() };
+  const uint32_t num_of_maturity_buckets = 5;
+  static const uint32_t now = cts.utc_seconds;
+  static const uint32_t r   = now % seconds_per_day;
+  static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
+  return rms;
+}
+
 void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
   accounts_i accounts(_self, owner.value);
   auto item = accounts.find(value.symbol.code().raw());

@@ -42,50 +42,43 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     while (item->collateral.amount != 0 && item != index.end()) {
       item++;
     }
+    
     check(item != index.end(), "open a debt position first");
+    
+    cdp_maturity_req_i requests(_self, _self.value);
+    auto& maturity_item = requests.get(item->id, "maturity has to exist for a new cdp");
     
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
-    auto ccr = ((double) item->debt.amount) / 1'000'000;
+    auto ccr = maturity_item.ccr;
     
     if (ccr > 0) {
       
-      // add debt
-      auto priceEOS = get_eos_price();
-      auto debt_amount = priceEOS * collateral_amount / ccr;
-      
-      // pay fee
-      auto debt_fee_amount = debt_amount * IF;
-      auto fee = asset(floor(debt_fee_amount), BUCK);
-      add_fee(fee);
-      
-      // take fee from debt and update balance
-      debt_amount -= debt_fee_amount;
+      // check if current debt amount is above the limit
+      auto price = get_eos_price();
+      auto debt_amount = (price * collateral_amount / ccr) * (1 - IF);
       debt = asset(floor(debt_amount), BUCK);
+      check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
+    }
+    else {
       
-      // add_balance(from, debt, from, true);
-      
-      // create maturity for
-      cdp_maturity_req_i requests(_self, _self.value);
-      requests.emplace(account, [&](auto& r) {
-        r.maturity_timestamp = current_time_point();
-        r.issue_debt = debt;
+      // if ccr == 0, not issuing any debt
+      index.modify(item, same_payer, [&](auto& r) {
+        r.debt = debt;
+        r.timestamp = current_time_point();
+        r.collateral = asset(collateral_amount, EOS);
       });
     }
     
-    check(debt >= MIN_DEBT, "you have to receive a larger debt");
-    
-    // update cdp
-    index.modify(item, same_payer, [&](auto& r) {
-      r.timestamp = current_time_point();
+    // setup maturity
+    requests.modify(maturity_item, same_payer, [&](auto& r) {
+      r.maturity_timestamp = get_maturity();
+      r.ccr = ccr;
+      r.collateral = quantity;
     });
     
-    // create maturity request with collateral and ccr
-    
-    // buy rex for this user 
-    
-    
-    
+    // buy rex with user's collateral
+    buy_rex(from, quantity);
   }
   else if (memo == "r") { // reparametrizing cdp
     
@@ -146,10 +139,7 @@ void buck::open(name account, double ccr, double acr) {
     r.collateral = asset(0, EOS);
     r.timestamp = current_time_point();
     r.rex = asset(0, REX);
-    
-    // temporary keep ccr value in a debt field
-    // multiplied by 1M to keep precision 
-    r.debt = asset((uint64_t) round(ccr * 1'000'000), BUCK); 
+    r.debt = asset(0, BUCK);
   });
   
   // open account if doesn't exist
@@ -165,8 +155,9 @@ void buck::open(name account, double ccr, double acr) {
   cdp_maturity_req_i requests(_self, _self.value);
   requests.emplace(account, [&](auto& r) {
     r.maturity_timestamp = current_time_point();
-    r.issue_collateral = asset(0, EOS);
+    r.collateral = asset(0, EOS);
     r.cdp_id = id;
+    r.ccr = ccr;
   });
   
   run(3);
