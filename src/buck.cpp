@@ -12,6 +12,7 @@
 #include "run.hpp"
 #include "transfer.hpp"
 #include "request.hpp"
+#include "tax.hpp"
 
 extern "C" {
   

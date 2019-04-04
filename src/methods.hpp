@@ -7,15 +7,6 @@ double buck::get_ccr(asset collateral, asset debt) {
   return (double) collateral.amount * price / (double) debt.amount;
 }
 
-void buck::add_fees(asset value) {
-  stats_i table(_self, _self.value);
-  check(table.begin() != table.end(), "contract is not yet initiated");
-
-  table.modify(table.begin(), same_payer, [&](auto& r) {
-    r.gathered_fees += value;
-  });
-}
-
 void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
   accounts_i accounts(_self, owner.value);
   auto item = accounts.find(value.symbol.code().raw());

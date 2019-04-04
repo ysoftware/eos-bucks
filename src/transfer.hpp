@@ -54,12 +54,15 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       auto priceEOS = get_eos_price();
       auto debt_amount = priceEOS * collateral_amount / ccr;
       
+      // pay fee
+      auto debt_fee_amount = debt_amount * IF;
+      auto fee = asset(floor(debt_fee_amount), BUCK);
+      add_fee(fee);
+      
       // take fee from debt and update balance
-      debt_amount = debt_amount * (1 - IF);
+      debt_amount -= debt_fee_amount;
       debt = asset(floor(debt_amount), BUCK);
       add_balance(from, debt, from, true);
-      
-      // to-do add fee
     }
     
     check(debt > MIN_DEBT, "you have to receive a larger debt");

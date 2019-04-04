@@ -55,8 +55,10 @@ CONTRACT buck : public contract {
       time_point  oracle_timestamp;
       double      oracle_eos_price;
       
-      asset       gathered_fees;
-    
+      asset   total_collateral;
+      asset   gathered_fees;
+      asset   aggregated_collateral;
+      
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
     
@@ -141,13 +143,13 @@ CONTRACT buck : public contract {
     // methods
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
     void sub_balance(name owner, asset value, bool change_supply);
-    void add_fees(asset value);
+    void add_fee(asset value);
+    void distribute_tax(uint64_t cdp_id);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
-    void deferred_run(uint64_t max);
     
     // getters
     double get_eos_price();

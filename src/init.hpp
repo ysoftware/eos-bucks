@@ -5,18 +5,20 @@
 void buck::init() {
   require_auth(_self);
   
-  stats_i table(_self, _self.value);
-  check(table.begin() == table.end(), "contract is already initiated");
+  stats_i stats(_self, _self.value);
+  check(stats.begin() == stats.end(), "contract is already initiated");
   
-  table.emplace(_self, [&](auto& r) {
+  stats.emplace(_self, [&](auto& r) {
     r.supply = asset(0, BUCK);
-    r.max_supply = asset(10000000000000000, BUCK);
+    r.max_supply = asset(1'000'000'000'000'0000, BUCK);
     r.issuer = _self;
     
     r.oracle_timestamp = time_point(microseconds(0));
     r.oracle_eos_price = 0;
     r.liquidation_timestamp = time_point(microseconds(0));
     
+    r.aggregated_collateral = asset(0, EOS);
+    r.total_collateral = asset(0, EOS);
     r.gathered_fees = asset(0, BUCK);
   });
 }
