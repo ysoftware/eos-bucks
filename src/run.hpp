@@ -94,7 +94,13 @@ void buck::run_requests(uint64_t max) {
         }
         
         if (reparam_item->change_collateral.amount > 0) { // 2
-          new_collateral += reparam_item->change_collateral;
+          // new_collateral += reparam_item->change_collateral;
+          
+          //   
+          
+          // buy rex for this user 
+          
+          
         }
         
         else if (reparam_item->change_collateral.amount < 0) { // 3 

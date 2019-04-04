@@ -46,7 +46,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
-    auto ccr = ((double) item->debt.amount) / 1000000;
+    auto ccr = ((double) item->debt.amount) / 1'000'000;
     
     if (ccr > 0) {
       
@@ -62,17 +62,30 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       // take fee from debt and update balance
       debt_amount -= debt_fee_amount;
       debt = asset(floor(debt_amount), BUCK);
-      add_balance(from, debt, from, true);
+      
+      // add_balance(from, debt, from, true);
+      
+      // create maturity for
+      cdp_maturity_req_i requests(_self, _self.value);
+      requests.emplace(account, [&](auto& r) {
+        r.maturity_timestamp = current_time_point();
+        r.issue_debt = debt;
+      });
     }
     
-    check(debt > MIN_DEBT, "you have to receive a larger debt");
+    check(debt >= MIN_DEBT, "you have to receive a larger debt");
     
     // update cdp
     index.modify(item, same_payer, [&](auto& r) {
-      r.debt = debt;
-      r.collateral = asset(collateral_amount, EOS);
       r.timestamp = current_time_point();
     });
+    
+    // create maturity request with collateral and ccr
+    
+    // buy rex for this user 
+    
+    
+    
   }
   else if (memo == "r") { // reparametrizing cdp
     
@@ -125,13 +138,18 @@ void buck::open(name account, double ccr, double acr) {
   check(table.begin() != table.end(), "contract is not yet initiated");
   
   // open cdp
+  auto id = positions.available_primary_key();
   positions.emplace(account, [&](auto& r) {
-    r.id = positions.available_primary_key();
+    r.id = id;
     r.account = account;
     r.acr = acr;
-    r.debt = asset((uint64_t) round(ccr * 1000000), BUCK);
     r.collateral = asset(0, EOS);
     r.timestamp = current_time_point();
+    r.rex = asset(0, REX);
+    
+    // temporary keep ccr value in a debt field
+    // multiplied by 1M to keep precision 
+    r.debt = asset((uint64_t) round(ccr * 1'000'000), BUCK); 
   });
   
   // open account if doesn't exist
@@ -142,6 +160,14 @@ void buck::open(name account, double ccr, double acr) {
       r.balance = asset(0, BUCK);
     });
   }
+  
+  // open maturity request
+  cdp_maturity_req_i requests(_self, _self.value);
+  requests.emplace(account, [&](auto& r) {
+    r.maturity_timestamp = current_time_point();
+    r.issue_collateral = asset(0, EOS);
+    r.cdp_id = id;
+  });
   
   run(3);
 }

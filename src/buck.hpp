@@ -87,12 +87,22 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
+    TABLE cdp_maturity_req {
+      uint64_t    cdp_id;
+      asset       collateral;
+      double      ccr;
+      time_point  maturity_timestamp;
+      
+      uint64_t primary_key() const { return cdp_id; }
+    };
+    
     TABLE cdp {
       uint64_t    id;
       double      acr;
       name        account;
       asset       debt;
       asset       collateral;
+      asset       rex;
       time_point  timestamp;
       
       uint64_t primary_key() const { return id; }
@@ -133,6 +143,7 @@ CONTRACT buck : public contract {
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
     typedef multi_index<"redeemreq"_n, redeem_req> redeem_req_i;
+    typedef multi_index<"maturityreq"_n, cdp_maturity_req> cdp_maturity_req_i;
     
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
