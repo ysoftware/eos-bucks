@@ -124,11 +124,13 @@ CONTRACT buck : public contract {
           return MAX * 3; // end of the table
         }
         
+        double c = (double) collateral.amount;
+        
         if (debt.amount == 0) {
-          return MAX - acr; // descending acr
+          return MAX - c / acr; // descending acr
         }
         
-        double cd = (double) collateral.amount / (double) debt.amount;
+        double cd = c / (double) debt.amount;
         return MAX * 2 - (cd - acr); // descending cd-acr 
       }
       
