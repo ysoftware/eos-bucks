@@ -14,13 +14,7 @@ time_point_sec buck::get_maturity() {
 bool buck::is_mature(uint64_t cdp_id) {
   cdp_maturity_req_i requests(_self, _self.value);
   auto item = requests.find(cdp_id);
-  if (item == requests.end()) {
-    return true;
-  }
-  if (current_time_point() > item->maturity_timestamp) {
-    return true;
-  }
-  return false;
+  return item == requests.end() || item->maturity_timestamp < current_time_point();
 }
 
 double buck::get_ccr(asset collateral, asset debt) {
