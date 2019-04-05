@@ -74,7 +74,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     requests.modify(maturity_item, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
       r.ccr = ccr;
-      r.collateral = quantity;
+      r.add_collateral = quantity;
     });
     
     // buy rex with user's collateral
@@ -154,8 +154,9 @@ void buck::open(name account, double ccr, double acr) {
   // open maturity request
   cdp_maturity_req_i requests(_self, _self.value);
   requests.emplace(account, [&](auto& r) {
-    r.maturity_timestamp = current_time_point();
-    r.collateral = asset(0, EOS);
+    r.maturity_timestamp = get_maturity();
+    r.add_collateral = asset(0, EOS);
+    r.change_debt = asset(0, BUCK);
     r.cdp_id = id;
     r.ccr = ccr;
   });

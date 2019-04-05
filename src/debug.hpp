@@ -5,13 +5,20 @@
 #define PRINT(x, y) eosio::print(x); eosio::print(": "); eosio::print(y); eosio::print("\n");
 #define PRINT_(x) eosio::print(x); eosio::print("\n");
 
-#define RM(x, scope) { x table(_self, scope); auto item = table.begin(); while (item != table.end()) { item = table.erase(item); } }
+#define RM(x, scope) { x table(_self, scope); auto item = table.begin(); while (item != table.end()) item = table.erase(item); }
 
 void buck::zdestroy() {
   
   RM(stats_i, _self.value)
   
-  RM(cdp_maturity_req_i, _self.value)
+  {
+    cdp_maturity_req_i table(_self, _self.value);
+    auto item = table.begin();
+    while (item != table.end()) {
+      item = table.erase(item);
+    }
+  }
+  
   
   RM(redeem_req_i, _self.value)
   

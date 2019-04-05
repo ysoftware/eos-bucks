@@ -19,8 +19,9 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
-  PRINT("running requests, max", max)
+  PRINT_("running requests")
   uint64_t processed = 0;
+  time_point_sec cts{ current_time_point() };
   auto price = get_eos_price();
   
   stats_i table(_self, _self.value);
@@ -31,12 +32,15 @@ void buck::run_requests(uint64_t max) {
   close_req_i closereqs(_self, _self.value);
   reparam_req_i reparamreqs(_self, _self.value);
   redeem_req_i redeemreqs(_self, _self.value);
+  cdp_maturity_req_i maturityreqs(_self, _self.value);
+  auto maturity_index = maturityreqs.get_index<"bytimestamp"_n>();
   auto debtor_index = positions.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
   
   auto close_item = closereqs.begin();
   auto reparam_item = reparamreqs.begin();
   auto redeem_item = redeemreqs.begin();
   auto debtor_item = debtor_index.begin();
+  auto maturity_item = maturity_index.begin();
   
   // loop until any requests exist and not over limit
   while (processed < max) {
@@ -70,7 +74,7 @@ void buck::run_requests(uint64_t max) {
       
       if (cdp_item != positions.end()) {
         
-        asset new_debt = cdp_item->debt;
+        asset change_debt = asset(0, BUCK);
         asset new_collateral = cdp_item->collateral;
         auto ccr = get_ccr(cdp_item->collateral, cdp_item->debt);
   
@@ -86,26 +90,32 @@ void buck::run_requests(uint64_t max) {
           add_fee(fee);
           
           auto change = asset(change_amount - fee_amount, BUCK);
-          new_debt += change;
+          change_debt = change;
           
           add_balance(cdp_item->account, change, same_payer, true);
         }
         
         else if (reparam_item->change_debt.amount < 0) { // 1
-          new_debt += reparam_item->change_debt; // add negative value
+          change_debt = reparam_item->change_debt; // add negative value
         }
         
         if (reparam_item->change_collateral.amount > 0) { // 2
-          // new_collateral += reparam_item->change_collateral;
+          new_collateral += reparam_item->change_collateral;
           
-          //   
+          // open maturity request
+          maturityreqs.emplace(cdp_item->account, [&](auto& r) {
+            r.maturity_timestamp = get_maturity();
+            r.add_collateral = reparam_item->change_collateral;
+            r.cdp_id = cdp_item->id;
+            r.change_debt = change_debt;
+            r.ccr = 0;
+          });
           
-          // buy rex for this user 
-          
-          
+          // buy rex for this cdp
+          buy_rex(cdp_item->id, reparam_item->change_collateral);
         }
         
-        else if (reparam_item->change_collateral.amount < 0) { // 3 
+        else if (reparam_item->change_collateral.amount < 0) { // 3
         
           auto cr_ccr = CR / ccr;
           auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item->collateral.amount;
@@ -116,12 +126,15 @@ void buck::run_requests(uint64_t max) {
         }
         
         // to-do check new ccr parameters
+        // don't give debt if ccr < CR 
         
-        // update cdp
-        positions.modify(cdp_item, same_payer, [&](auto& r) {
-          r.collateral = new_collateral;
-          r.debt = new_debt;
-        });
+        // not buying rex here, so update cdp immediately
+        if (reparam_item->change_collateral.amount <= 0) {
+          positions.modify(cdp_item, same_payer, [&](auto& r) {
+            r.collateral = new_collateral;
+            r.debt += change_debt;
+          });
+        }
       }
       
       // remove request
@@ -165,6 +178,37 @@ void buck::run_requests(uint64_t max) {
       
       // remove request
       redeem_item = redeemreqs.erase(redeem_item);
+    }
+    
+    // maturity requests (issue bucks, add/remove cdp debt, add collateral)
+    if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts) {
+      
+      auto& cdp_item = positions.get(maturity_item->cdp_id);
+      
+      // to-do take fees
+      
+      // calculate new debt and collateral
+      auto change_debt = maturity_item->change_debt; // changing debt explicitly (or 0)
+      auto add_collateral = maturity_item->add_collateral;
+      
+      // if should also use ccr value to calculate new debt
+      if (maturity_item->ccr > 0) { 
+        
+        // price
+        
+      }
+      
+      positions.modify(cdp_item, same_payer, [&](auto& r) {
+        r.collateral += add_collateral;
+        r.debt += change_debt;
+      });
+      
+      if (change_debt.amount > 0) {
+        add_balance(cdp_item.account, change_debt, cdp_item.account, true);
+      }
+      
+      // remove request
+      maturity_item = maturity_index.erase(maturity_item);
     }
   }
 }

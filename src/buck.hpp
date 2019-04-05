@@ -97,11 +97,13 @@ CONTRACT buck : public contract {
     
     TABLE cdp_maturity_req {
       uint64_t        cdp_id;
-      asset           collateral;
+      asset           change_debt;
+      asset           add_collateral;
       double          ccr;
       time_point_sec  maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
+      uint64_t by_time() const { return maturity_timestamp.utc_seconds; }
     };
     
     TABLE cdp {
@@ -153,7 +155,11 @@ CONTRACT buck : public contract {
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
     typedef multi_index<"redeemreq"_n, redeem_req> redeem_req_i;
-    typedef multi_index<"maturityreq"_n, cdp_maturity_req> cdp_maturity_req_i;
+    
+    typedef multi_index<"maturityreq"_n, cdp_maturity_req,
+      indexed_by<"bytimestamp"_n, const_mem_fun<cdp_maturity_req, uint64_t, &cdp_maturity_req::by_time>>
+        > cdp_maturity_req_i;
+    
     typedef multi_index<"rexprocess"_n, rex_processing> rex_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
@@ -196,4 +202,5 @@ CONTRACT buck : public contract {
     double get_ccr(asset collateral, asset debt);
     time_point_sec get_maturity();
     asset get_rex_balance();
+    bool is_mature(uint64_t cdp_id);
 };
