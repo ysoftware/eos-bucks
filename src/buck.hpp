@@ -87,6 +87,14 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
+    TABLE rex_processing
+    {
+      uint64_t  cdp_id;
+      asset     current_rex_balance;
+      
+      uint64_t primary_key() const { return 0; }
+    };
+    
     TABLE cdp_maturity_req {
       uint64_t        cdp_id;
       asset           collateral;
@@ -144,6 +152,7 @@ CONTRACT buck : public contract {
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
     typedef multi_index<"redeemreq"_n, redeem_req> redeem_req_i;
     typedef multi_index<"maturityreq"_n, cdp_maturity_req> cdp_maturity_req_i;
+    typedef multi_index<"rexprocess"_n, rex_processing> rex_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
@@ -151,20 +160,38 @@ CONTRACT buck : public contract {
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
     
+    // rex 
+    
+    struct rex_balance {
+      uint8_t version = 0;
+      name    owner;
+      asset   vote_stake; /// the amount of CORE_SYMBOL currently included in owner's vote
+      asset   rex_balance; /// the amount of REX owned by owner
+      int64_t matured_rex = 0; /// matured REX available for selling
+      std::deque<std::pair<time_point_sec, int64_t>> rex_maturities; /// REX daily maturity buckets
+
+      uint64_t primary_key()const { return owner.value; }
+   };
+
+   typedef eosio::multi_index< "rexbal"_n, rex_balance > rex_balance_i;
+    
     // methods
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
     void sub_balance(name owner, asset value, bool change_supply);
     void add_fee(asset value);
     void distribute_tax(uint64_t cdp_id);
     
+    void process_rex();
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
-    void buy_rex(name account, asset quantity);
+    void buy_rex(uint64_t cdp_id, asset quantity);
+    void sell_rex(uint64_t cdp_id, asset quantity);
     
     // getters
     double get_eos_price();
     double get_ccr(asset collateral, asset debt);
     time_point_sec get_maturity();
+    asset get_rex_balance();
 };

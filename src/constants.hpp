@@ -16,3 +16,4 @@ const double RF = 0.005;
 const asset& MIN_COLLATERAL = eosio::asset(50000, EOS);
 const asset& MIN_DEBT = eosio::asset(500000, BUCK);
 const name& EOSIO_TOKEN = "eosio.token"_n;
+const name& EOSIO = "eosio"_n;

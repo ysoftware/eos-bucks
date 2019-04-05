@@ -78,7 +78,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     });
     
     // buy rex with user's collateral
-    buy_rex(from, quantity);
+    buy_rex(item->id, quantity);
   }
   else if (memo == "r") { // reparametrizing cdp
     

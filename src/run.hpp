@@ -7,6 +7,8 @@ void buck::run(uint64_t max) {
   stats_i table(_self, _self.value);
   check(table.begin() != table.end(), "contract is not yet initiated");
 
+  process_rex();
+  
   // check if liquidation complete for this round
   if (table.begin()->liquidation_timestamp == table.begin()->oracle_timestamp) {
     run_requests(max);
