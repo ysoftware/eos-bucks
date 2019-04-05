@@ -87,10 +87,9 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
-    TABLE rex_processing
-    {
+    TABLE rex_processing {
       uint64_t  cdp_id;
-      asset     current_rex_balance;
+      asset     current_balance;
       
       uint64_t primary_key() const { return 0; }
     };
@@ -170,6 +169,14 @@ CONTRACT buck : public contract {
     
     // rex 
     
+   struct rex_fund {
+      uint8_t version = 0;
+      name    owner;
+      asset   balance;
+
+      uint64_t primary_key()const { return owner.value; }
+   };
+
     struct rex_balance {
       uint8_t version = 0;
       name    owner;
@@ -178,10 +185,11 @@ CONTRACT buck : public contract {
       int64_t matured_rex = 0; /// matured REX available for selling
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities; /// REX daily maturity buckets
 
-      uint64_t primary_key()const { return owner.value; }
+      uint64_t primary_key() const { return owner.value; }
    };
 
-   typedef eosio::multi_index< "rexbal"_n, rex_balance > rex_balance_i;
+   typedef multi_index< "rexbal"_n, rex_balance > rex_balance_i;
+   typedef multi_index< "rexfund"_n, rex_fund > rex_fund_i;
     
     // methods
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
