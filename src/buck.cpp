@@ -14,6 +14,11 @@
 #include "request.hpp"
 #include "tax.hpp"
 
+buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
+   :contract(receiver,code,ds),
+   _cdp(_self, _self.value)
+   {}
+
 void buck::init() {
   require_auth(_self);
   

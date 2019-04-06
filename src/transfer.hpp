@@ -35,9 +35,8 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
   if (memo == "") { // opening cdp 
     check(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
     
-    // find cdp
-    cdp_i positions(_self, _self.value);
-    auto index = positions.get_index<"byaccount"_n>();
+    // find cdps
+    auto index = _cdp.get_index<"byaccount"_n>();
     auto item = index.find(from.value);
     while (item->collateral.amount != 0 && item != index.end()) {
       item++;
@@ -82,10 +81,9 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
   }
   else if (memo == "r") { // reparametrizing cdp
     
-    cdp_i positions(_self, _self.value);
     reparam_req_i reparamreqs(_self, _self.value);
   
-    auto index = positions.get_index<"byaccount"_n>();
+    auto index = _cdp.get_index<"byaccount"_n>();
     auto cdp_item = index.find(from.value);
     auto reparam_item = reparamreqs.find(cdp_item->id);
     
@@ -118,8 +116,7 @@ void buck::open(name account, double ccr, double acr) {
   check(acr < 1000, "acr value is too high");
   
   // to-do assert no other cdp without collateral opened
-  cdp_i positions(_self, _self.value);
-  auto account_index = positions.get_index<"byaccount"_n>();
+  auto account_index = _cdp.get_index<"byaccount"_n>();
   auto cdp_item = account_index.begin();
   while (cdp_item != account_index.end()) {
       check(cdp_item->collateral.amount > 0, "you already have created a debt position created");
@@ -131,8 +128,8 @@ void buck::open(name account, double ccr, double acr) {
   check(table.begin() != table.end(), "contract is not yet initiated");
   
   // open cdp
-  auto id = positions.available_primary_key();
-  positions.emplace(account, [&](auto& r) {
+  auto id = _cdp.available_primary_key();
+  _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
     r.acr = acr;

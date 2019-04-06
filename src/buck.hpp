@@ -13,8 +13,8 @@ using namespace eosio;
 CONTRACT buck : public contract {
   public:
     using contract::contract;
-    buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
-      :contract(receiver, code, ds) {}
+    
+    buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
     ACTION open(name account, double ccr, double acr);
@@ -39,7 +39,7 @@ CONTRACT buck : public contract {
     
   private:
   
-   TABLE account {
+    TABLE account {
       asset balance;
       asset debt;
     
@@ -212,4 +212,7 @@ CONTRACT buck : public contract {
     time_point_sec get_maturity();
     asset get_rex_balance();
     asset get_eos_rex_balance();
+    
+    
+    cdp_i _cdp;
 };
