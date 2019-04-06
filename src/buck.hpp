@@ -34,7 +34,7 @@ CONTRACT buck : public contract {
     // debug 
     ACTION zdestroy();
     
-    // notify
+    [[eosio::on_notify("eosio.token::transfer")]]
     void notify_transfer(name from, name to, asset quantity, std::string memo);
     
   private:
