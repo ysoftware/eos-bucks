@@ -58,6 +58,8 @@ void buck::process_rex() {
       auto diff = current_balance - previos_balance;
       if (diff.amount != 0) {
         
+        // update maturity request
+        
         positions.modify(cdp_item, same_payer, [&](auto& r) {
           r.rex += diff;
         });
@@ -82,10 +84,12 @@ void buck::process_rex() {
           std::make_tuple(_self, diff)
         ).send();
         
-        // to-do what do we do here????
+        // transfer gained collateral (with rex income)
+        // inline_transfer(cdp_item.account, diff, "collateral return", EOSIO_TOKEN);
         
-        // send eos to user
-        inline_transfer(cdp_item.account, diff, "collateral return", EOSIO_TOKEN);
+        // update cdp
+        
+        // to-do
       }
     }
     

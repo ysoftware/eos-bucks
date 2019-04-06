@@ -27,7 +27,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
   require_auth(from);
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
-  check(get_code() == "eosio.token"_n, "you have to transfer EOS");
+  check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
 
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");

@@ -188,8 +188,8 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return owner.value; }
    };
 
-   typedef multi_index< "rexbal"_n, rex_balance > rex_balance_i;
-   typedef multi_index< "rexfund"_n, rex_fund > rex_fund_i;
+    typedef multi_index<"rexbal"_n, rex_balance> rex_balance_i;
+    typedef multi_index<"rexfund"_n, rex_fund> rex_fund_i;
     
     // methods
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
