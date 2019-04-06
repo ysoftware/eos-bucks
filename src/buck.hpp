@@ -208,7 +208,8 @@ CONTRACT buck : public contract {
     // getters
     double get_eos_price();
     double get_ccr(asset collateral, asset debt);
+    bool is_mature(uint64_t cdp_id);
     time_point_sec get_maturity();
     asset get_rex_balance();
-    bool is_mature(uint64_t cdp_id);
+    asset get_eos_rex_balance();
 };

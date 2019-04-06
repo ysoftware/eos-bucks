@@ -108,8 +108,6 @@ void buck::redeem(name account, asset quantity) {
   
   if (request_item != requests.end()) {
     requests.modify(request_item, same_payer, [&](auto& r) {
-      
-      r.account = account;
       r.quantity += quantity;
       r.timestamp = current_time_point();
     });

@@ -10,6 +10,7 @@
 #include "methods.hpp"
 #include "oracle.hpp"
 #include "run.hpp"
+#include "rex.hpp"
 #include "transfer.hpp"
 #include "request.hpp"
 #include "tax.hpp"

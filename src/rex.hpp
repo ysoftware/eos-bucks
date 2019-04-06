@@ -69,13 +69,13 @@ void buck::process_rex() {
       // sold rex, determine for how much
       
       // get previous balance, subtract from current balance
-      auto previos_balance = item.current_balance;
+      auto previous_balance = item.current_balance;
       auto current_balance = get_eos_rex_balance();
       auto diff = current_balance - previous_balance;
       if (diff.amount != 0) {
       
         positions.modify(cdp_item, same_payer, [&](auto& r) {
-          r.rex += current_balance - previos_balance;
+          r.rex += current_balance - previous_balance;
         });
         
         // withdraw
@@ -134,7 +134,7 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   rex_processing_i info(_self, _self.value);
   info.emplace(_self, [&](auto& r) {
     r.cdp_id = cdp_id;
-    r.current_rex_balance = get_eos_rex_balance();
+    r.current_balance = get_eos_rex_balance();
   });
  
   cdp_i positions(_self, _self.value);
