@@ -7,8 +7,7 @@ void buck::distribute_tax(uint64_t cdp_id) {
 }
 
 void buck::add_fee(asset value) {
-  stats_i stats(_self, _self.value);
-  stats.modify(stats.begin(), same_payer, [&](auto& r) {
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.gathered_fees += value;
   });
 }

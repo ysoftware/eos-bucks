@@ -44,8 +44,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     
     check(item != index.end(), "open a debt position first");
     
-    cdp_maturity_req_i requests(_self, _self.value);
-    auto& maturity_item = requests.get(item->id, "maturity has to exist for a new cdp");
+    auto& maturity_item = _maturityreq.get(item->id, "maturity has to exist for a new cdp");
     
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
@@ -70,7 +69,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     }
     
     // setup maturity
-    requests.modify(maturity_item, same_payer, [&](auto& r) {
+    _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
       r.ccr = ccr;
       r.add_collateral = quantity;
@@ -124,8 +123,7 @@ void buck::open(name account, double ccr, double acr) {
   }
   
   // update supply
-  stats_i table(_self, _self.value);
-  check(table.begin() != table.end(), "contract is not yet initiated");
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   // open cdp
   auto id = _cdp.available_primary_key();
@@ -149,8 +147,7 @@ void buck::open(name account, double ccr, double acr) {
   }
   
   // open maturity request
-  cdp_maturity_req_i requests(_self, _self.value);
-  requests.emplace(account, [&](auto& r) {
+  _maturityreq.emplace(account, [&](auto& r) {
     r.maturity_timestamp = get_maturity();
     r.add_collateral = asset(0, EOS);
     r.change_debt = asset(0, BUCK);

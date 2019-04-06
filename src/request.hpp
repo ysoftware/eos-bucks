@@ -3,25 +3,23 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
-  cdp_i positions(_self, _self.value);
-  auto position_item = positions.find(cdp_id);
-  check(position_item != positions.end(), "debt position does not exist");
+  auto position_item = _cdp.find(cdp_id);
+  check(position_item != _cdp.end(), "debt position does not exist");
   
   auto account = position_item->account;
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
   
   require_auth(account);
   
-  reparam_req_i requests(_self, _self.value);
-  auto request_item = requests.find(cdp_id);
-  if (request_item != requests.end()) {
+  auto request_item = _reparamreq.find(cdp_id);
+  if (request_item != _reparamreq.end()) {
     
     // give back debt if was negative change
     if (request_item->change_debt.amount < 0) {
       add_balance(account, -request_item->change_debt, account, true);
     }
     
-    requests.erase(request_item); // remove existing request
+    _reparamreq.erase(request_item); // remove existing request
   }
   
   // to-do validate arguments
@@ -43,7 +41,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
     sub_balance(account, -change_debt, true);
   }
   
-  requests.emplace(account, [&](auto& r) {
+  _reparamreq.emplace(account, [&](auto& r) {
     r.cdp_id = cdp_id;
     r.timestamp = current_time_point();
     r.change_collateral = change_collateral;
@@ -58,22 +56,20 @@ void buck::changeacr(uint64_t cdp_id, double acr) {
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr < 1000, "acr value is too high");
   
-  cdp_i positions(_self, _self.value);
-  auto position_item = positions.find(cdp_id);
-  check(position_item != positions.end(), "debt position does not exist");
+  auto position_item = _cdp.find(cdp_id);
+  check(position_item != _cdp.end(), "debt position does not exist");
   check(position_item->acr != acr, "acr is already set to this value");
   
   require_auth(position_item->account);
   
-  positions.modify(position_item, same_payer, [&](auto& r) {
+  _cdp.modify(position_item, same_payer, [&](auto& r) {
     r.acr = acr;
   });
 }
 
 void buck::closecdp(uint64_t cdp_id) {
-  cdp_i positions(_self, _self.value);
-  auto position_item = positions.find(cdp_id);
-  check(position_item != positions.end(), "debt position does not exist");
+  auto position_item = _cdp.find(cdp_id);
+  check(position_item != _cdp.end(), "debt position does not exist");
   
   close_req_i requests(_self, _self.value);
   auto requestItem = requests.find(cdp_id);
@@ -95,7 +91,6 @@ void buck::closecdp(uint64_t cdp_id) {
   run_requests(2);
 }
 
-
 void buck::redeem(name account, asset quantity) {
   require_auth(account);
   
@@ -103,17 +98,16 @@ void buck::redeem(name account, asset quantity) {
   check(quantity.symbol == BUCK, "symbol mismatch");
   
   // find previous request
-  redeem_req_i requests(_self, _self.value);
-  auto request_item = requests.find(account.value);
+  auto request_item = _redeemreq.find(account.value);
   
-  if (request_item != requests.end()) {
-    requests.modify(request_item, same_payer, [&](auto& r) {
+  if (request_item != _redeemreq.end()) {
+    _redeemreq.modify(request_item, same_payer, [&](auto& r) {
       r.quantity += quantity;
       r.timestamp = current_time_point();
     });
   }
   else {
-    requests.emplace(account, [&](auto& r) {
+    _redeemreq.emplace(account, [&](auto& r) {
       r.account = account;
       r.quantity = quantity;
       r.timestamp = current_time_point();

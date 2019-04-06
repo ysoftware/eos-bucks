@@ -213,6 +213,12 @@ CONTRACT buck : public contract {
     asset get_rex_balance();
     asset get_eos_rex_balance();
     
-    
-    cdp_i _cdp;
+    // tables
+    cdp_i               _cdp;
+    stats_i             _stat;
+    close_req_i         _closereq;
+    reparam_req_i       _reparamreq;
+    redeem_req_i        _redeemreq;
+    cdp_maturity_req_i  _maturityreq;
+    rex_processing_i    _rexprocess;
 };

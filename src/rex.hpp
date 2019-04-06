@@ -36,18 +36,15 @@ asset buck::get_eos_rex_balance() {
 }
 
 bool buck::is_mature(uint64_t cdp_id) {
-  cdp_maturity_req_i requests(_self, _self.value);
-  auto item = requests.find(cdp_id);
-  return item == requests.end() || item->maturity_timestamp < current_time_point();
+  auto item = _maturityreq.find(cdp_id);
+  return item == _maturityreq.end() || item->maturity_timestamp < current_time_point();
 }
 
 void buck::process_rex() {
-  rex_processing_i info(_self, _self.value);
-  if (info.begin() != info.end()) {
-    auto& item = *info.begin();
+  if (_rexprocess.begin() != _rexprocess.end()) {
+    auto& item = *_rexprocess.begin();
     
-    cdp_i positions(_self, _self.value);
-    auto& cdp_item = positions.get(item.cdp_id);
+    auto& cdp_item = _cdp.get(item.cdp_id);
     
     if (item.current_balance.symbol == BUCK) {
       // bought rex, determine how much
@@ -60,7 +57,7 @@ void buck::process_rex() {
         
         // update maturity request
         
-        positions.modify(cdp_item, same_payer, [&](auto& r) {
+        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
           r.rex += diff;
         });
       }
@@ -74,7 +71,7 @@ void buck::process_rex() {
       auto diff = current_balance - previous_balance;
       if (diff.amount != 0) {
       
-        positions.modify(cdp_item, same_payer, [&](auto& r) {
+        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
           r.rex += current_balance - previous_balance;
         });
         
@@ -93,7 +90,7 @@ void buck::process_rex() {
       }
     }
     
-    info.erase(info.begin());
+    _rexprocess.erase(_rexprocess.begin());
   }
 }
 
@@ -103,8 +100,7 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
   process_rex();
   
   // store info current rex balance and this cdp
-  rex_processing_i info(_self, _self.value);
-  info.emplace(_self, [&](auto& r) {
+  _rexprocess.emplace(_self, [&](auto& r) {
     r.cdp_id = cdp_id;
     r.current_balance = get_rex_balance();
   });
@@ -131,14 +127,12 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   process_rex();
 
   // store info current eos balance in rex pool for this cdp
-  rex_processing_i info(_self, _self.value);
-  info.emplace(_self, [&](auto& r) {
+  _rexprocess.emplace(_self, [&](auto& r) {
     r.cdp_id = cdp_id;
     r.current_balance = get_eos_rex_balance();
   });
  
-  cdp_i positions(_self, _self.value);
-  auto& cdp_item = positions.get(cdp_id);
+  auto& cdp_item = _cdp.get(cdp_id);
   
   if (REX_TESTING) { return; }
   

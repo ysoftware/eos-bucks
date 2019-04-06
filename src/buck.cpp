@@ -15,17 +15,22 @@
 #include "tax.hpp"
 
 buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
-   :contract(receiver,code,ds),
-   _cdp(_self, _self.value)
+    :contract(receiver,code,ds),
+      _cdp(_self, _self.value),
+      _stat(_self, _self.value),
+      _reparamreq(_self, _self.value),
+      _closereq(_self, _self.value),
+      _redeemreq(_self, _self.value),
+      _maturityreq(_self, _self.value),
+      _rexprocess(_self, _self.value)
    {}
 
 void buck::init() {
   require_auth(_self);
   
-  stats_i stats(_self, _self.value);
-  check(stats.begin() == stats.end(), "contract is already initiated");
+  check(_stat.begin() == _stat.end(), "contract is already initiated");
   
-  stats.emplace(_self, [&](auto& r) {
+  _stat.emplace(_self, [&](auto& r) {
     r.supply = asset(0, BUCK);
     r.max_supply = asset(1'000'000'000'000'0000, BUCK);
     r.issuer = _self;

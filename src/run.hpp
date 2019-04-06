@@ -4,13 +4,12 @@
 
 void buck::run(uint64_t max) {
   
-  stats_i table(_self, _self.value);
-  check(table.begin() != table.end(), "contract is not yet initiated");
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
 
   process_rex();
   
   // check if liquidation complete for this round
-  if (table.begin()->liquidation_timestamp == table.begin()->oracle_timestamp) {
+  if (_stat.begin()->liquidation_timestamp == _stat.begin()->oracle_timestamp) {
     run_requests(max);
   }
   else {
@@ -24,21 +23,15 @@ void buck::run_requests(uint64_t max) {
   time_point_sec cts{ current_time_point() };
   auto price = get_eos_price();
   
-  stats_i table(_self, _self.value);
-  check(table.begin() != table.end(), "contract is not yet initiated");
-  auto oracle_timestamp = table.begin()->oracle_timestamp;
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  auto oracle_timestamp = _stat.begin()->oracle_timestamp;
   
-  cdp_i positions(_self, _self.value);
-  close_req_i closereqs(_self, _self.value);
-  reparam_req_i reparamreqs(_self, _self.value);
-  redeem_req_i redeemreqs(_self, _self.value);
-  cdp_maturity_req_i maturityreqs(_self, _self.value);
-  auto maturity_index = maturityreqs.get_index<"bytimestamp"_n>();
-  auto debtor_index = positions.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
+  auto maturity_index = _maturityreq.get_index<"bytimestamp"_n>();
+  auto debtor_index = _cdp.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
   
-  auto close_item = closereqs.begin();
-  auto reparam_item = reparamreqs.begin();
-  auto redeem_item = redeemreqs.begin();
+  auto close_item = _closereq.begin();
+  auto reparam_item = _reparamreq.begin();
+  auto redeem_item = _redeemreq.begin();
   auto debtor_item = debtor_index.begin();
   auto maturity_item = maturity_index.begin();
   
@@ -47,32 +40,32 @@ void buck::run_requests(uint64_t max) {
     processed++;
     
     // close request
-    if (close_item != closereqs.end() && close_item->timestamp < oracle_timestamp) {
+    if (close_item != _closereq.end() && close_item->timestamp < oracle_timestamp) {
       
       // find cdp, should always exist
-      auto& cdp_item = positions.get(close_item->cdp_id);
+      auto& cdp_item = _cdp.get(close_item->cdp_id);
       
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing debt position", EOSIO_TOKEN);
       
       // remove request and cdp
-      close_item = closereqs.erase(close_item);
-      positions.erase(cdp_item);
+      close_item = _closereq.erase(close_item);
+      _cdp.erase(cdp_item);
     }
     
     // reparam request
-    if (reparam_item != reparamreqs.end() && reparam_item->timestamp < oracle_timestamp) {
+    if (reparam_item != _reparamreq.end() && reparam_item->timestamp < oracle_timestamp) {
       
       // remove old unpaid requests in ~2 rounds. no need to return buck cuz unpaid
       
       // look for a first paid request
-      while (reparam_item != reparamreqs.end() && !reparam_item->isPaid) { reparam_item++; }
-      if (reparam_item == reparamreqs.end() && !reparam_item->isPaid) { continue; }
+      while (reparam_item != _reparamreq.end() && !reparam_item->isPaid) { reparam_item++; }
+      if (reparam_item == _reparamreq.end() && !reparam_item->isPaid) { continue; }
       
       // find cdp
-      auto cdp_item = positions.find(reparam_item->cdp_id);
+      auto cdp_item = _cdp.find(reparam_item->cdp_id);
       
-      if (cdp_item != positions.end()) {
+      if (cdp_item != _cdp.end()) {
         
         asset change_debt = asset(0, BUCK);
         asset new_collateral = cdp_item->collateral;
@@ -103,7 +96,7 @@ void buck::run_requests(uint64_t max) {
           new_collateral += reparam_item->change_collateral;
           
           // open maturity request
-          maturityreqs.emplace(cdp_item->account, [&](auto& r) {
+          _maturityreq.emplace(cdp_item->account, [&](auto& r) {
             r.maturity_timestamp = get_maturity();
             r.add_collateral = reparam_item->change_collateral;
             r.cdp_id = cdp_item->id;
@@ -132,7 +125,7 @@ void buck::run_requests(uint64_t max) {
         
         // not buying rex here, so update cdp immediately
         if (reparam_item->change_collateral.amount <= 0) {
-          positions.modify(cdp_item, same_payer, [&](auto& r) {
+          _cdp.modify(cdp_item, same_payer, [&](auto& r) {
             r.collateral = new_collateral;
             r.debt += change_debt;
           });
@@ -140,11 +133,11 @@ void buck::run_requests(uint64_t max) {
       }
       
       // remove request
-      reparam_item = reparamreqs.erase(reparam_item);
+      reparam_item = _reparamreq.erase(reparam_item);
     }
     
     // redeem request
-    if (redeem_item != redeemreqs.end() && redeem_item->timestamp < oracle_timestamp) {
+    if (redeem_item != _redeemreq.end() && redeem_item->timestamp < oracle_timestamp) {
       
       auto redeem_quantity = redeem_item->quantity;
       asset collateral_return = asset(0, EOS);
@@ -179,13 +172,13 @@ void buck::run_requests(uint64_t max) {
       inline_transfer(redeem_item->account, collateral_return, "redeem buck", EOSIO_TOKEN);
       
       // remove request
-      redeem_item = redeemreqs.erase(redeem_item);
+      redeem_item = _redeemreq.erase(redeem_item);
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
     if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts) {
       
-      auto& cdp_item = positions.get(maturity_item->cdp_id);
+      auto& cdp_item = _cdp.get(maturity_item->cdp_id);
       
       // to-do take fees
       
@@ -200,7 +193,7 @@ void buck::run_requests(uint64_t max) {
         
       }
       
-      positions.modify(cdp_item, same_payer, [&](auto& r) {
+      _cdp.modify(cdp_item, same_payer, [&](auto& r) {
         r.collateral += add_collateral;
         r.debt += change_debt;
       });
@@ -220,10 +213,10 @@ void buck::run_liquidation(uint64_t max) {
   uint64_t processed = 0;
   auto eos_price = get_eos_price();
   
-  cdp_i positions(_self, _self.value);
-  auto debtor_index = positions.get_index<"debtor"_n>();
+  auto debtor_index = _cdp.get_index<"debtor"_n>();
+  auto liquidator_index = _cdp.get_index<"liquidator"_n>();
+  
   auto debtor_item = debtor_index.begin();
-  auto liquidator_index = positions.get_index<"liquidator"_n>();
   auto liquidator_item = liquidator_index.begin();
   
   // loop through debtors
@@ -235,11 +228,10 @@ void buck::run_liquidation(uint64_t max) {
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
       
-      stats_i table(_self, _self.value);
-      check(table.begin() != table.end(), "contract is not yet initiated");
+      check(_stat.begin() != _stat.end(), "contract is not yet initiated");
       
-      table.modify(table.begin(), same_payer, [&](auto& r) {
-        r.liquidation_timestamp = table.begin()->oracle_timestamp;
+      _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+        r.liquidation_timestamp = _stat.begin()->oracle_timestamp;
       });
       
       PRINT("liquidation complete for", processed)
