@@ -9,9 +9,12 @@ const symbol& BUCK  = eosio::symbol{"BUCK", 4};
 const symbol& REX   = eosio::symbol{"REX", 4};
 
 const double CR = 1.5;
-const double IF = 0.005;
-const double LF = 0.005;
-const double RF = 0.005;
+const double IF = 0.02;   // issuance tax
+const double LF = 0.1;    // liquidation fee
+const double LT = 0.025;  // liquidation tax
+const double RF = 0.01;   // redemption fee
+const double CF = 0.0125; // creator fee
+const double RF = 0.00085;// transacttion tax
 
 const asset& MIN_COLLATERAL = eosio::asset(50000, EOS);
 const asset& MIN_DEBT       = eosio::asset(500000, BUCK);

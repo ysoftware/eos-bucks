@@ -3,13 +3,19 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
+  require_auth(account);
+  
   auto position_item = _cdp.find(cdp_id);
   check(position_item != _cdp.end(), "debt position does not exist");
   
+  check(change_debt.amount != 0 || change_collateral.amount != 0, 
+    "can not create empty reparametrization request");
+  
+  check(position_item->debt.symbol == change_debt.symbol, "debt symbol mismatch");
+  check(position_item->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
+  
   auto account = position_item->account;
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
-  
-  require_auth(account);
   
   auto request_item = _reparamreq.find(cdp_id);
   if (request_item != _reparamreq.end()) {
@@ -23,12 +29,6 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   }
   
   // to-do validate arguments
-  
-  check(change_debt.amount != 0 || change_collateral.amount != 0, 
-    "can not create empty reparametrization request");
-  
-  check(position_item->debt.symbol == change_debt.symbol, "debt symbol mismatch");
-  check(position_item->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
   
   asset new_debt = position_item->debt + change_debt;
   asset new_collateral = position_item->collateral + change_collateral;

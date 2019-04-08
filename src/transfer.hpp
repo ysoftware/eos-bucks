@@ -110,6 +110,7 @@ void buck::open(name account, double ccr, double acr) {
   // check values
   check(ccr >= CR || ccr == 0, "ccr value is too small");
   check(acr >= CR || acr == 0, "acr value is too small");
+  check(acr != 0 CR && acr != 0, "acr and ccr can not be both 0");
   
   check(ccr < 1000, "ccr value is too high");
   check(acr < 1000, "acr value is too high");

@@ -32,6 +32,7 @@ void buck::run_requests(uint64_t max) {
   auto close_item = _closereq.begin();
   auto reparam_item = _reparamreq.begin();
   auto redeem_item = _redeemreq.begin();
+  
   auto debtor_item = debtor_index.begin();
   auto maturity_item = maturity_index.begin();
   
@@ -264,6 +265,12 @@ void buck::run_liquidation(uint64_t max) {
       // this and all further liquidators can not bail out anymore bad debt 
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
         
+        // to-do allow requests to run but still look for liquidation opportunity
+        // to-do how about this? run_requests(max - processed);
+        
+        // to-do or instead of liquidation_timestamp use 
+        // liquidation_status: complete / processing / no available liquidators
+        
         // no more liquidators
         return;
       }
@@ -277,7 +284,7 @@ void buck::run_liquidation(uint64_t max) {
       }
       
       double used_debt_amount = fmin(bad_debt, bailable);
-      double used_collateral_amount = used_debt_amount / eos_price * (1 - LF);
+      double used_collateral_amount = used_debt_amount / (eos_price * (1 - LF));
       
       // to-do change rounding
       asset used_debt = asset(ceil(used_debt_amount), BUCK);
