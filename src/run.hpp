@@ -191,11 +191,13 @@ void buck::run_requests(uint64_t max) {
       auto change_debt = maturity_item->change_debt; // changing debt explicitly (or 0)
       auto add_collateral = maturity_item->add_collateral;
       
-      // if should also use ccr value to calculate new debt
-      if (maturity_item->ccr > 0) { 
+      if (maturity_item->ccr > 0) {
+        // opening cdp 
         
-        // price
-        
+        // issue debt
+        auto price = get_eos_price();
+        auto debt_amount = (price * (double) add_collateral.amount / maturity_item->ccr) * (1 - IF);
+        change_debt = asset(floor(debt_amount), BUCK);
       }
       
       _cdp.modify(cdp_item, same_payer, [&](auto& r) {

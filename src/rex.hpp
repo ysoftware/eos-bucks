@@ -54,21 +54,19 @@ void buck::process() {
     auto current_balance = get_rex_balance();
     
     auto diff = current_balance - previos_balance;
-    if (diff.amount != 0) {
       
-      // update maturity request
-      auto maturity_itr = _maturityreq.find(item.cdp_id);
-      _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-        r.maturity_timestamp = get_maturity();
-      });
-      
-      // update rex amount  
-      _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-        r.rex += diff;
-      });
-      
-      _rexprocess.erase(item);
-    }
+    // update maturity request
+    auto maturity_itr = _maturityreq.find(item.cdp_id);
+    _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
+      r.maturity_timestamp = get_maturity();
+    });
+    
+    // update rex amount  
+    _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+      r.rex += diff;
+    });
+    
+    _rexprocess.erase(item);
   }
   else if (item.current_balance.symbol == EOS) {
     
@@ -80,13 +78,12 @@ void buck::process() {
       auto current_balance = get_eos_rex_balance();
       
       auto diff = current_balance - previous_balance;
-      if (diff.amount != 0) {
       
-        _rexprocess.modify(item, same_payer, [&](auto& r) {
-          r.current_balance = -diff;
-        });
-        
-        // withdraw
+      _rexprocess.modify(item, same_payer, [&](auto& r) {
+        r.current_balance = -diff;
+      });
+      
+      if (!REX_TESTING) {
         action(permission_level{ _self, "active"_n },
           EOSIO, "withdraw"_n,
           std::make_tuple(_self, diff)
@@ -124,19 +121,20 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
     r.current_balance = get_rex_balance();
   });
   
-  if (REX_TESTING) { return; }
-  
-  // deposit
-  action(permission_level{ _self, "active"_n },
-		EOSIO, "deposit"_n,
-		std::make_tuple(_self, quantity)
-	).send();
-	
-  // buy rex
-  action(permission_level{ _self, "active"_n },
-		EOSIO, "buyrex"_n,
-		std::make_tuple(_self, quantity)
-	).send();
+  if (!REX_TESTING) {
+    
+    // deposit
+    action(permission_level{ _self, "active"_n },
+  		EOSIO, "deposit"_n,
+  		std::make_tuple(_self, quantity)
+  	).send();
+  	
+    // buy rex
+    action(permission_level{ _self, "active"_n },
+  		EOSIO, "buyrex"_n,
+  		std::make_tuple(_self, quantity)
+  	).send();
+  }
 	
 	inline_process();
 }
@@ -152,16 +150,17 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
  
   auto& cdp_item = _cdp.get(cdp_id);
   
-  if (REX_TESTING) { return; }
+  if (!REX_TESTING) {
+    
+    auto sell_rex_amount = cdp_item.collateral.amount * cdp_item.rex.amount / quantity.amount;
+    auto sell_rex = asset(sell_rex_amount, REX);
+    
+    // sell rex
+    action(permission_level{ _self, "active"_n },
+  		EOSIO, "sellrex"_n,
+  		std::make_tuple(_self, sell_rex)
+  	).send();
+  }
   
-  auto sell_rex_amount = cdp_item.collateral.amount * cdp_item.rex.amount / quantity.amount;
-  auto sell_rex = asset(sell_rex_amount, REX);
-  
-  // sell rex
-  action(permission_level{ _self, "active"_n },
-		EOSIO, "sellrex"_n,
-		std::make_tuple(_self, sell_rex)
-	).send();
-	
 	inline_process();
 }
