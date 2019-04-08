@@ -55,7 +55,9 @@ void buck::run_requests(uint64_t max) {
     // reparam request
     if (reparam_item != _reparamreq.end() && reparam_item->timestamp < oracle_timestamp) {
       
+      // to-do:
       // remove old unpaid requests in ~2 rounds. no need to return buck cuz unpaid
+      // also remove maturity request if exists
       
       // look for a first paid request
       while (reparam_item != _reparamreq.end() && !reparam_item->isPaid) { reparam_item++; }
@@ -178,6 +180,8 @@ void buck::run_requests(uint64_t max) {
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
     if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts) {
+      
+      // remove cdp if all collateral is 0 (and cdp was just created)
       
       auto& cdp_item = _cdp.get(maturity_item->cdp_id);
       
