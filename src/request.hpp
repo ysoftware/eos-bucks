@@ -19,12 +19,22 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   auto request_item = _reparamreq.find(cdp_id);
   if (request_item != _reparamreq.end()) {
     
+    // reverse previous request
     // give back debt if was negative change
     if (request_item->change_debt.amount < 0) {
       add_balance(account, -request_item->change_debt, account, true);
     }
     
     _reparamreq.erase(request_item); // remove existing request
+  }
+  
+  auto maturity_itr = _maturityreq.find(cdp_id);
+  if (maturity_itr != _maturityreq.end()) {
+    
+    // remove matutity request
+    if (maturity_itr->maturity_timestamp.utc_seconds == 0) {
+      _maturityreq.erase(maturity_itr);
+    }
   }
   
   // to-do validate arguments
@@ -38,6 +48,18 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   // take away debt if negative change
   if (change_debt.amount < 0) {
     sub_balance(account, -change_debt, true);
+  }
+  
+  if (change_collateral.amount > 0) {
+    
+    // open maturity request
+    _maturityreq.emplace(account, [&](auto& r) {
+      r.maturity_timestamp = time_point_sec{0};
+      r.add_collateral = change_collateral;
+      r.change_debt = change_debt;
+      r.cdp_id = cdp_id;
+      r.ccr = 0;
+    });
   }
   
   _reparamreq.emplace(account, [&](auto& r) {

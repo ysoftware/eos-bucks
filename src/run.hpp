@@ -42,7 +42,7 @@ void buck::run_requests(uint64_t max) {
     if (close_item != _closereq.end() && close_item->timestamp < oracle_timestamp) {
       
       // find cdp, should always exist
-      auto& cdp_item = _cdp.get(close_item->cdp_id);
+      auto& cdp_item = _cdp.get(close_item->cdp_id, "to-do: remove. no cdp for this close request");
       
       // send eos
       inline_transfer(cdp_item.account, cdp_item.collateral, "closing debt position", EOSIO_TOKEN);
@@ -65,6 +65,7 @@ void buck::run_requests(uint64_t max) {
       
       // find cdp
       auto cdp_item = _cdp.find(reparam_item->cdp_id);
+      bool shouldRemove = true;
       
       if (cdp_item != _cdp.end()) {
         
@@ -74,6 +75,7 @@ void buck::run_requests(uint64_t max) {
   
         // adding debt
         if (reparam_item->change_debt.amount > 0) {
+          PRINT_("adding debt")
           
           auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
           auto di = (double) reparam_item->change_debt.amount;
@@ -99,8 +101,11 @@ void buck::run_requests(uint64_t max) {
         if (reparam_item->change_collateral.amount > 0) {
           new_collateral += reparam_item->change_collateral;
           
+          // to-do MODIFY HERE, EMPLACED IN CHANGE
+          
           // open maturity request
-          _maturityreq.emplace(cdp_item->account, [&](auto& r) {
+          auto& maturity_item = _maturityreq.get(cdp_item->id);
+          _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
             r.maturity_timestamp = get_maturity();
             r.add_collateral = reparam_item->change_collateral;
             r.cdp_id = cdp_item->id;
@@ -121,22 +126,31 @@ void buck::run_requests(uint64_t max) {
           new_collateral -= change;
           
           sell_rex(cdp_item->id, reparam_item->change_collateral);
+          shouldRemove = false;
         }
         
         // to-do check new ccr parameters
         // don't give debt if ccr < CR 
+
         
-        // not buying rex here, so update cdp immediately
-        if (reparam_item->change_collateral.amount <= 0) {
-          _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-            r.collateral = new_collateral;
-            r.debt += change_debt;
-          });
-        }
+        // // not buying rex here, so update cdp immediately
+        // if (reparam_item->change_collateral.amount <= 0) {
+        //   PRINT_("modifying cdp")
+        //   _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+        //     r.collateral = new_collateral;
+        //     r.debt += change_debt;
+        //   });
+        // }
       }
       
       // remove request
-      reparam_item = _reparamreq.erase(reparam_item);
+      if (shouldRemove) {
+        PRINT_("removing request")
+        reparam_item = _reparamreq.erase(reparam_item);
+      }
+      else {
+        reparam_item++;
+      }
     }
     
     // redeem request
@@ -179,11 +193,11 @@ void buck::run_requests(uint64_t max) {
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
-    if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts) {
+    if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts && maturity_item->maturity_timestamp.utc_seconds != 0) {
       
       // remove cdp if all collateral is 0 (and cdp was just created)
       
-      auto& cdp_item = _cdp.get(maturity_item->cdp_id);
+      auto& cdp_item = _cdp.get(maturity_item->cdp_id, "to-do: remove. no cdp for this maturity");
       
       // to-do take fees
       
