@@ -117,7 +117,7 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
       
-      // index to search for liquidators with highest acr
+      // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {
         const double MAX = 100;
         
@@ -128,7 +128,7 @@ CONTRACT buck : public contract {
         double c = (double) collateral.amount;
         
         if (debt.amount == 0) {
-          return MAX - c / acr; // descending acr
+          return MAX - c / acr; // descending c/acr
         }
         
         double cd = c / (double) debt.amount;
