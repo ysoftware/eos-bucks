@@ -107,8 +107,6 @@ void buck::closecdp(uint64_t cdp_id) {
     r.timestamp = current_time_point();
   });
   
-  sell_rex(position_item->id, position_item->collateral);
-  
   run_requests(2);
 }
 
