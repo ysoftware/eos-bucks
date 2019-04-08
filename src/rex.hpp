@@ -67,7 +67,6 @@ void buck::process() {
     });
     
     // update rex amount
-    PRINT("purchased ", diff)
     _cdp.modify(cdp_item, same_payer, [&](auto& r) {
       r.rex += diff;
     });
@@ -109,15 +108,16 @@ void buck::process() {
       }
   
       auto& request_item = _reparamreq.get(item.cdp_id, "to-do: remove. no request for this rex process item");
-      asset new_collateral = cdp_item.collateral - request_item.change_collateral;
+      asset new_collateral = cdp_item.collateral + request_item.change_collateral;
       asset change_debt = asset(0, BUCK);
+      asset new_debt = cdp_item.debt + change_debt;
       
       if (request_item.change_debt.amount > 0) {
         
         // to-do check this
         
         // to-do use updated collateral value or the old one?
-        double ccr = get_ccr(cdp_item.collateral, cdp_item.debt);
+        double ccr = get_ccr(new_collateral, new_debt);
         double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
         double di = (double) request_item.change_debt.amount;
         uint64_t change_amount = ceil(fmin(ccr_cr, di));
@@ -183,12 +183,17 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
     r.cdp_id = cdp_id;
     r.current_balance = get_eos_rex_balance();
   });
+  
+  
+  auto& cdp_item = _cdp.get(cdp_id);
+  auto sell_rex_amount = cdp_item.collateral.amount * cdp_item.rex.amount / quantity.amount;
+  auto sell_rex = asset(sell_rex_amount, REX);
+  
+  _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+    r.rex =- sell_rex;
+  });
  
   if (!REX_TESTING) {
-    
-    auto& cdp_item = _cdp.get(cdp_id);
-    auto sell_rex_amount = cdp_item.collateral.amount * cdp_item.rex.amount / quantity.amount;
-    auto sell_rex = asset(sell_rex_amount, REX);
     
     // sell rex
     action(permission_level{ _self, "active"_n },

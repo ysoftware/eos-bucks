@@ -131,16 +131,6 @@ void buck::run_requests(uint64_t max) {
         
         // to-do check new ccr parameters
         // don't give debt if ccr < CR 
-
-        
-        // // not buying rex here, so update cdp immediately
-        // if (reparam_item->change_collateral.amount <= 0) {
-        //   PRINT_("modifying cdp")
-        //   _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-        //     r.collateral = new_collateral;
-        //     r.debt += change_debt;
-        //   });
-        // }
       }
       
       // remove request
