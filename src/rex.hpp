@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-const bool REX_TESTING = false;
+const bool REX_TESTING = true;
 
 time_point_sec buck::get_maturity() {
   time_point_sec cts{ current_time_point() };

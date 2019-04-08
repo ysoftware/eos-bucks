@@ -77,7 +77,6 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     
     // buy rex with user's collateral
     buy_rex(cdp_itr->id, quantity);
-    inline_process();
   }
   else if (memo == "r") { // reparametrizing cdp
     
@@ -100,7 +99,6 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     });
     
     buy_rex(cdp_item->id, quantity);
-    inline_process();
   }
   
   run(3);
@@ -121,12 +119,11 @@ void buck::open(name account, double ccr, double acr) {
   auto account_index = _cdp.get_index<"byaccount"_n>();
   auto cdp_item = account_index.begin();
   while (cdp_item != account_index.end()) {
-      check(cdp_item->collateral.amount > 0, "you already have created a debt position created");
+      check(cdp_item->rex.amount > 0 || cdp_item->collateral.amount > 0, 
+        "you already have created an unfinished debt position created");
+        
       cdp_item++;
   }
-  
-  // update supply
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   // open cdp
   auto id = _cdp.available_primary_key();

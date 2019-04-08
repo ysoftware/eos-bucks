@@ -29,7 +29,6 @@ CONTRACT buck : public contract {
     
     // admin
     ACTION update(double eos_price);
-    ACTION init();
     ACTION process();
     
     // debug 
@@ -193,6 +192,7 @@ CONTRACT buck : public contract {
     typedef multi_index<"rexfund"_n, rex_fund> rex_fund_i;
     
     // methods
+    void init();
     void add_balance(name owner, asset value, name ram_payer, bool change_supply);
     void sub_balance(name owner, asset value, bool change_supply);
     void add_fee(asset value);

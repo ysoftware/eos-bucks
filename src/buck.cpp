@@ -28,19 +28,20 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
 void buck::init() {
   require_auth(_self);
   
-  check(_stat.begin() == _stat.end(), "contract is already initiated");
+  if (_stat.begin() == _stat.end()) {
   
-  _stat.emplace(_self, [&](auto& r) {
-    r.supply = asset(0, BUCK);
-    r.max_supply = asset(1'000'000'000'000'0000, BUCK);
-    r.issuer = _self;
-    
-    r.oracle_timestamp = time_point(microseconds(0));
-    r.oracle_eos_price = 0;
-    r.liquidation_timestamp = time_point(microseconds(0));
-    
-    r.aggregated_collateral = asset(0, EOS);
-    r.total_collateral = asset(0, EOS);
-    r.gathered_fees = asset(0, BUCK);
-  });
+    _stat.emplace(_self, [&](auto& r) {
+      r.supply = asset(0, BUCK);
+      r.max_supply = asset(1'000'000'000'000'0000, BUCK);
+      r.issuer = _self;
+      
+      r.oracle_timestamp = time_point(microseconds(0));
+      r.oracle_eos_price = 0;
+      r.liquidation_timestamp = time_point(microseconds(0));
+      
+      r.aggregated_collateral = asset(0, EOS);
+      r.total_collateral = asset(0, EOS);
+      r.gathered_fees = asset(0, BUCK);
+    });
+  }
 }

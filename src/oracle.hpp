@@ -4,9 +4,7 @@
 
 void buck::update(double eos_price) {
   require_auth(_self);
-  
-  // update prices
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  init();
   
   auto previous_price = _stat.begin()->oracle_eos_price;
   
@@ -27,7 +25,6 @@ void buck::update(double eos_price) {
 }
 
 double buck::get_eos_price() {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   double price = _stat.begin()->oracle_eos_price;
   check(price != 0, "oracle prices are not yet set");
   return _stat.begin()->oracle_eos_price;
