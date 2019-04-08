@@ -3,8 +3,6 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
-  require_auth(account);
-  
   auto position_item = _cdp.find(cdp_id);
   check(position_item != _cdp.end(), "debt position does not exist");
   
@@ -15,6 +13,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
   check(position_item->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
   
   auto account = position_item->account;
+  require_auth(account);
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
   
   auto request_item = _reparamreq.find(cdp_id);
@@ -46,7 +45,7 @@ void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
     r.timestamp = current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
-    r.isPaid = change_collateral.amount <= 0; // isPaid if not increasing collateral
+    r.isPaid = change_collateral.amount <= 0; // isPaid if not adding collateral
   });
   
   run_requests(2);

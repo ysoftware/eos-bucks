@@ -30,6 +30,7 @@ CONTRACT buck : public contract {
     // admin
     ACTION update(double eos_price);
     ACTION init();
+    ACTION process();
     
     // debug 
     ACTION zdestroy();
@@ -197,11 +198,12 @@ CONTRACT buck : public contract {
     void add_fee(asset value);
     void distribute_tax(uint64_t cdp_id);
     
-    void process_rex();
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
+    void inline_process();
+    
     void buy_rex(uint64_t cdp_id, asset quantity);
     void sell_rex(uint64_t cdp_id, asset quantity);
     

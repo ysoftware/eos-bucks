@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-static constexpr uint32_t     seconds_per_day = 24 * 3600;
+static constexpr uint32_t seconds_per_day = 24 * 3600;
 
 const symbol& EOS   = eosio::symbol{"EOS", 4};
 const symbol& BUCK  = eosio::symbol{"BUCK", 4};
@@ -14,10 +14,10 @@ const double LF = 0.1;    // liquidation fee
 const double LT = 0.025;  // liquidation tax
 const double RF = 0.01;   // redemption fee
 const double CF = 0.0125; // creator fee
-const double RF = 0.00085;// transacttion tax
+const double TT = 0.00085;// transaction tax
 
 const asset& MIN_COLLATERAL = eosio::asset(50000, EOS);
 const asset& MIN_DEBT       = eosio::asset(500000, BUCK);
 
 const name& EOSIO_TOKEN = "eosio.token"_n;
-const name& EOSIO = "eosio"_n;
+const name& EOSIO       = "eosio"_n;

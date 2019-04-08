@@ -8,3 +8,9 @@ void buck::inline_transfer(name account, asset quantity, std::string memo, name 
 		std::make_tuple(_self, account, quantity, memo)
 	).send();
 }
+
+void buck::inline_process() {
+  action(permission_level{ _self, "active"_n },
+    _self, "process"_n, std::make_tuple()
+  ).send();
+}

@@ -5,8 +5,6 @@
 void buck::run(uint64_t max) {
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-
-  process_rex();
   
   // check if liquidation complete for this round
   if (_stat.begin()->liquidation_timestamp == _stat.begin()->oracle_timestamp) {
@@ -72,7 +70,8 @@ void buck::run_requests(uint64_t max) {
         asset new_collateral = cdp_item->collateral;
         auto ccr = get_ccr(cdp_item->collateral, cdp_item->debt);
   
-        if (reparam_item->change_debt.amount > 0) { // 4
+        // adding debt
+        if (reparam_item->change_debt.amount > 0) {
           
           auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
           auto di = (double) reparam_item->change_debt.amount;
@@ -89,11 +88,13 @@ void buck::run_requests(uint64_t max) {
           add_balance(cdp_item->account, change, same_payer, true);
         }
         
-        else if (reparam_item->change_debt.amount < 0) { // 1
+        // removing debt
+        else if (reparam_item->change_debt.amount < 0) {
           change_debt = reparam_item->change_debt; // add negative value
         }
         
-        if (reparam_item->change_collateral.amount > 0) { // 2
+        // adding collateral
+        if (reparam_item->change_collateral.amount > 0) {
           new_collateral += reparam_item->change_collateral;
           
           // open maturity request
@@ -109,7 +110,8 @@ void buck::run_requests(uint64_t max) {
           buy_rex(cdp_item->id, reparam_item->change_collateral);
         }
         
-        else if (reparam_item->change_collateral.amount < 0) { // 3
+        // removing collateral
+        else if (reparam_item->change_collateral.amount < 0) {
         
           auto cr_ccr = CR / ccr;
           auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item->collateral.amount;
@@ -117,8 +119,6 @@ void buck::run_requests(uint64_t max) {
           new_collateral -= change;
           
           sell_rex(cdp_item->id, reparam_item->change_collateral);
-          
-          inline_transfer(cdp_item->account, change, "collateral return", EOSIO_TOKEN);
         }
         
         // to-do check new ccr parameters

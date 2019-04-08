@@ -40,39 +40,50 @@ bool buck::is_mature(uint64_t cdp_id) {
   return item == _maturityreq.end() || item->maturity_timestamp < current_time_point();
 }
 
-void buck::process_rex() {
-  if (_rexprocess.begin() != _rexprocess.end()) {
-    auto& item = *_rexprocess.begin();
+void buck::process() {
+  check(_rexprocess.begin() != _rexprocess.end(), "this action is not to be ran manually");
+  
+  auto& item = *_rexprocess.begin();
+  auto& cdp_item = _cdp.get(item.cdp_id);
+  
+  if (item.current_balance.symbol == REX) {
+    // bought rex, determine how much
     
-    auto& cdp_item = _cdp.get(item.cdp_id);
+    // get previous balance, subtract current balance
+    auto previos_balance = item.current_balance;
+    auto current_balance = get_rex_balance();
     
-    if (item.current_balance.symbol == BUCK) {
-      // bought rex, determine how much
+    auto diff = current_balance - previos_balance;
+    if (diff.amount != 0) {
       
-      // get previous balance, subtract current balance
-      auto previos_balance = item.current_balance;
-      auto current_balance = get_rex_balance();
-      auto diff = current_balance - previos_balance;
-      if (diff.amount != 0) {
-        
-        // update maturity request
-        
-        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-          r.rex += diff;
-        });
-      }
+      // update maturity request
+      auto maturity_itr = _maturityreq.find(item.cdp_id);
+      _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
+        r.maturity_timestamp = get_maturity();
+      });
+      
+      // update rex amount  
+      _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+        r.rex += diff;
+      });
+      
+      _rexprocess.erase(item);
     }
-    else if (item.current_balance.symbol == EOS) {
+  }
+  else if (item.current_balance.symbol == EOS) {
+    
+    if (item.current_balance.amount > 0) {
       // sold rex, determine for how much
       
       // get previous balance, subtract from current balance
       auto previous_balance = item.current_balance;
       auto current_balance = get_eos_rex_balance();
+      
       auto diff = current_balance - previous_balance;
       if (diff.amount != 0) {
       
-        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-          r.rex += current_balance - previous_balance;
+        _rexprocess.modify(item, same_payer, [&](auto& r) {
+          r.current_balance = -diff;
         });
         
         // withdraw
@@ -80,24 +91,32 @@ void buck::process_rex() {
           EOSIO, "withdraw"_n,
           std::make_tuple(_self, diff)
         ).send();
-        
-        // transfer gained collateral (with rex income)
-        // inline_transfer(cdp_item.account, diff, "collateral return", EOSIO_TOKEN);
-        
-        // update cdp
-        
-        // to-do
       }
+      
+      _rexprocess.modify(item, same_payer, [&](auto& r) {
+        r.current_balance = asset(0, EOS);
+      });
+      
+      // run processing again after withdraw
+      inline_process();
     }
-    
-    _rexprocess.erase(_rexprocess.begin());
+    else {
+      // withdrew money from rex, sending to user
+      
+      inline_transfer(cdp_item.account, -item.current_balance, "", EOSIO_TOKEN);
+      
+      auto& request_itr = _reparamreq.get(item.cdp_id);
+      if (request_itr.change_debt.amount != 0) {
+        // if changing debt, verify ccr
+        
+      }
+      
+      _rexprocess.erase(item);
+    }
   }
 }
 
 void buck::buy_rex(uint64_t cdp_id, asset quantity) {
-  
-  // update previous rex process
-  process_rex();
   
   // store info current rex balance and this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
@@ -118,14 +137,13 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
 		EOSIO, "buyrex"_n,
 		std::make_tuple(_self, quantity)
 	).send();
+	
+	inline_process();
 }
 
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   
-  // update previous rex process
-  process_rex();
-
   // store info current eos balance in rex pool for this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
     r.cdp_id = cdp_id;
@@ -144,4 +162,6 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
 		EOSIO, "sellrex"_n,
 		std::make_tuple(_self, sell_rex)
 	).send();
+	
+	inline_process();
 }

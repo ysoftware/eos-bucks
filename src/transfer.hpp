@@ -37,14 +37,14 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     
     // find cdps
     auto index = _cdp.get_index<"byaccount"_n>();
-    auto item = index.find(from.value);
-    while (item->collateral.amount != 0 && item != index.end()) {
-      item++;
+    auto cdp_itr = index.find(from.value);
+    while (cdp_itr->collateral.amount != 0 && cdp_itr != index.end()) {
+      cdp_itr++;
     }
     
-    check(item != index.end(), "open a debt position first");
+    check(cdp_itr != index.end(), "open a debt position first");
     
-    auto& maturity_item = _maturityreq.get(item->id, "maturity has to exist for a new cdp");
+    auto& maturity_item = _maturityreq.get(cdp_itr->id, "maturity has to exist for a new cdp");
     
     auto collateral_amount = (double) quantity.amount;
     auto debt = asset(0, BUCK);
@@ -61,7 +61,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     else {
       
       // if ccr == 0, not issuing any debt
-      index.modify(item, same_payer, [&](auto& r) {
+      index.modify(cdp_itr, same_payer, [&](auto& r) {
         r.debt = debt;
         r.timestamp = current_time_point();
         r.collateral = asset(collateral_amount, EOS);
@@ -76,29 +76,31 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     });
     
     // buy rex with user's collateral
-    buy_rex(item->id, quantity);
+    buy_rex(cdp_itr->id, quantity);
+    inline_process();
   }
   else if (memo == "r") { // reparametrizing cdp
     
-    reparam_req_i reparamreqs(_self, _self.value);
-  
     auto index = _cdp.get_index<"byaccount"_n>();
     auto cdp_item = index.find(from.value);
-    auto reparam_item = reparamreqs.find(cdp_item->id);
+    auto reparam_item = _reparamreq.find(cdp_item->id);
     
     while (cdp_item != index.end()) {
       if (!reparam_item->isPaid) { break; }
       cdp_item++;
-      reparam_item = reparamreqs.find(cdp_item->id);
+      reparam_item = _reparamreq.find(cdp_item->id);
     }
-    check(reparam_item != reparamreqs.end(), "could not find a reparametrization request");
+    check(reparam_item != _reparamreq.end(), "could not find a reparametrization request");
 
     check(quantity == reparam_item->change_collateral,
       "you must transfer the exact amount of collateral you wish to increase");
     
-    reparamreqs.modify(reparam_item, same_payer, [&](auto& r) {
+    _reparamreq.modify(reparam_item, same_payer, [&](auto& r) {
       r.isPaid = true;
     });
+    
+    buy_rex(cdp_item->id, quantity);
+    inline_process();
   }
   
   run(3);
@@ -110,7 +112,7 @@ void buck::open(name account, double ccr, double acr) {
   // check values
   check(ccr >= CR || ccr == 0, "ccr value is too small");
   check(acr >= CR || acr == 0, "acr value is too small");
-  check(acr != 0 CR && acr != 0, "acr and ccr can not be both 0");
+  check(acr != 0 || ccr != 0, "acr and ccr can not be both 0");
   
   check(ccr < 1000, "ccr value is too high");
   check(acr < 1000, "acr value is too high");
