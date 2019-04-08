@@ -4,6 +4,11 @@
 
 const bool REX_TESTING = true;
 
+name REX_ACCOUNT() {
+  if (REX_TESTING) { return "rexrexrexrex"_n; }
+  return EOSIO;
+}
+
 time_point_sec buck::get_maturity() {
   time_point_sec cts{ current_time_point() };
   const uint32_t num_of_maturity_buckets = 5;
@@ -18,9 +23,7 @@ time_point_sec buck::get_maturity() {
 }
 
 asset buck::get_rex_balance() {
-  if (REX_TESTING) { return asset(10000, REX); }
-  
-  rex_balance_i table(EOSIO, EOSIO.value);
+  rex_balance_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
     return asset(0, REX);
@@ -29,9 +32,7 @@ asset buck::get_rex_balance() {
 }
 
 asset buck::get_eos_rex_balance() {
-  if (REX_TESTING) { return asset(10000, EOS); }
-  
-  rex_fund_i table(EOSIO, EOSIO.value);
+  rex_fund_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
     return asset(0, EOS);
@@ -58,8 +59,6 @@ void buck::process() {
     auto current_balance = get_rex_balance();
     auto diff = current_balance - previos_balance;
     
-    if (REX_TESTING) { diff = asset(10000, REX); }
-    
     // update maturity request
     auto& maturity_item = _maturityreq.get(item.cdp_id, "to-do: remove. did not find maturity");
     _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
@@ -83,19 +82,15 @@ void buck::process() {
       auto current_balance = get_eos_rex_balance();
       auto diff = current_balance - previous_balance;
       
-      if (REX_TESTING) { diff = asset(10000, EOS); }
-      
       PRINT("sold rex for ", -diff)
       _rexprocess.modify(item, same_payer, [&](auto& r) {
         r.current_balance = -diff;
       });
       
-      if (!REX_TESTING) {
-        action(permission_level{ _self, "active"_n },
-          EOSIO, "withdraw"_n,
-          std::make_tuple(_self, diff)
-        ).send();
-      }
+      action(permission_level{ _self, "active"_n },
+        REX_ACCOUNT(), "withdraw"_n,
+        std::make_tuple(_self, diff)
+      ).send();
       
       // run processing again after withdraw
       inline_process();
@@ -157,20 +152,17 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
     r.current_balance = get_rex_balance();
   });
   
-  if (!REX_TESTING) {
-    
-    // deposit
-    action(permission_level{ _self, "active"_n },
-  		EOSIO, "deposit"_n,
-  		std::make_tuple(_self, quantity)
-  	).send();
-  	
-    // buy rex
-    action(permission_level{ _self, "active"_n },
-  		EOSIO, "buyrex"_n,
-  		std::make_tuple(_self, quantity)
-  	).send();
-  }
+  // deposit
+  action(permission_level{ _self, "active"_n },
+		REX_ACCOUNT(), "deposit"_n,
+		std::make_tuple(_self, quantity)
+	).send();
+	
+  // buy rex
+  action(permission_level{ _self, "active"_n },
+		REX_ACCOUNT(), "buyrex"_n,
+		std::make_tuple(_self, quantity)
+	).send();
 	
 	inline_process();
 }
@@ -192,15 +184,12 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   _cdp.modify(cdp_item, same_payer, [&](auto& r) {
     r.rex =- sell_rex;
   });
- 
-  if (!REX_TESTING) {
-    
-    // sell rex
-    action(permission_level{ _self, "active"_n },
-  		EOSIO, "sellrex"_n,
-  		std::make_tuple(_self, sell_rex)
-  	).send();
-  }
+
+  // sell rex
+  action(permission_level{ _self, "active"_n },
+		REX_ACCOUNT(), "sellrex"_n,
+		std::make_tuple(_self, sell_rex)
+	).send();
   
 	inline_process();
 }
