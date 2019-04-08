@@ -97,8 +97,6 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
     _reparamreq.modify(reparam_item, same_payer, [&](auto& r) {
       r.isPaid = true;
     });
-    
-    buy_rex(cdp_item->id, quantity);
   }
   
   run(3);
@@ -119,7 +117,7 @@ void buck::open(name account, double ccr, double acr) {
   auto account_index = _cdp.get_index<"byaccount"_n>();
   auto cdp_item = account_index.begin();
   while (cdp_item != account_index.end()) {
-      check(cdp_item->rex.amount > 0 || cdp_item->collateral.amount > 0, 
+      check(cdp_item->rex.amount > 0 || cdp_item->collateral.amount > 0,
         "you already have created an unfinished debt position created");
         
       cdp_item++;
