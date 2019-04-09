@@ -77,16 +77,18 @@ void buck::run_requests(uint64_t max) {
         if (reparam_item->change_debt.amount > 0) {
           PRINT_("adding debt")
           
-          auto ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
-          auto di = (double) reparam_item->change_debt.amount;
-          auto change_amount = ceil(fmin(ccr_cr, di));
+          double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
+          double di = (double) reparam_item->change_debt.amount;
+          uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, di));
           
           // take fee
-          auto fee_amount = change_amount * IF;
-          auto fee = asset(fee_amount, BUCK);
+          uint64_t fee_amount = change_amount * IF;
+          change_amount -= fee_amount;
+          
+          asset fee = asset(fee_amount, BUCK);
           add_fee(fee);
           
-          auto change = asset(change_amount - fee_amount, BUCK);
+          asset change = asset(change_amount - fee_amount, BUCK);
           change_debt = change;
           
           add_balance(cdp_item->account, change, same_payer, true);

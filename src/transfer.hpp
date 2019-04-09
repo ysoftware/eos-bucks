@@ -54,7 +54,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
       
       // check if current debt amount is above the limit
       auto price = get_eos_price();
-      auto debt_amount = (price * collateral_amount / ccr) * (1 - IF);
+      auto debt_amount = (price * collateral_amount / ccr);
       debt = asset(floor(debt_amount), BUCK);
       check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
     }
