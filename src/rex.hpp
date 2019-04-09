@@ -51,6 +51,8 @@ void buck::process() {
   auto& item = *_rexprocess.begin();
   auto& cdp_item = _cdp.get(item.cdp_id);
   
+  PRINT("running process", cdp_item.id);
+  
   if (item.current_balance.symbol == REX) {
     // bought rex, determine how much
     
@@ -103,40 +105,54 @@ void buck::process() {
         inline_transfer(cdp_item.account, -item.current_balance, "return collateral (+ rex dividends)", EOSIO_TOKEN);
       }
   
-      auto& request_item = _reparamreq.get(item.cdp_id, "to-do: remove. no request for this rex process item");
-      asset new_collateral = cdp_item.collateral + request_item.change_collateral;
-      asset change_debt = asset(0, BUCK);
-      asset new_debt = cdp_item.debt + change_debt;
-      
-      if (request_item.change_debt.amount > 0) {
+      auto reparam_itr = _reparamreq.find(item.cdp_id);
+      if (reparam_itr != _reparamreq.end()) {
         
-        // to-do check this
+        // finish reparametrization
+        auto& request_item = *reparam_itr;
         
-        double ccr = get_ccr(new_collateral, new_debt);
-        double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
-        double di = (double) request_item.change_debt.amount;
-        uint64_t change_amount = ceil(fmin(ccr_cr, di));
-        change_debt = asset(change_amount, BUCK);
+        asset new_collateral = cdp_item.collateral + request_item.change_collateral;
+        asset change_debt = asset(0, BUCK);
+        asset new_debt = cdp_item.debt + change_debt;
         
-        // take issuance fee
-        uint64_t fee_amount = change_amount * IF;
-        auto fee = asset(fee_amount, BUCK);
-        add_fee(fee);
+        if (request_item.change_debt.amount > 0) {
+          
+          // to-do check this
+          
+          double ccr = get_ccr(new_collateral, new_debt);
+          double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
+          double di = (double) request_item.change_debt.amount;
+          uint64_t change_amount = ceil(fmin(ccr_cr, di));
+          change_debt = asset(change_amount, BUCK);
+          
+          // take issuance fee
+          uint64_t fee_amount = change_amount * IF;
+          auto fee = asset(fee_amount, BUCK);
+          add_fee(fee);
+          
+          add_balance(cdp_item.account, change_debt - fee, same_payer, true);
+        }
         
-        add_balance(cdp_item.account, change_debt - fee, same_payer, true);
+        // removing debt
+        else if (request_item.change_debt.amount < 0) {
+          change_debt = request_item.change_debt; // add negative value
+        }
+        
+        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+          r.collateral = new_collateral;
+          r.debt += change_debt;
+        });
+    
+        _reparamreq.erase(request_item);
+      }
+      else {
+        
+        // closing cdp
+        auto close_itr = _closereq.require_find(item.cdp_id);
+        _closereq.erase(close_itr);
+        _cdp.erase(cdp_item);
       }
       
-      // removing debt
-      else if (request_item.change_debt.amount < 0) {
-        change_debt = request_item.change_debt; // add negative value
-      }
-      
-      _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-        r.collateral = new_collateral;
-        r.debt += change_debt;
-      });
-  
-      _reparamreq.erase(request_item);
       _rexprocess.erase(item);
     }
   }
@@ -174,9 +190,8 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
     r.current_balance = get_eos_rex_balance();
   });
   
-  
   auto& cdp_item = _cdp.get(cdp_id);
-  auto sell_rex_amount = cdp_item.rex.amount / cdp_item.collateral.amount * quantity.amount;
+  auto sell_rex_amount = cdp_item.rex.amount * quantity.amount / cdp_item.collateral.amount;
   auto sell_rex = asset(sell_rex_amount, REX);
   
   _cdp.modify(cdp_item, same_payer, [&](auto& r) {

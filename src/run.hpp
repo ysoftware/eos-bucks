@@ -40,20 +40,20 @@ void buck::run_requests(uint64_t max) {
     
     // close request
     if (close_item != _closereq.end() && close_item->timestamp < oracle_timestamp) {
+      PRINT_("closing cdp")
       
       // find cdp, should always exist
       auto& cdp_item = _cdp.get(close_item->cdp_id, "to-do: remove. no cdp for this close request");
       
-      // send eos
-      inline_transfer(cdp_item.account, cdp_item.collateral, "closing debt position", EOSIO_TOKEN);
+      // sell rex
+      sell_rex(cdp_item.id, cdp_item.collateral);
       
-      // remove request and cdp
-      close_item = _closereq.erase(close_item);
-      _cdp.erase(cdp_item);
+      close_item++;
     }
     
     // reparam request
     if (reparam_item != _reparamreq.end() && reparam_item->timestamp < oracle_timestamp) {
+      PRINT_("reparametrizing cdp")
       
       // to-do:
       // remove old unpaid requests in ~2 rounds. no need to return buck cuz unpaid
@@ -150,6 +150,7 @@ void buck::run_requests(uint64_t max) {
     
     // redeem request
     if (redeem_item != _redeemreq.end() && redeem_item->timestamp < oracle_timestamp) {
+      PRINT_("redeeming buck")
       
       auto redeem_quantity = redeem_item->quantity;
       asset collateral_return = asset(0, EOS);
@@ -189,6 +190,7 @@ void buck::run_requests(uint64_t max) {
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
     if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts && maturity_item->maturity_timestamp.utc_seconds != 0) {
+      PRINT_("running maturity request")
       
       // remove cdp if all collateral is 0 (and cdp was just created)
       
