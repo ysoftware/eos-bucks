@@ -29,6 +29,7 @@ void buck::run_requests(uint64_t max) {
   
   auto close_item = _closereq.begin();
   auto reparam_item = _reparamreq.begin();
+  // to-do redeem sorting
   auto redeem_item = _redeemreq.begin();
   
   auto debtor_item = debtor_index.begin();
@@ -152,40 +153,7 @@ void buck::run_requests(uint64_t max) {
     if (redeem_item != _redeemreq.end() && redeem_item->timestamp < oracle_timestamp) {
       PRINT_("redeeming buck")
       
-      auto redeem_quantity = redeem_item->quantity;
-      asset collateral_return = asset(0, EOS);
-      
-      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
-        
-        auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
-        auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
-        
-        asset using_debt = asset(using_debt_amount, BUCK);
-        asset using_collateral = asset(using_collateral_amount, EOS);
-        
-        redeem_quantity -= using_debt;
-        
-        // switch to next debtor if this one is out of debt
-        if (using_debt >= debtor_item->debt) {
-          debtor_item = debtor_index.erase(debtor_item);
-        }
-        else {
-          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
-            r.debt -= using_debt;
-            r.collateral -= using_collateral;
-          });
-        }
-      }
-      
-      // check if all bucks have been redeemed
-      if (redeem_quantity.amount > 0) {
-        add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
-      }
-      
-      inline_transfer(redeem_item->account, collateral_return, "redeem buck", EOSIO_TOKEN);
-      
-      // remove request
-      redeem_item = _redeemreq.erase(redeem_item);
+      sell_rex(UINT64_MAX, redeem_item->quantity);
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)

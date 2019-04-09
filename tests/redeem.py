@@ -29,15 +29,16 @@ class Test(unittest.TestCase):
 		reset()
 
 		create_master_account("master")
-
 		create_account("eosio_token", master, "eosio.token")
-
+		create_account("rex", master, "rexrexrexrex")
+		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
 		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
+		deploy(Contract(rex, "eos-bucks/tests/rexmock"))
 
 		# Distribute tokens
 
@@ -55,11 +56,14 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		init(buck)
+		SCENARIO("Test buck redeem")
 		update(buck)
 
 		open(buck, user1, 2.0, 0) # cdp 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+
+		sleep(2)
+		update(buck)
 
 		balance_buck1 = balance(buck, user1)
 
@@ -67,6 +71,7 @@ class Test(unittest.TestCase):
 
 		balance_eos1 = balance(eosio_token, user1)
 
+		sleep(2)
 		update(buck)
 
 		balance_buck2 = balance(buck, user1)

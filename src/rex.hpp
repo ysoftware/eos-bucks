@@ -49,9 +49,9 @@ void buck::process() {
   check(_rexprocess.begin() != _rexprocess.end(), "this action is not to be ran manually");
   
   auto& item = *_rexprocess.begin();
-  auto& cdp_item = _cdp.get(item.cdp_id);
+  auto cdp_itr = _cdp.find(item.cdp_id);
   
-  PRINT("running process", cdp_item.id);
+  PRINT("running process", cdp_itr->id);
   
   if (item.current_balance.symbol == REX) {
     // bought rex, determine how much
@@ -68,7 +68,8 @@ void buck::process() {
     });
     
     // update rex amount
-    _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+    check(cdp_item != _cdp.end(), "did not find cdp to buy rex for");
+    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.rex += diff;
     });
     
@@ -100,11 +101,9 @@ void buck::process() {
     }
     else {
       // withdrew money from rex, sending to user
+      std::string memo;
+      asset transfer_quantity = -item.current_balance;
       
-      if (item.current_balance.amount != 0) {
-        inline_transfer(cdp_item.account, -item.current_balance, "return collateral (+ rex dividends)", EOSIO_TOKEN);
-      }
-  
       auto reparam_itr = _reparamreq.find(item.cdp_id);
       if (reparam_itr != _reparamreq.end()) {
         
@@ -143,8 +142,54 @@ void buck::process() {
           r.debt += change_debt;
         });
     
+        memo = "collateral return (+ rex dividends)";
         _reparamreq.erase(request_item);
       }
+      
+      if (item.cdp_id == UINT64_MAX) {
+        
+        // redeeming bucks
+        
+        // to-do sorting
+        // to-do verify timestamp
+        auto redeem_item = _redeemreq.begin();
+        auto redeem_quantity = redeem_item->quantity;
+        asset collateral_return = asset(0, EOS);
+        
+        while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
+          
+          auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
+          auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
+          
+          asset using_debt = asset(using_debt_amount, BUCK);
+          asset using_collateral = asset(using_collateral_amount, EOS);
+          
+          redeem_quantity -= using_debt;
+          
+          // switch to next debtor if this one is out of debt
+          if (using_debt >= debtor_item->debt) {
+            debtor_item = debtor_index.erase(debtor_item);
+          }
+          else {
+            debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+              r.debt -= using_debt;
+              r.collateral -= using_collateral;
+            });
+          }
+        }
+        
+        // check if all bucks have been redeemed
+        if (redeem_quantity.amount > 0) {
+          add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
+        }
+        
+        // remove request
+        redeem_item = _redeemreq.erase(redeem_item);
+        
+        transfer_quantity = collateral_return;
+        memo = "bucks redemption";
+      }
+
       else {
         
         // closing cdp
@@ -153,6 +198,11 @@ void buck::process() {
         _cdp.erase(cdp_item);
       }
       
+      if (item.current_balance.amount < 0) {
+        check(cdp_item != _cdp.end(), "did not find cdp to withdraw money for");
+        inline_transfer(cdp_item->account, transfer_quantity, memo, EOSIO_TOKEN);
+      }
+  
       _rexprocess.erase(item);
     }
   }
