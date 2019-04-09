@@ -77,14 +77,15 @@ void buck::process() {
     if (item.current_balance.amount > 0) {
       // sold rex, determine for how much
       
-      // get previous balance, subtract from current balance
+      // to-do what if rex sold for 0 amount?
+      
       auto previous_balance = item.current_balance;
       auto current_balance = get_eos_rex_balance();
       auto diff = current_balance - previous_balance;
       
-      PRINT("sold rex for ", -diff)
+      PRINT("sold rex for ", diff)
       _rexprocess.modify(item, same_payer, [&](auto& r) {
-        r.current_balance = -diff;
+        r.current_balance = -diff; // negative to exec "after withdraw"
       });
       
       action(permission_level{ _self, "active"_n },
@@ -111,7 +112,6 @@ void buck::process() {
         
         // to-do check this
         
-        // to-do use updated collateral value or the old one?
         double ccr = get_ccr(new_collateral, new_debt);
         double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
         double di = (double) request_item.change_debt.amount;
@@ -180,7 +180,7 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   auto sell_rex = asset(sell_rex_amount, REX);
   
   _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-    r.rex =- sell_rex;
+    r.rex -= sell_rex;
   });
 
   // sell rex

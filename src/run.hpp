@@ -121,7 +121,7 @@ void buck::run_requests(uint64_t max) {
           auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item->collateral.amount), EOS);
           new_collateral -= change;
           
-          sell_rex(cdp_item->id, reparam_item->change_collateral);
+          sell_rex(cdp_item->id, -reparam_item->change_collateral);
           shouldRemove = false;
         }
         
