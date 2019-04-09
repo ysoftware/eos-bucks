@@ -3,6 +3,7 @@
 const uint64_t rex_multiplier = 100;
 
 ACTION rexmock::deposit( const name& owner, const asset& amount ) {
+  check(amount.amount > 0, "can not deposit negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.find( owner.value );
   if ( itr == _rexfunds.end() ) {
@@ -18,6 +19,7 @@ ACTION rexmock::deposit( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
+  check(amount.amount > 0, "can not withdraw negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.require_find( owner.value, "must deposit to REX fund first" );
   check(itr->balance >= amount, "overdrawn deposit balance");
@@ -27,6 +29,7 @@ ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::buyrex( const name& from, const asset& amount ) {
+  check(amount.amount > 0, "can not buy negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.find( from.value );
   if ( bitr == _rexbalance.end() ) {
@@ -44,6 +47,7 @@ ACTION rexmock::buyrex( const name& from, const asset& amount ) {
 }
 
 ACTION rexmock::sellrex( const name& from, const asset& rex ) {
+  check(rex.amount > 0, "can not sell negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.require_find( from.value, "must buy some REX first" );
   check(bitr->rex_balance >= rex, "overdrawn REX balance");
