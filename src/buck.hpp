@@ -91,7 +91,7 @@ CONTRACT buck : public contract {
       uint64_t  cdp_id;
       asset     current_balance;
       
-      uint64_t primary_key() const { return 0; }
+      uint64_t primary_key() const { return cdp_id; }
     };
     
     TABLE cdp_maturity_req {
