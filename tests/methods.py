@@ -64,9 +64,6 @@ def buyram(contract):
 
 # contract actions
 
-def init(contract):
-	contract.push_action("init", "[]", permission=[(contract, Permission.ACTIVE)])
-
 def open(contract, user, ccr, acr):
 	contract.push_action("open",
 		{

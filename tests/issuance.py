@@ -25,11 +25,11 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test init and open cdp")
 		reset()
 
 		create_master_account("master")
 		create_account("eosio_token", master, "eosio.token")
+		create_account("rex", master, "rexrexrexrex")
 		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
@@ -37,6 +37,7 @@ class Test(unittest.TestCase):
 
 		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
+		deploy(Contract(rex, "eos-bucks/tests/rexmock"))
 
 		# Distribute tokens
 
@@ -45,24 +46,52 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "1000000.0000 EOS", "")
+		transfer(eosio_token, master, user1, "100000.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
 
-	# tests 
+	# tests
 	
+	### to-do: test 
+
 	def test(self):
-		init(buck)
+		SCENARIO("Test init and open cdp")
 
-		update(buck, 3.6545)
+		# initialize
+		update(buck)
 
+		# create cdp, transfer collateral
 		open(buck, user1, 1.6, 0)
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
-		self.assertEqual(227.2642, balance(buck, user1))
+		# maturity
+		sleep(2)
+
+		# oracle update
+		update(buck)
+
+		# check rex
+		self.assertEqual(0, amount(table(rex, "rexfund", element="balance")))
+		self.assertEqual(10000, amount(table(rex, "rexbal", element="rex_balance")))
+
+		# issuance formula
+		price = 2
+		col = 100
+		ccr = 1.6
+		fee = 0.02
+		debt = price * (col / ccr)
+		debt_after_fee = debt - debt * fee
+
+		# check buck balance
+		self.assertEqual(debt_after_fee, balance(buck, user1))
 
 		# check all cdp values
+		cdp = table(buck, "cdp")
+		self.assertEqual(100, amount(cdp["collateral"]))
+		self.assertEqual(debt, amount(cdp["debt"]))
+		self.assertAlmostEqual(0, float(cdp["acr"]))
+		self.assertEqual("user1", cdp["account"])
 
 
 # main
