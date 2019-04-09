@@ -80,18 +80,14 @@ void buck::run_requests(uint64_t max) {
           double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
           double di = (double) reparam_item->change_debt.amount;
           uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, di));
+          change_debt = asset(change_amount, BUCK);
           
-          // take fee
+          // take issuance fee
           uint64_t fee_amount = change_amount * IF;
-          change_amount -= fee_amount;
-          
           asset fee = asset(fee_amount, BUCK);
           add_fee(fee);
           
-          asset change = asset(change_amount - fee_amount, BUCK);
-          change_debt = change;
-          
-          add_balance(cdp_item->account, change, same_payer, true);
+          add_balance(cdp_item->account, change_debt - fee, same_payer, true);
         }
         
         // removing debt
@@ -102,8 +98,6 @@ void buck::run_requests(uint64_t max) {
         // adding collateral
         if (reparam_item->change_collateral.amount > 0) {
           new_collateral += reparam_item->change_collateral;
-          
-          // to-do MODIFY HERE, EMPLACED IN CHANGE
           
           // open maturity request
           auto& maturity_item = _maturityreq.get(cdp_item->id);
@@ -211,7 +205,7 @@ void buck::run_requests(uint64_t max) {
         
         // issue debt
         auto price = get_eos_price();
-        auto debt_amount = (price * (double) add_collateral.amount / maturity_item->ccr) * (1 - IF);
+        auto debt_amount = (price * (double) add_collateral.amount / maturity_item->ccr);
         change_debt = asset(floor(debt_amount), BUCK);
       }
       
@@ -221,7 +215,13 @@ void buck::run_requests(uint64_t max) {
       });
       
       if (change_debt.amount > 0) {
-        add_balance(cdp_item.account, change_debt, cdp_item.account, true);
+        
+        // take issuance fee
+        uint64_t fee_amount = change_debt.amount * IF;
+        asset fee = asset(fee_amount, BUCK);
+        add_fee(fee);
+        
+        add_balance(cdp_item.account, change_debt - fee, cdp_item.account, true);
       }
       
       // remove request

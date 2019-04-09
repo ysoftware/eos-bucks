@@ -116,16 +116,14 @@ void buck::process() {
         double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
         double di = (double) request_item.change_debt.amount;
         uint64_t change_amount = ceil(fmin(ccr_cr, di));
+        change_debt = asset(change_amount, BUCK);
         
-        // take fee
-        auto fee_amount = change_amount * IF;
+        // take issuance fee
+        uint64_t fee_amount = change_amount * IF;
         auto fee = asset(fee_amount, BUCK);
         add_fee(fee);
         
-        auto change = asset(change_amount - fee_amount, BUCK);
-        auto change_debt = change;
-        
-        add_balance(cdp_item.account, change, same_payer, true);
+        add_balance(cdp_item.account, change_debt - fee, same_payer, true);
       }
       
       // removing debt
