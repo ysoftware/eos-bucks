@@ -25,19 +25,19 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test cdp reparametrization")
 		reset()
 
 		create_master_account("master")
-
 		create_account("eosio_token", master, "eosio.token")
-
+		create_account("rex", master, "rexrexrexrex")
+		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
 		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
+		deploy(Contract(rex, "eos-bucks/tests/rexmock"))
 
 		# Distribute tokens
 
@@ -47,6 +47,7 @@ class Test(unittest.TestCase):
 
 		create_account("user1", master, "user1")
 		create_account("user2", master, "user2")
+
 		transfer(eosio_token, master, user1, "150.0000 EOS", "")
 		transfer(eosio_token, master, user2, "99.0000 EOS", "")
 
@@ -55,8 +56,11 @@ class Test(unittest.TestCase):
 
 	# tests
 
+	### check rex values when selling rex
+
 	def test(self):
-		init(buck)
+		SCENARIO("Test cdp reparametrization")
+
 		update(buck)
 
 		open(buck, user1, 2.0, 0) # cdp 0
@@ -65,6 +69,9 @@ class Test(unittest.TestCase):
 		open(buck, user2, 2.0, 0) # cdp 1
 		transfer(eosio_token, user2, buck, "99.0000 EOS", "")
 
+		sleep(2)
+		update(buck)
+
 		# test acr change
 		changeacr(buck, user1, 0, 1.6)
 		self.assertAlmostEqual(1.6, float(table(buck, "cdp", element="acr")))
@@ -72,11 +79,14 @@ class Test(unittest.TestCase):
 		changeacr(buck, user1, 0, 0)
 		self.assertAlmostEqual(0, float(table(buck, "cdp", element="acr")))
 
-
 		# check starting 100 eos
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
+
+
+
 		## + collateral
+
 		reparam(buck, user1, 0, "0.0000 BUCK", "50.0000 EOS")
 
 		self.assertEqual(0, table(buck, "reparamreq", element="isPaid"))
@@ -92,53 +102,70 @@ class Test(unittest.TestCase):
 		# check nothing changes before update
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
+		sleep(2)
+		update(buck)
+
+		sleep(2)
 		update(buck)
 
 		# check change to 150 eos
 		self.assertEqual(150, amount(table(buck, "cdp", element="collateral")))
 
+
+
 		## - collateral
+
 		reparam(buck, user1, 0, "0.0000 BUCK", "-50.0000 EOS")
+
+		sleep(2)
 		update(buck)
 
-		# check change to 100 eos
+		# check 50.5 eos came back to user1 (with rex 1%)
+		self.assertEqual(50.5, balance(eosio_token, user1))
+
+		# check change collateral to 100 eos
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
-		# check 50 eos came back to user1
-		self.assertEqual(50, balance(eosio_token, user1))
 
-		# check 99.5 buck of balance  to-do might change later
-		self.assertEqual(99.5, balance(buck, user1))
-		self.assertEqual(99.5, amount(table(buck, "cdp", element="debt")))
 
 		## + debt
+
 		reparam(buck, user1, 0, "10.5000 BUCK", "0.0000 EOS")
+
+		sleep(2)
 		update(buck)
 
 		# check updated buck balance
-		self.assertEqual(110, balance(buck, user1))
-		self.assertEqual(110, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(108.29, balance(buck, user1))
+		self.assertEqual(110.5, amount(table(buck, "cdp", element="debt")))
+
+
 
 		## - debt
+
 		reparam(buck, user1, 0, "-10.0000 BUCK", "0.0000 EOS")
 
 		# check instantly updated balance
-		self.assertEqual(100, balance(buck, user1))
+		self.assertEqual(98.29, balance(buck, user1))
 
 		run(buck)
 
 		# check not yet updated cdp
-		self.assertEqual(110, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(110.5, amount(table(buck, "cdp", element="debt")))
 
+		sleep(2)
 		update(buck)
 
 		# check previously updated balance
-		self.assertEqual(100, balance(buck, user1))
+		self.assertEqual(98.29, balance(buck, user1))
 
 		# check now updated cdp debt after request complete
-		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(100.5, amount(table(buck, "cdp", element="debt")))
 
-		## reparam both at the same time
+
+
+		## reparam removing collateral and changing debt
+		## also having an unpaid request
 
 		# first create unpaid request
 		reparam(buck, user2, 1, "0.0000 BUCK", "10.0000 EOS")
@@ -146,19 +173,21 @@ class Test(unittest.TestCase):
 		# create actual request
 		reparam(buck, user1, 0, "-10.0000 BUCK", "-10.0000 EOS")
 
+		sleep(2)
 		update(buck)
 
 		self.assertEqual(90, amount(table(buck, "cdp", element="collateral")))
-		self.assertEqual(90, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(90.5, amount(table(buck, "cdp", element="debt")))
 
-		# check 10 eos came back
-		self.assertEqual(90, balance(buck, user1))
+		# check 10.1 eos came back to user1 (with rex 1%)
+		self.assertEqual(60.6, balance(eosio_token, user1))
 
 		# check buck
-		self.assertEqual(90, balance(buck, user1))
+		self.assertEqual(88.29, balance(buck, user1))
 
 
 
+		## reparam adding collateral and changing debt
 
 
 # main

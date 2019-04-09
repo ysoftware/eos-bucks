@@ -46,14 +46,12 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "100000.0000 EOS", "")
+		transfer(eosio_token, master, user1, "100.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
 
 	# tests
-	
-	### to-do: test 
 
 	def test(self):
 		SCENARIO("Test init and open cdp")
@@ -90,9 +88,9 @@ class Test(unittest.TestCase):
 		cdp = table(buck, "cdp")
 		self.assertEqual(100, amount(cdp["collateral"]))
 		self.assertEqual(debt, amount(cdp["debt"]))
+		self.assertEqual(10000, amount(cdp["rex"]))
 		self.assertAlmostEqual(0, float(cdp["acr"]))
 		self.assertEqual("user1", cdp["account"])
-
 
 # main
 
