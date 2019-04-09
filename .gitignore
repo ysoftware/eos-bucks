@@ -8,7 +8,6 @@
 *.lo
 *.o
 *.obj
-*.wasm
 
 # Precompiled Headers
 *.gch
@@ -40,4 +39,5 @@
 # Python
 __pycache__
 *.tmp
-buck.abi
+src/build/buck.wasm
+src/build/buck.abi
