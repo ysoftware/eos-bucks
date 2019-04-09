@@ -8,6 +8,8 @@ double buck::get_ccr(asset collateral, asset debt) {
 }
 
 void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
+  PRINT("+ balance", value)
+  
   accounts_i accounts(_self, owner.value);
   auto item = accounts.find(value.symbol.code().raw());
   
@@ -32,10 +34,12 @@ void buck::add_balance(name owner, asset value, name ram_payer, bool change_supp
 }
 
 void buck::sub_balance(name owner, asset value, bool change_supply) {
+  PRINT("- balance", value)
+  
   accounts_i accounts(_self, owner.value);
 
   const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
-  check(item.balance.amount >= value.amount, "overdrawn balance");
+  check(item.balance.amount >= value.amount, "overdrawn buck balance");
 
   accounts.modify(item, owner, [&](auto& r) {
     r.balance -= value;

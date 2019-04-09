@@ -25,19 +25,19 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test close cdp")
 		reset()
 
 		create_master_account("master")
-
 		create_account("eosio_token", master, "eosio.token")
-
+		create_account("rex", master, "rexrexrexrex")
+		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
 		perm(buck, key)
 
 		deploy(Contract(eosio_token, "eosio_token"))
 		deploy(Contract(buck, "eos-bucks/src"))
+		deploy(Contract(rex, "eos-bucks/tests/rexmock"))
 
 		# Distribute tokens
 
@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "100.0000 EOS", "")
+		transfer(eosio_token, master, user1, "200.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -54,13 +54,28 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		init(buck)
+		SCENARIO("Test close cdp")
 		update(buck)
+
+		# rex gives dividents, mock contract doesn't.
+		# we need to have spare eos on contract to ensure proper workflow
+		# when taking out collateral
+		transfer(eosio_token, master, buck, "100.0000 EOS", "rex fund") 
 
 		open(buck, user1, 1.5, 0) # 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
+		sleep(2)
+		update(buck)
+
+		open(buck, user1, 1.6, 0) # 1 request to get more bucks for closing
+		transfer(eosio_token, user1, buck, "50.0000 EOS", "")
+
+		table(buck, "maturityreq")
 		table(buck, "cdp")
+
+		sleep(2)
+		update(buck)
 
 		close(buck, user1, 0)
 
@@ -72,19 +87,20 @@ class Test(unittest.TestCase):
 		# check close request still there
 		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
 
+		sleep(2)
 		update(buck)
 
 		# check close request gone
 		self.assertEqual(0, len(table(buck, "closereq")))
 
-		# check cdp
-		self.assertEqual(0, len(table(buck, "cdp")))
+		# check first cdp id (should be 1)
+		self.assertEqual(1, table(buck, "cdp", element="id"))
 
 		# check collateral return
-		self.assertEqual(100, balance(eosio_token, user1))
+		self.assertEqual(50, balance(eosio_token, user1))
 
-		# check debt burned
-		self.assertEqual(0, balance(buck, user1))
+		# check debt burned (left over from cdp #1)
+		self.assertEqual(58.5834, balance(buck, user1))
 
 
 # main

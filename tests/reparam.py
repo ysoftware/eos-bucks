@@ -63,6 +63,11 @@ class Test(unittest.TestCase):
 
 		update(buck)
 
+		# rex gives dividents, mock contract doesn't.
+		# we need to have spare eos on contract to ensure proper workflow
+		# when taking out collateral
+		transfer(eosio_token, master, buck, "1000.0000 EOS", "rex fund") 
+
 		open(buck, user1, 2.0, 0) # cdp 0
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
