@@ -41,3 +41,5 @@ __pycache__
 *.tmp
 src/build/buck.wasm
 src/build/buck.abi
+src/buck.abi
+src/buck.wasm

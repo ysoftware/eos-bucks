@@ -99,7 +99,7 @@ void buck::process() {
       // withdrew money from rex, sending to user
       
       if (item.current_balance.amount != 0) {
-        inline_transfer(cdp_item.account, -item.current_balance, "", EOSIO_TOKEN);
+        inline_transfer(cdp_item.account, -item.current_balance, "return collateral (+ rex dividends)", EOSIO_TOKEN);
       }
   
       auto& request_item = _reparamreq.get(item.cdp_id, "to-do: remove. no request for this rex process item");
@@ -176,7 +176,7 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
   
   
   auto& cdp_item = _cdp.get(cdp_id);
-  auto sell_rex_amount = cdp_item.collateral.amount * cdp_item.rex.amount / quantity.amount;
+  auto sell_rex_amount = cdp_item.rex.amount / cdp_item.collateral.amount * quantity.amount;
   auto sell_rex = asset(sell_rex_amount, REX);
   
   _cdp.modify(cdp_item, same_payer, [&](auto& r) {
