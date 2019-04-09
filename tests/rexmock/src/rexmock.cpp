@@ -6,7 +6,7 @@ ACTION rexmock::deposit( const name& owner, const asset& amount ) {
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.find( owner.value );
   if ( itr == _rexfunds.end() ) {
-     _rexfunds.emplace( owner, [&]( auto& fund ) {
+     _rexfunds.emplace( _self, [&]( auto& fund ) {
         fund.owner   = owner;
         fund.balance = amount;
      });
@@ -30,7 +30,7 @@ ACTION rexmock::buyrex( const name& from, const asset& amount ) {
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.find( from.value );
   if ( bitr == _rexbalance.end() ) {
-     bitr = _rexbalance.emplace( from, [&]( auto& rb ) {
+     bitr = _rexbalance.emplace( _self, [&]( auto& rb ) {
         rb.owner       = from;
         rb.rex_balance = asset(amount.amount * rex_multiplier, eosio::symbol{"REX", 4});
      });
@@ -52,5 +52,5 @@ ACTION rexmock::sellrex( const name& from, const asset& rex ) {
     rb.rex_balance.amount -= rex.amount;
   });
   
-  deposit(from, asset(rex.amount / rex_multiplier, eosio::symbol{"EOS", 4}));
+  deposit(from, asset(rex.amount * 1.01 / rex_multiplier, eosio::symbol{"EOS", 4}));
 }
