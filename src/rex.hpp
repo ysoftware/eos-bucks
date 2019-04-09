@@ -16,8 +16,8 @@ time_point_sec buck::get_maturity() {
   static const uint32_t r   = now % seconds_per_day;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   
-  // maturity is 5 seconds
-  if (REX_TESTING) { return time_point_sec{ now + 5 }; }
+  // maturity is 1 second
+  if (REX_TESTING) { return time_point_sec{ now + 1 }; }
   
   return rms;
 }
