@@ -45,15 +45,15 @@ bool buck::is_mature(uint64_t cdp_id) {
   return item == _maturityreq.end() || item->maturity_timestamp < current_time_point();
 }
 
-void buck::process() {
+void buck::process(uint8_t kind) {
   check(_rexprocess.begin() != _rexprocess.end(), "this action is not to be ran manually");
   
   auto& item = *_rexprocess.begin();
   auto cdp_itr = _cdp.find(item.cdp_id);
   
-  PRINT("running process", cdp_itr->id);
+  PRINT("running process", kind);
   
-  if (item.current_balance.symbol == REX) {
+  if (kind == ProcessKind::bought_rex) {
     // bought rex, determine how much
     
     // get previous balance, subtract current balance
@@ -68,143 +68,115 @@ void buck::process() {
     });
     
     // update rex amount
-    check(cdp_item != _cdp.end(), "did not find cdp to buy rex for");
+    check(cdp_itr != _cdp.end(), "did not find cdp to buy rex for");
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.rex += diff;
     });
     
     _rexprocess.erase(item);
   }
-  else if (item.current_balance.symbol == EOS) {
+  else if (kind == ProcessKind::sold_rex) {
+    // sold rex, determine for how much
+    
+    // to-do what if rex sold for 0 amount?
+    auto previous_balance = item.current_balance;
+    auto current_balance = get_eos_rex_balance();
+    auto diff = current_balance - previous_balance;
+    
+    _rexprocess.modify(item, same_payer, [&](auto& r) {
+      r.current_balance = diff;
+    });
+    
+    action(permission_level{ _self, "active"_n },
+      REX_ACCOUNT(), "withdraw"_n,
+      std::make_tuple(_self, diff)
+    ).send();
+  }
+  else if (kind == ProcessKind::reparam) {
+    
+    auto reparam_itr = _reparamreq.find(item.cdp_id);
+    auto& request_item = *reparam_itr;
+    
+    asset new_collateral = cdp_itr->collateral + request_item.change_collateral;
+    asset change_debt = asset(0, BUCK);
+    asset new_debt = cdp_itr->debt + change_debt;
+    
+    if (request_item.change_debt.amount > 0) {
+      
+      // to-do check this
+      
+      double ccr = get_ccr(new_collateral, new_debt);
+      double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
+      double di = (double) request_item.change_debt.amount;
+      uint64_t change_amount = ceil(fmin(ccr_cr, di));
+      change_debt = asset(change_amount, BUCK);
+      
+      // take issuance fee
+      uint64_t fee_amount = change_amount * IF;
+      auto fee = asset(fee_amount, BUCK);
+      add_fee(fee);
+      
+      add_balance(cdp_itr->account, change_debt - fee, same_payer, true);
+    }
+    
+    // removing debt
+    else if (request_item.change_debt.amount < 0) {
+      change_debt = request_item.change_debt; // add negative value
+    }
+    
+    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+      r.collateral = new_collateral;
+      r.debt += change_debt;
+    });
     
     if (item.current_balance.amount > 0) {
-      // sold rex, determine for how much
-      
-      // to-do what if rex sold for 0 amount?
-      
-      auto previous_balance = item.current_balance;
-      auto current_balance = get_eos_rex_balance();
-      auto diff = current_balance - previous_balance;
-      
-      PRINT("sold rex for ", diff)
-      _rexprocess.modify(item, same_payer, [&](auto& r) {
-        r.current_balance = -diff; // negative to exec "after withdraw"
-      });
-      
-      action(permission_level{ _self, "active"_n },
-        REX_ACCOUNT(), "withdraw"_n,
-        std::make_tuple(_self, diff)
-      ).send();
-      
-      // run processing again after withdraw
-      inline_process();
+      inline_transfer(cdp_itr->account, item.current_balance, "collateral return (+ rex dividends)", EOSIO_TOKEN);
     }
-    else {
-      // withdrew money from rex, sending to user
-      std::string memo;
-      asset transfer_quantity = -item.current_balance;
-      
-      auto reparam_itr = _reparamreq.find(item.cdp_id);
-      if (reparam_itr != _reparamreq.end()) {
-        
-        // finish reparametrization
-        auto& request_item = *reparam_itr;
-        
-        asset new_collateral = cdp_item.collateral + request_item.change_collateral;
-        asset change_debt = asset(0, BUCK);
-        asset new_debt = cdp_item.debt + change_debt;
-        
-        if (request_item.change_debt.amount > 0) {
-          
-          // to-do check this
-          
-          double ccr = get_ccr(new_collateral, new_debt);
-          double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item.debt.amount;
-          double di = (double) request_item.change_debt.amount;
-          uint64_t change_amount = ceil(fmin(ccr_cr, di));
-          change_debt = asset(change_amount, BUCK);
-          
-          // take issuance fee
-          uint64_t fee_amount = change_amount * IF;
-          auto fee = asset(fee_amount, BUCK);
-          add_fee(fee);
-          
-          add_balance(cdp_item.account, change_debt - fee, same_payer, true);
-        }
-        
-        // removing debt
-        else if (request_item.change_debt.amount < 0) {
-          change_debt = request_item.change_debt; // add negative value
-        }
-        
-        _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-          r.collateral = new_collateral;
-          r.debt += change_debt;
-        });
+    _reparamreq.erase(request_item);
+  }
+  else if (kind == ProcessKind::redemption) {
     
-        memo = "collateral return (+ rex dividends)";
-        _reparamreq.erase(request_item);
+    auto redeem_itr = _redeemreq.require_find(item.cdp_id);
+    
+    auto previous_balance = item.current_balance;
+    auto current_balance = get_eos_rex_balance();
+    auto gained_collateral = current_balance - previous_balance;
+    
+    // determine total collateral
+    asset total_collateral = asset(0, EOS);
+    for (auto& process_item: _redprocess) {
+      if (process_item.account == redeem_itr->account) {
+        total_collateral += process_item.collateral;
       }
-      
-      if (item.cdp_id == UINT64_MAX) {
-        
-        // redeeming bucks
-        
-        // to-do sorting
-        // to-do verify timestamp
-        auto redeem_item = _redeemreq.begin();
-        auto redeem_quantity = redeem_item->quantity;
-        asset collateral_return = asset(0, EOS);
-        
-        while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
-          
-          auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
-          auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
-          
-          asset using_debt = asset(using_debt_amount, BUCK);
-          asset using_collateral = asset(using_collateral_amount, EOS);
-          
-          redeem_quantity -= using_debt;
-          
-          // switch to next debtor if this one is out of debt
-          if (using_debt >= debtor_item->debt) {
-            debtor_item = debtor_index.erase(debtor_item);
-          }
-          else {
-            debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
-              r.debt -= using_debt;
-              r.collateral -= using_collateral;
-            });
-          }
-        }
-        
-        // check if all bucks have been redeemed
-        if (redeem_quantity.amount > 0) {
-          add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
-        }
-        
-        // remove request
-        redeem_item = _redeemreq.erase(redeem_item);
-        
-        transfer_quantity = collateral_return;
-        memo = "bucks redemption";
-      }
-
-      else {
-        
-        // closing cdp
-        auto close_itr = _closereq.require_find(item.cdp_id);
-        _closereq.erase(close_itr);
-        _cdp.erase(cdp_item);
-      }
-      
-      if (item.current_balance.amount < 0) {
-        check(cdp_item != _cdp.end(), "did not find cdp to withdraw money for");
-        inline_transfer(cdp_item->account, transfer_quantity, memo, EOSIO_TOKEN);
-      }
-  
-      _rexprocess.erase(item);
     }
+    asset dividends = gained_collateral - total_collateral;
+    
+    // go through all redeem processing items and give dividends to cdps pro rata
+    auto process_itr = _redprocess.begin();
+    while (process_itr != _redprocess.end()) {
+      if (process_itr->account == redeem_itr->account) {
+        uint64_t cdp_dividends_amount = process_itr->collateral.amount * gained_collateral.amount / total_collateral.amount;
+        asset cdp_dividends = asset(cdp_dividends_amount, EOS);
+        
+        auto cdp_itr = _cdp.require_find(process_itr->cdp_id);
+        if (cdp_dividends.amount > 0) {
+          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+            r.collateral += cdp_dividends;
+          });
+        }
+        else if (cdp_itr->collateral.amount == 0) {
+          // no dividends, remove fully recapitalized cdp
+          _cdp.erase(cdp_itr);
+        }
+        _redprocess.erase(process_itr);
+      }
+    }
+  }
+  else if (kind == ProcessKind::closing) {
+    
+    auto close_itr = _closereq.require_find(item.cdp_id);
+    _closereq.erase(close_itr);
+    _cdp.erase(cdp_itr);
   }
 }
 
@@ -228,11 +200,30 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
 		std::make_tuple(_self, quantity)
 	).send();
 	
-	inline_process();
+	inline_process(ProcessKind::bought_rex);
+}
+
+// quantity in REX
+void buck::sell_rex_redeem(asset quantity) {
+  
+  // store info current eos balance in rex pool for this cdp
+  _rexprocess.emplace(_self, [&](auto& r) {
+    r.cdp_id = 0;
+    r.current_balance = get_eos_rex_balance();
+  });
+  
+  // sell rex
+  action(permission_level{ _self, "active"_n },
+		REX_ACCOUNT(), "sellrex"_n,
+		std::make_tuple(_self, quantity)
+	).send();
+  
+  inline_process(ProcessKind::sold_rex);
+	inline_process(ProcessKind::redemption);
 }
 
 // quantity in EOS for how much of collateral we're about to sell
-void buck::sell_rex(uint64_t cdp_id, asset quantity) {
+void buck::sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind) {
   
   // store info current eos balance in rex pool for this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
@@ -254,5 +245,6 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity) {
 		std::make_tuple(_self, sell_rex)
 	).send();
   
-	inline_process();
+  inline_process(ProcessKind::sold_rex);
+	inline_process(kind);
 }

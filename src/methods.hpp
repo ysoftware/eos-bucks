@@ -41,7 +41,8 @@ void buck::sub_balance(name owner, asset value, bool change_supply) {
   const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
   check(item.balance.amount >= value.amount, "overdrawn buck balance");
 
-  accounts.modify(item, owner, [&](auto& r) {
+  // to-do ram payer should always be replaced by owner when possible
+  accounts.modify(item, same_payer, [&](auto& r) {
     r.balance -= value;
   });
   

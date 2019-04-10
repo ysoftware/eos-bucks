@@ -47,7 +47,7 @@ void buck::run_requests(uint64_t max) {
       auto& cdp_item = _cdp.get(close_item->cdp_id, "to-do: remove. no cdp for this close request");
       
       // sell rex
-      sell_rex(cdp_item.id, cdp_item.collateral);
+      sell_rex(cdp_item.id, cdp_item.collateral, ProcessKind::closing);
       
       close_item++;
     }
@@ -122,7 +122,7 @@ void buck::run_requests(uint64_t max) {
           auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item->collateral.amount), EOS);
           new_collateral -= change;
           
-          sell_rex(cdp_item->id, -reparam_item->change_collateral);
+          sell_rex(cdp_item->id, -reparam_item->change_collateral, ProcessKind::reparam);
           shouldRemove = false;
         }
         
@@ -151,9 +151,72 @@ void buck::run_requests(uint64_t max) {
     
     // redeem request
     if (redeem_item != _redeemreq.end() && redeem_item->timestamp < oracle_timestamp) {
-      PRINT_("redeeming buck")
+      PRINT("redeeming", redeem_item->account)
       
-      sell_rex(UINT64_MAX, redeem_item->quantity);
+      // to-do sorting
+      // to-do verify timestamp
+      auto redeem_item = _redeemreq.begin();
+      auto redeem_quantity = redeem_item->quantity;
+      asset collateral_return = asset(0, EOS); // how much collateral is redeemer getting after all
+      asset rex_return = asset(0, REX);
+      
+      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
+        
+        auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
+        auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
+        uint64_t using_rex_amount = debtor_item->collateral.amount / using_collateral_amount * debtor_item->rex.amount;
+        
+        asset using_debt = asset(using_debt_amount, BUCK);
+        asset using_collateral = asset(using_collateral_amount, EOS);
+        asset using_rex = asset(using_rex_amount, REX);
+        
+        redeem_quantity -= using_debt;
+        collateral_return += using_collateral;
+        rex_return += using_rex;
+        
+        // to receive dividends after selling rex
+        PRINT("emplace", debtor_item->id);
+        
+        _redprocess.emplace(_self, [&](auto& r) {
+          r.key = _redprocess.available_primary_key();
+          r.account = redeem_item->account;
+          r.cdp_id = debtor_item->id;
+          r.collateral = using_collateral;
+        });
+        
+        // switch to next debtor if this one is out of debt
+        if (using_debt >= debtor_item->debt) {
+          // remove rex, debt, acr
+          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+            r.collateral = asset(0, EOS);
+            r.debt = asset(0, BUCK);
+            r.rex = asset(0, REX);
+            r.acr = 0;
+          });
+        }
+        else {
+          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+            r.debt -= using_debt;
+            r.collateral -= using_collateral;
+            r.rex -= using_rex;
+          });
+        }
+        
+        debtor_item++;
+      }
+      
+      // check if all bucks have been redeemed
+      if (redeem_quantity.amount > 0) {
+        add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
+      }
+      
+      sell_rex_redeem(rex_return);
+      
+      // transfer after selling rex
+      inline_transfer(redeem_item->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
+      
+      // remove request
+      redeem_item++;
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)

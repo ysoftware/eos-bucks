@@ -29,7 +29,7 @@ CONTRACT buck : public contract {
     
     // admin
     ACTION update(double eos_price);
-    ACTION process();
+    ACTION process(uint8_t kind);
     
     // debug 
     ACTION zdestroy();
@@ -38,7 +38,10 @@ CONTRACT buck : public contract {
     void notify_transfer(name from, name to, asset quantity, std::string memo);
     
   private:
-  
+      
+    enum ProcessKind: uint8_t { bought_rex = 0, sold_rex = 1, reparam = 2, 
+                                closing = 3, redemption = 4 };
+
     TABLE account {
       asset balance;
       asset debt;
@@ -88,10 +91,20 @@ CONTRACT buck : public contract {
     };
     
     TABLE rex_processing {
-      uint64_t  cdp_id;
+      uint64_t  cdp_id; // can also contain redeemer account.value; to-do rename
       asset     current_balance;
+      uint8_t   kind;
       
       uint64_t primary_key() const { return cdp_id; }
+    };
+    
+    TABLE redeem_processing {
+      uint64_t  cdp_id;
+      asset     collateral;
+      name      account;
+      uint64_t  key;
+      
+      uint64_t primary_key() const { return key; }
     };
     
     TABLE cdp_maturity_req {
@@ -139,7 +152,7 @@ CONTRACT buck : public contract {
       double debtor() const {
         const double MAX = 100;
         
-        if (debt.amount == 0) {
+        if (debt.amount == 0 || rex.amount == 0) {
           return MAX; // end of the table
         }
         
@@ -160,6 +173,7 @@ CONTRACT buck : public contract {
         > cdp_maturity_req_i;
     
     typedef multi_index<"rexprocess"_n, rex_processing> rex_processing_i;
+    typedef multi_index<"redprocess"_n, redeem_processing> red_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
@@ -202,10 +216,11 @@ CONTRACT buck : public contract {
     void run_liquidation(uint64_t max);
     
     void inline_transfer(name account, asset quantity, std::string memo, name contract);
-    void inline_process();
+    void inline_process(ProcessKind kind);
     
     void buy_rex(uint64_t cdp_id, asset quantity);
-    void sell_rex(uint64_t cdp_id, asset quantity);
+    void sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind);
+    void sell_rex_redeem(asset quantity);
     
     // getters
     double get_eos_price();
@@ -223,4 +238,5 @@ CONTRACT buck : public contract {
     redeem_req_i        _redeemreq;
     cdp_maturity_req_i  _maturityreq;
     rex_processing_i    _rexprocess;
+    red_processing_i    _redprocess;
 };
