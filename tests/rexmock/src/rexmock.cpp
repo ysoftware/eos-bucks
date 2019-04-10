@@ -3,6 +3,7 @@
 const uint64_t rex_multiplier = 100;
 
 ACTION rexmock::deposit( const name& owner, const asset& amount ) {
+  eosio::print("deposit: "); eosio::print(amount);
   check(amount.amount > 0, "can not deposit negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.find( owner.value );
@@ -19,6 +20,7 @@ ACTION rexmock::deposit( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
+  eosio::print("withdraw: "); eosio::print(amount);
   check(amount.amount > 0, "can not withdraw negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.require_find( owner.value, "must deposit to REX fund first" );
@@ -29,6 +31,7 @@ ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::buyrex( const name& from, const asset& amount ) {
+  eosio::print("buy: "); eosio::print(amount);
   check(amount.amount > 0, "can not buy negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.find( from.value );
@@ -47,6 +50,7 @@ ACTION rexmock::buyrex( const name& from, const asset& amount ) {
 }
 
 ACTION rexmock::sellrex( const name& from, const asset& rex ) {
+  eosio::print("sell: "); eosio::print(rex);
   check(rex.amount > 0, "can not sell negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.require_find( from.value, "must buy some REX first" );
