@@ -204,8 +204,6 @@ void buck::process(uint8_t kind) {
 
 void buck::buy_rex(uint64_t cdp_id, asset quantity) {
   
-  PRINT("adding rexprocess table", cdp_id)
-  
   // store info current rex balance and this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
     r.cdp_id = cdp_id;
@@ -229,8 +227,6 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
 
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind) {
-  
-  PRINT("adding rexprocess table", cdp_id)
   
   // store info current eos balance in rex pool for this cdp
   _rexprocess.emplace(_self, [&](auto& r) {

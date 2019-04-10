@@ -201,10 +201,6 @@ void buck::run_requests(uint64_t max) {
             r.rex -= using_rex;
           });
         }
-        
-        for (auto& s: debtor_index) {
-          PRINT("- ", s.id)
-        }
 
         // next best debtor will be the first in table (after this one changed)
         debtor_item = debtor_index.begin();
