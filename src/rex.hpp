@@ -161,25 +161,17 @@ void buck::process(uint8_t kind) {
     while (process_itr != _redprocess.end()) {
       if (process_itr->account == redeem_itr->account) {
         uint64_t cdp_dividends_amount = process_itr->collateral.amount * gained_collateral.amount / total_collateral.amount;
+        uint64_t cdp_dividends_amount = process_itr->collateral.amount * dividends.amount / total_collateral.amount;
         asset cdp_dividends = asset(cdp_dividends_amount, EOS);
         
         auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
-        PRINT("giving to cdp", cdp_itr->id)
-        PRINT("dividends", cdp_dividends)
-        PRINT_("\n")
         
         if (cdp_dividends.amount > 0) {
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += cdp_dividends;
           });
-        }
-        else if (cdp_itr->collateral.amount == 0) {
-          // no dividends, remove fully recapitalized cdp
-          
-          PRINT("no dividends, removing cdp", cdp_itr->id)
-          
-          _cdp.erase(cdp_itr);
-        }
+        // }
+        
         process_itr = _redprocess.erase(process_itr);
       }
     }

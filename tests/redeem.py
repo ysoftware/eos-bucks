@@ -71,14 +71,27 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		balance(eosio_token, buck)
+
 		# give some bucks to user 2
 		transfer(buck, user1, user2, "150.0000 BUCK")
 
-		# redeem 10 bucks
+		table(buck, "cdp")
+
+		## redeem from 1 cdp
+
 		redeem(buck, user2, "10.0000 BUCK")
 
 		sleep(2)
 		update(buck)
+
+		# sell from cdp 0: 		497.5100 REX
+		# get from rex:		 	5.0248 EOS
+		# add back to cdp 0:	0.0497 EOS
+		# cdp 0 should be: 		95.0249 EOS
+
+		# calculated leftover collateral for cdp 0
+		self.assertEqual(95.0249, amount(table(buck, "cdp", element="collateral")))
 
 		# check redeem request gone
 		self.assertEqual(0, len(table(buck, "redeemreq")))
@@ -91,11 +104,44 @@ class Test(unittest.TestCase):
 
 		table(buck, "cdp")
 
-		# redeem 100 bucks
+
+
+		## redeem from 2 cdp
+
 		redeem(buck, user2, "100.0000 BUCK")
 
 		sleep(2)
 		update(buck)
+
+
+
+		# total collateral:		49.7512 EOS
+		# gained collateral:	50.2487 EOS
+		# dividends: 			0.4975 EOS
+
+		# dividends for 1:		47.8559 * 0.4975 / 49.7512		= 0.4785 EOS
+		# dividends for 2:		1.8953 * 0.4975 / 49.7512		= 0.0189 EOS
+
+		# initial collateral	101 BUCK
+		# using debt: 			96.1904 BUCK
+		# using collateral:		47.8559 EOS
+		# new collateral:		53.1441 EOS
+		# sell from cdp 1:		4785.5900 REX
+		# get from rex:			48.3345 EOS
+		# add back to cdp:		0.4786 EOS
+		# cdp 1 should be: 		53.6227 EOS
+
+		# initial collateral	95.0249
+		# using debt:			3.8096 BUCK
+		# using collateral:		1.8953 EOS
+		# new collateral: 		93.1296 (was 95.0249)
+		# sell rex:				189.5300 REX
+		# get from rex:			0.0191 EOS
+		# add back to cdp:		0.0001 EOS
+		# cdp 0 should be: 		93.1296 EOS
+		# 95.0249 - 1.8953 + 0.0189 = 93.1485
+
+		# TO-DO: CALCULATE COLLATERAL CHANGE FOR CDPS IN REDEMPTION
 
 		self.assertAlmostEqual(40, balance(buck, user2))
 
@@ -106,6 +152,11 @@ class Test(unittest.TestCase):
 		# check rex dividends added to cdp 0
 		table(buck, "cdp")
 
+		table(buck, "redprocess")
+
+
+
+		## test if not enough debtors
 
 
 

@@ -172,6 +172,10 @@ void buck::run_requests(uint64_t max) {
         asset using_collateral = asset(using_collateral_amount, EOS);
         asset using_rex = asset(using_rex_amount, REX);
         
+        PRINT("using deb", using_debt)
+        PRINT("using col", using_collateral)
+        PRINT("using rex", using_rex)
+        
         redeem_quantity -= using_debt;
         rex_return += using_rex;
         collateral_return += using_collateral;
@@ -183,24 +187,18 @@ void buck::run_requests(uint64_t max) {
           r.collateral = using_collateral;
         });
         
-        // switch to next debtor if this one is out of debt
-        if (using_debt >= debtor_item->debt) {
-          // remove rex, debt, acr
-          
-          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
-            r.collateral = asset(0, EOS);
-            r.debt = asset(0, BUCK);
-            r.rex = asset(0, REX);
-            r.acr = 0;
-          });
-        }
-        else {
-          debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
-            r.debt -= using_debt;
-            r.collateral -= using_collateral;
-            r.rex -= using_rex;
-          });
-        }
+        PRINT_("add to redprocess")
+        PRINT("acc", redeem_item->account)
+        PRINT("id", debtor_item->id)
+        PRINT("c", using_collateral)
+        PRINT_("")
+        
+        
+        debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+          r.debt -= using_debt;
+          r.collateral -= using_collateral;
+          r.rex -= using_rex;
+        });
 
         // next best debtor will be the first in table (after this one changed)
         debtor_item = debtor_index.begin();
@@ -217,7 +215,7 @@ void buck::run_requests(uint64_t max) {
         redeem_item = _redeemreq.erase(redeem_item);
       }
       else {
-        
+        PRINT("selling rex", rex_return)
         sell_rex(redeem_item->account.value, rex_return, ProcessKind::redemption);
         
         // transfer after selling rex
