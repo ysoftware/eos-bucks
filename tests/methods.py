@@ -49,7 +49,7 @@ def create_issue(contract, to, symbol):
 		},
 		permission=[(to, Permission.ACTIVE)])
 
-def transfer(contract, fromAccount, to, quantity, memo):
+def transfer(contract, fromAccount, to, quantity, memo=""):
 	contract.push_action("transfer",
 		{
 			"from": fromAccount,
@@ -120,10 +120,14 @@ def redeem(contract, user, quantity):
 # requests
 
 def balance(token, account, unwrap=True):
+	rows = token.table("accounts", account).json["rows"]
+	if len(rows) == 0:
+		return 0 if unwrap else "0 -"
+	balance = rows[0]["balance"]
 	if unwrap:
-		return amount(token.table("accounts", account).json["rows"][0]["balance"])
+		return amount(balance, force=False)
 	else:
-		return token.table("accounts", account).json["rows"][0]["balance"]
+		return balance
 
 def amount(quantity, force=True, default=0):
 	split = quantity.split(" ")

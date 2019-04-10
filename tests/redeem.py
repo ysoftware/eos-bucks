@@ -48,7 +48,7 @@ class Test(unittest.TestCase):
 
 		create_account("user1", master, "user1")
 		create_account("user2", master, "user2")
-		transfer(eosio_token, master, user1, "100.0000 EOS", "")
+		transfer(eosio_token, master, user1, "1000.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -65,22 +65,49 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-		balance_buck1 = balance(buck, user1)
-
-		redeem(buck, user1, "10.0000 BUCK")
-
-		balance_eos1 = balance(eosio_token, user1)
+		open(buck, user1, 2.1, 0) # cdp 1
+		transfer(eosio_token, user1, buck, "101.0000 EOS", "")
 
 		sleep(2)
 		update(buck)
 
-		balance_buck2 = balance(buck, user1)
+		# give some bucks to user 2
+		transfer(buck, user1, user2, "150.0000 BUCK")
 
-		balance_eos2 = balance(eosio_token, user1)
+		# redeem 10 bucks
+		redeem(buck, user2, "10.0000 BUCK")
 
-		self.assertEqual(10, balance_buck1 - balance_buck2)
+		sleep(2)
+		update(buck)
 
-		self.assertEqual(4.9875, balance_eos2 - balance_eos1)
+		# check redeem request gone
+		self.assertEqual(0, len(table(buck, "redeemreq")))
+
+		# check balance taken
+		self.assertAlmostEqual(140, balance(buck, user2))
+
+		# value calculated with formula
+		self.assertAlmostEqual(4.9751, balance(eosio_token, user2))
+
+		table(buck, "cdp")
+
+		# redeem 100 bucks
+		redeem(buck, user2, "100.0000 BUCK")
+
+		sleep(2)
+		update(buck)
+
+		self.assertAlmostEqual(40, balance(buck, user2))
+
+		# value calculated with formula
+		# 49.7512 + 4.9751 = 54.7263
+		self.assertAlmostEqual(54.7263, balance(eosio_token, user2))
+
+		# check rex dividends added to cdp 0
+		table(buck, "cdp")
+
+
+
 
 
 # main

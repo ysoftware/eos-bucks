@@ -101,7 +101,7 @@ void buck::run_requests(uint64_t max) {
           new_collateral += reparam_item->change_collateral;
           
           // open maturity request
-          auto& maturity_item = _maturityreq.get(cdp_item->id);
+          auto& maturity_item = _maturityreq.get(cdp_item->id, "to-do: remove. could not find maturity (run)");
           _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
             r.maturity_timestamp = get_maturity();
             r.add_collateral = reparam_item->change_collateral;
@@ -157,28 +157,27 @@ void buck::run_requests(uint64_t max) {
       // to-do verify timestamp
       auto redeem_item = _redeemreq.begin();
       auto redeem_quantity = redeem_item->quantity;
-      asset collateral_return = asset(0, EOS); // how much collateral is redeemer getting after all
       asset rex_return = asset(0, REX);
+      asset collateral_return = asset(0, EOS);
       
-      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end()) {
+      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end() && debtor_item->debt.amount > 0) {
+        auto next_debtor = debtor_item;
+        next_debtor++;
         
         auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
         auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
-        uint64_t using_rex_amount = debtor_item->collateral.amount / using_collateral_amount * debtor_item->rex.amount;
+        uint64_t using_rex_amount = using_collateral_amount / debtor_item->collateral.amount * debtor_item->rex.amount;
         
         asset using_debt = asset(using_debt_amount, BUCK);
         asset using_collateral = asset(using_collateral_amount, EOS);
         asset using_rex = asset(using_rex_amount, REX);
         
         redeem_quantity -= using_debt;
-        collateral_return += using_collateral;
         rex_return += using_rex;
+        collateral_return += using_collateral;
         
         // to receive dividends after selling rex
-        PRINT("emplace", debtor_item->id);
-        
         _redprocess.emplace(_self, [&](auto& r) {
-          r.key = _redprocess.available_primary_key();
           r.account = redeem_item->account;
           r.cdp_id = debtor_item->id;
           r.collateral = using_collateral;
@@ -187,6 +186,7 @@ void buck::run_requests(uint64_t max) {
         // switch to next debtor if this one is out of debt
         if (using_debt >= debtor_item->debt) {
           // remove rex, debt, acr
+          
           debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
             r.collateral = asset(0, EOS);
             r.debt = asset(0, BUCK);
@@ -202,21 +202,34 @@ void buck::run_requests(uint64_t max) {
           });
         }
         
-        debtor_item++;
+        for (auto& s: debtor_index) {
+          PRINT("- ", s.id)
+        }
+
+        // next best debtor will be the first in table (after this one changed)
+        debtor_item = debtor_index.begin();
       }
       
       // check if all bucks have been redeemed
       if (redeem_quantity.amount > 0) {
-        add_balance(redeem_item->account, redeem_quantity, redeem_item->account, true);
+        add_balance(redeem_item->account, redeem_quantity, _self, true);
       }
       
-      sell_rex_redeem(rex_return);
-      
-      // transfer after selling rex
-      inline_transfer(redeem_item->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
-      
-      // remove request
-      redeem_item++;
+      if (collateral_return.amount == 0) {
+  
+        // to-do completely failed to redeem. what to do?
+        redeem_item = _redeemreq.erase(redeem_item);
+      }
+      else {
+        
+        sell_rex(redeem_item->account.value, rex_return, ProcessKind::redemption);
+        
+        // transfer after selling rex
+        inline_transfer(redeem_item->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
+        
+        // next request (removed in process)
+        redeem_item++;
+      }
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
@@ -260,6 +273,8 @@ void buck::run_requests(uint64_t max) {
       // remove request
       maturity_item = maturity_index.erase(maturity_item);
     }
+    
+    break;
   }
 }
 

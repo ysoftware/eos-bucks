@@ -60,6 +60,7 @@ void buck::process(uint8_t kind) {
     auto previos_balance = item.current_balance;
     auto current_balance = get_rex_balance();
     auto diff = current_balance - previos_balance;
+    _rexprocess.erase(item);
     
     // update maturity request
     auto& maturity_item = _maturityreq.get(item.cdp_id, "to-do: remove. did not find maturity");
@@ -72,8 +73,6 @@ void buck::process(uint8_t kind) {
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.rex += diff;
     });
-    
-    _rexprocess.erase(item);
   }
   else if (kind == ProcessKind::sold_rex) {
     // sold rex, determine for how much
@@ -92,8 +91,8 @@ void buck::process(uint8_t kind) {
       std::make_tuple(_self, diff)
     ).send();
   }
+  
   else if (kind == ProcessKind::reparam) {
-    
     auto reparam_itr = _reparamreq.find(item.cdp_id);
     auto& request_item = *reparam_itr;
     
@@ -133,14 +132,18 @@ void buck::process(uint8_t kind) {
       inline_transfer(cdp_itr->account, item.current_balance, "collateral return (+ rex dividends)", EOSIO_TOKEN);
     }
     _reparamreq.erase(request_item);
+    if (_rexprocess.begin() != _rexprocess.end()) {
+      _rexprocess.erase(_rexprocess.begin());
+    }
   }
   else if (kind == ProcessKind::redemption) {
-    
-    auto redeem_itr = _redeemreq.require_find(item.cdp_id);
+    PRINT("getting", item.cdp_id)
+    auto redeem_itr = _redeemreq.require_find(item.cdp_id, "to-do: remove. could not find the redemption request");
     
     auto previous_balance = item.current_balance;
     auto current_balance = get_eos_rex_balance();
     auto gained_collateral = current_balance - previous_balance;
+    _rexprocess.erase(item);
     
     // determine total collateral
     asset total_collateral = asset(0, EOS);
@@ -151,6 +154,8 @@ void buck::process(uint8_t kind) {
     }
     asset dividends = gained_collateral - total_collateral;
     
+    PRINT("dividends", dividends)
+    
     // go through all redeem processing items and give dividends to cdps pro rata
     auto process_itr = _redprocess.begin();
     while (process_itr != _redprocess.end()) {
@@ -158,7 +163,11 @@ void buck::process(uint8_t kind) {
         uint64_t cdp_dividends_amount = process_itr->collateral.amount * gained_collateral.amount / total_collateral.amount;
         asset cdp_dividends = asset(cdp_dividends_amount, EOS);
         
-        auto cdp_itr = _cdp.require_find(process_itr->cdp_id);
+        auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
+        PRINT("giving to cdp", cdp_itr->id)
+        PRINT("dividends", cdp_dividends)
+        PRINT_("\n")
+        
         if (cdp_dividends.amount > 0) {
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += cdp_dividends;
@@ -166,21 +175,36 @@ void buck::process(uint8_t kind) {
         }
         else if (cdp_itr->collateral.amount == 0) {
           // no dividends, remove fully recapitalized cdp
+          
+          PRINT("no dividends, removing cdp", cdp_itr->id)
+          
           _cdp.erase(cdp_itr);
         }
-        _redprocess.erase(process_itr);
+        process_itr = _redprocess.erase(process_itr);
       }
+    }
+    
+    _redeemreq.erase(redeem_itr);
+    
+    if (_rexprocess.begin() != _rexprocess.end()) {
+      _rexprocess.erase(_rexprocess.begin());
     }
   }
   else if (kind == ProcessKind::closing) {
-    
-    auto close_itr = _closereq.require_find(item.cdp_id);
+    auto close_itr = _closereq.require_find(item.cdp_id, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);
     _cdp.erase(cdp_itr);
+    
+    // to-do deal with this and 2 other cases above. this should make sense
+    if (_rexprocess.begin() != _rexprocess.end()) {
+      _rexprocess.erase(_rexprocess.begin());
+    }
   }
 }
 
 void buck::buy_rex(uint64_t cdp_id, asset quantity) {
+  
+  PRINT("adding rexprocess table", cdp_id)
   
   // store info current rex balance and this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
@@ -203,27 +227,10 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
 	inline_process(ProcessKind::bought_rex);
 }
 
-// quantity in REX
-void buck::sell_rex_redeem(asset quantity) {
-  
-  // store info current eos balance in rex pool for this cdp
-  _rexprocess.emplace(_self, [&](auto& r) {
-    r.cdp_id = 0;
-    r.current_balance = get_eos_rex_balance();
-  });
-  
-  // sell rex
-  action(permission_level{ _self, "active"_n },
-		REX_ACCOUNT(), "sellrex"_n,
-		std::make_tuple(_self, quantity)
-	).send();
-  
-  inline_process(ProcessKind::sold_rex);
-	inline_process(ProcessKind::redemption);
-}
-
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind) {
+  
+  PRINT("adding rexprocess table", cdp_id)
   
   // store info current eos balance in rex pool for this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
@@ -231,13 +238,19 @@ void buck::sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind) {
     r.current_balance = get_eos_rex_balance();
   });
   
-  auto& cdp_item = _cdp.get(cdp_id);
-  auto sell_rex_amount = cdp_item.rex.amount * quantity.amount / cdp_item.collateral.amount;
-  auto sell_rex = asset(sell_rex_amount, REX);
-  
-  _cdp.modify(cdp_item, same_payer, [&](auto& r) {
-    r.rex -= sell_rex;
-  });
+  asset sell_rex;
+  if (kind == ProcessKind::redemption) {
+    sell_rex = quantity;
+  }
+  else {
+    auto& cdp_item = _cdp.get(cdp_id);
+    auto sell_rex_amount = cdp_item.rex.amount * quantity.amount / cdp_item.collateral.amount;
+    sell_rex = asset(sell_rex_amount, REX);
+    
+    _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+      r.rex -= sell_rex;
+    });
+  }
 
   // sell rex
   action(permission_level{ _self, "active"_n },

@@ -102,9 +102,8 @@ CONTRACT buck : public contract {
       uint64_t  cdp_id;
       asset     collateral;
       name      account;
-      uint64_t  key;
       
-      uint64_t primary_key() const { return key; }
+      uint64_t primary_key() const { return cdp_id; }
     };
     
     TABLE cdp_maturity_req {
