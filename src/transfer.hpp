@@ -129,6 +129,7 @@ void buck::open(name account, double ccr, double acr) {
     r.id = id;
     r.account = account;
     r.acr = acr;
+    r.rex_dividends = asset(0, EOS);
     r.collateral = asset(0, EOS);
     r.timestamp = current_time_point();
     r.rex = asset(0, REX);

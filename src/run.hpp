@@ -161,12 +161,12 @@ void buck::run_requests(uint64_t max) {
       asset collateral_return = asset(0, EOS);
       
       while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end() && debtor_item->debt.amount > 0) {
-        auto next_debtor = debtor_item;
-        next_debtor++;
+        auto next_debtor = debtor_item; // to-do remove this 
+        next_debtor++; 
         
-        auto using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
-        auto using_collateral_amount = floor((double) using_debt_amount / (price + RF));
-        uint64_t using_rex_amount = using_collateral_amount / debtor_item->collateral.amount * debtor_item->rex.amount;
+        uint64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
+        uint64_t using_collateral_amount = ceil((double) using_debt_amount / (price + RF));
+        uint64_t using_rex_amount =  debtor_item->rex.amount * using_collateral_amount / debtor_item->collateral.amount;
         
         asset using_debt = asset(using_debt_amount, BUCK);
         asset using_collateral = asset(using_collateral_amount, EOS);
@@ -185,6 +185,7 @@ void buck::run_requests(uint64_t max) {
           r.account = redeem_item->account;
           r.cdp_id = debtor_item->id;
           r.collateral = using_collateral;
+          r.rex = using_rex;
         });
         
         PRINT_("add to redprocess")
@@ -192,7 +193,6 @@ void buck::run_requests(uint64_t max) {
         PRINT("id", debtor_item->id)
         PRINT("c", using_collateral)
         PRINT_("")
-        
         
         debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
           r.debt -= using_debt;
@@ -209,13 +209,15 @@ void buck::run_requests(uint64_t max) {
         add_balance(redeem_item->account, redeem_quantity, _self, true);
       }
       
+      PRINT("rex_return", rex_return)
+      PRINT("collateral_return", collateral_return)
+      
       if (collateral_return.amount == 0) {
   
         // to-do completely failed to redeem. what to do?
         redeem_item = _redeemreq.erase(redeem_item);
       }
       else {
-        PRINT("selling rex", rex_return)
         sell_rex(redeem_item->account.value, rex_return, ProcessKind::redemption);
         
         // transfer after selling rex

@@ -137,43 +137,57 @@ void buck::process(uint8_t kind) {
     }
   }
   else if (kind == ProcessKind::redemption) {
-    PRINT("getting", item.cdp_id)
     auto redeem_itr = _redeemreq.require_find(item.cdp_id, "to-do: remove. could not find the redemption request");
     
     auto previous_balance = item.current_balance;
     auto current_balance = get_eos_rex_balance();
-    auto gained_collateral = current_balance - previous_balance;
+    auto gained_collateral = previous_balance - current_balance;
     _rexprocess.erase(item);
     
     // determine total collateral
     asset total_collateral = asset(0, EOS);
+    asset total_rex = asset(0, REX);
     for (auto& process_item: _redprocess) {
       if (process_item.account == redeem_itr->account) {
         total_collateral += process_item.collateral;
+        total_rex += process_item.rex;
       }
     }
     asset dividends = gained_collateral - total_collateral;
     
+    PRINT("total_rex", total_rex)
+    PRINT("gained_collateral", gained_collateral)
+    PRINT("total_collateral", total_collateral)
     PRINT("dividends", dividends)
     
     // go through all redeem processing items and give dividends to cdps pro rata
     auto process_itr = _redprocess.begin();
     while (process_itr != _redprocess.end()) {
-      if (process_itr->account == redeem_itr->account) {
-        uint64_t cdp_dividends_amount = process_itr->collateral.amount * gained_collateral.amount / total_collateral.amount;
-        uint64_t cdp_dividends_amount = process_itr->collateral.amount * dividends.amount / total_collateral.amount;
-        asset cdp_dividends = asset(cdp_dividends_amount, EOS);
-        
-        auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
-        
-        if (cdp_dividends.amount > 0) {
-          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral += cdp_dividends;
-          });
-        // }
-        
-        process_itr = _redprocess.erase(process_itr);
+      if (process_itr->account != redeem_itr->account) {
+        process_itr++;
+        continue;
       }
+      
+      PRINT("id", process_itr->cdp_id)
+      PRINT("rex", process_itr->rex)
+      
+      uint64_t cdp_dividends_amount = process_itr->rex.amount * dividends.amount / total_rex.amount;
+      asset cdp_dividends = asset(cdp_dividends_amount, EOS);
+      
+      auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
+      
+      PRINT("account", process_itr->account)
+      PRINT("cdp_dividends", cdp_dividends)
+      
+      if (cdp_dividends.amount > 0) {
+        
+        PRINT_("adding...")
+        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+          r.rex_dividends += cdp_dividends;
+        });
+      }
+      
+      process_itr = _redprocess.erase(process_itr);
     }
     
     _redeemreq.erase(redeem_itr);

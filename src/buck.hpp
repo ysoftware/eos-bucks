@@ -101,6 +101,7 @@ CONTRACT buck : public contract {
     TABLE redeem_processing {
       uint64_t  cdp_id;
       asset     collateral;
+      asset     rex;
       name      account;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -122,6 +123,7 @@ CONTRACT buck : public contract {
       double      acr;
       name        account;
       asset       debt;
+      asset       rex_dividends;
       asset       collateral;
       asset       rex;
       time_point  timestamp;
