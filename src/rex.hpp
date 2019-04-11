@@ -97,14 +97,14 @@ void buck::process(uint8_t kind) {
     auto& request_item = *reparam_itr;
     
     asset new_collateral = cdp_itr->collateral + request_item.change_collateral;
-    asset change_debt = asset(0, BUCK);
-    asset new_debt = cdp_itr->debt + change_debt;
+    asset change_debt = cdp_itr->debt;
     
+    // adding debt
     if (request_item.change_debt.amount > 0) {
       
       // to-do check this
       
-      double ccr = get_ccr(new_collateral, new_debt);
+      double ccr = get_ccr(new_collateral, change_debt);
       double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
       double di = (double) request_item.change_debt.amount;
       uint64_t change_amount = ceil(fmin(ccr_cr, di));
@@ -131,10 +131,12 @@ void buck::process(uint8_t kind) {
     if (item.current_balance.amount > 0) {
       inline_transfer(cdp_itr->account, item.current_balance, "collateral return (+ rex dividends)", EOSIO_TOKEN);
     }
-    _reparamreq.erase(request_item);
+    
     if (_rexprocess.begin() != _rexprocess.end()) {
       _rexprocess.erase(_rexprocess.begin());
     }
+    
+    _reparamreq.erase(request_item);
   }
   else if (kind == ProcessKind::redemption) {
     auto redeem_itr = _redeemreq.require_find(item.cdp_id, "to-do: remove. could not find the redemption request");

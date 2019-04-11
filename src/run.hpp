@@ -112,6 +112,7 @@ void buck::run_requests(uint64_t max) {
           
           // buy rex for this cdp
           buy_rex(cdp_item->id, reparam_item->change_collateral);
+          inline_process(ProcessKind::reparam);
         }
         
         // removing collateral
@@ -129,7 +130,7 @@ void buck::run_requests(uint64_t max) {
         // to-do check new ccr parameters
         // don't give debt if ccr < CR 
 
-        // not updating collateral here, so update cdp immediately
+        // not removing collateral here, update immediately
         if (reparam_item->change_collateral.amount == 0) {
           PRINT_("modifying cdp")
           _cdp.modify(cdp_item, same_payer, [&](auto& r) {
