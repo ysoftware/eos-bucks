@@ -112,7 +112,6 @@ void buck::run_requests(uint64_t max) {
           
           // buy rex for this cdp
           buy_rex(cdp_item->id, reparam_item->change_collateral);
-          inline_process(ProcessKind::reparam);
         }
         
         // removing collateral

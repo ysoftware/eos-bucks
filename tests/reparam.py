@@ -77,6 +77,9 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		sleep(2)
+		update(buck)
+
 		# test acr change
 		changeacr(buck, user1, 0, 1.6)
 		self.assertAlmostEqual(1.6, float(table(buck, "cdp", element="acr")))
@@ -110,7 +113,10 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-		sleep(2)
+		table(buck, "maturityreq")
+		table(buck, "cdp")
+
+		sleep(4)
 		update(buck)
 
 		# check change to 150 eos
