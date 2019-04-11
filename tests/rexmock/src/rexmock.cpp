@@ -1,9 +1,11 @@
 #include <rexmock.hpp>
 
-const uint64_t rex_multiplier = 100;
+const uint64_t eos_price = 1000; // in REX
+const double dividends_multiplier = 1.01;
 
 ACTION rexmock::deposit( const name& owner, const asset& amount ) {
   eosio::print("deposit: "); eosio::print(amount);
+  
   check(amount.amount > 0, "can not deposit negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.find( owner.value );
@@ -21,6 +23,7 @@ ACTION rexmock::deposit( const name& owner, const asset& amount ) {
 
 ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
   eosio::print("withdraw: "); eosio::print(amount);
+  
   check(amount.amount > 0, "can not withdraw negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
   auto itr = _rexfunds.require_find( owner.value, "must deposit to REX fund first" );
@@ -32,17 +35,18 @@ ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
 
 ACTION rexmock::buyrex( const name& from, const asset& amount ) {
   eosio::print("buy: "); eosio::print(amount);
+  
   check(amount.amount > 0, "can not buy negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.find( from.value );
   if ( bitr == _rexbalance.end() ) {
      bitr = _rexbalance.emplace( _self, [&]( auto& rb ) {
         rb.owner       = from;
-        rb.rex_balance = asset(amount.amount * rex_multiplier, eosio::symbol{"REX", 4});
+        rb.rex_balance = asset(amount.amount * get_eos_price(), eosio::symbol{"REX", 4});
      });
   } else {
      _rexbalance.modify( bitr, same_payer, [&]( auto& rb ) {
-        rb.rex_balance.amount += amount.amount * rex_multiplier;
+        rb.rex_balance.amount += amount.amount * get_eos_price();
      });
   }
   
@@ -51,6 +55,7 @@ ACTION rexmock::buyrex( const name& from, const asset& amount ) {
 
 ACTION rexmock::sellrex( const name& from, const asset& rex ) {
   eosio::print("sell: "); eosio::print(rex);
+  
   check(rex.amount > 0, "can not sell negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
   auto bitr = _rexbalance.require_find( from.value, "must buy some REX first" );
@@ -60,5 +65,20 @@ ACTION rexmock::sellrex( const name& from, const asset& rex ) {
     rb.rex_balance.amount -= rex.amount;
   });
   
-  deposit(from, asset(rex.amount * 1.01 / rex_multiplier, eosio::symbol{"EOS", 4}));
+  deposit(from, asset(rex.amount * dividends_multiplier / get_eos_price(), eosio::symbol{"EOS", 4}));
+}
+
+uint64_t rexmock::get_eos_price() {
+  stats_table _stat(_self, _self.value);
+  if (_stat.begin() != _stat.end()) {
+    _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+      r.eos_price -= 1;
+    });
+  }
+  else {
+    _stat.emplace(_self, [&](auto& r) {
+      r.eos_price = eos_price;
+    });
+  }
+  return _stat.begin()->eos_price;
 }

@@ -108,6 +108,16 @@
             ]
         },
         {
+            "name": "stats",
+            "base": "",
+            "fields": [
+                {
+                    "name": "eos_price",
+                    "type": "uint64"
+                }
+            ]
+        },
+        {
             "name": "withdraw",
             "base": "",
             "fields": [
@@ -155,6 +165,13 @@
         {
             "name": "rexfund",
             "type": "rex_fund",
+            "index_type": "i64",
+            "key_names": [],
+            "key_types": []
+        },
+        {
+            "name": "rexstat",
+            "type": "stats",
             "index_type": "i64",
             "key_names": [],
             "key_types": []

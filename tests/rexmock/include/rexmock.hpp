@@ -24,6 +24,14 @@ CONTRACT rexmock : public contract {
 
   private:
   
+    TABLE stats {
+      uint64_t eos_price;
+      
+      uint64_t primary_key() const { return 0; }
+    };
+    
+    typedef eosio::multi_index< "rexstat"_n, stats > stats_table;
+  
     TABLE rex_balance {
       uint8_t version = 0;
       name    owner;
@@ -32,7 +40,7 @@ CONTRACT rexmock : public contract {
       int64_t matured_rex = 0; /// matured REX available for selling
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities; /// REX daily maturity buckets
     
-      uint64_t primary_key()const { return owner.value; }
+      uint64_t primary_key() const { return owner.value; }
     };
     
     typedef eosio::multi_index< "rexbal"_n, rex_balance > rex_balance_table;
@@ -42,8 +50,10 @@ CONTRACT rexmock : public contract {
       name    owner;
       asset   balance;
     
-      uint64_t primary_key()const { return owner.value; }
+      uint64_t primary_key() const { return owner.value; }
     };
     
     typedef eosio::multi_index< "rexfund"_n, rex_fund > rex_fund_table;
+    
+    uint64_t get_eos_price();
 };

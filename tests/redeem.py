@@ -58,13 +58,13 @@ class Test(unittest.TestCase):
 		SCENARIO("Test buck redeem")
 		update(buck)
 
-		open(buck, user1, 2.0, 0) # cdp 0
+		open(buck, user1, 2.0, 0) # cdp 0 # rex.eos = 1000
 		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
 
 		sleep(2)
 		update(buck)
 
-		open(buck, user1, 2.1, 0) # cdp 1
+		open(buck, user1, 2.1, 0) # cdp 1 # rex.eos = 999
 		transfer(eosio_token, user1, buck, "101.0000 EOS", "")
 
 		sleep(2)
@@ -82,18 +82,21 @@ class Test(unittest.TestCase):
 		redeem(buck, user2, "10.0000 BUCK")
 
 		sleep(2)
-		update(buck)
+		update(buck) # rex.eos = 998
+
+		table(rex, "rexstat")
 
 		# collateral 		100
 		# using col:		4.9752 # debt / (price + rf)
-		# dividends			0.0497
+		# gained			5.0350 # (col * 1.01 / rex.eos)
+		# dividends			0.0598
 
-		table(buck, "redprocess") 
+		table(buck, "redprocess")
 
 		# calculated leftover collateral for cdp 0
 		self.assertEqual(95.0248, amount(table(buck, "cdp", element="collateral")))
 
-		self.assertEqual(0.0497, amount(table(buck, "cdp", element="rex_dividends")))
+		self.assertEqual(0.0598, amount(table(buck, "cdp", element="rex_dividends")))
 
 		# check redeem request gone
 		self.assertEqual(0, len(table(buck, "redeemreq")))
@@ -111,7 +114,7 @@ class Test(unittest.TestCase):
 		redeem(buck, user2, "100.0000 BUCK")
 
 		sleep(2)
-		update(buck)
+		update(buck) # rex.eos = 997
 
 		self.assertAlmostEqual(40, balance(buck, user2))
 
@@ -121,6 +124,9 @@ class Test(unittest.TestCase):
 
 		# check rex dividends
 		table(buck, "cdp")
+
+		# match all other values
+
 
 
 		## test if not enough debtors
