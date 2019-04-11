@@ -25,7 +25,6 @@ class Test(unittest.TestCase):
 
 	@classmethod
 	def setUpClass(cls):
-		SCENARIO("Test buck redeem")
 		reset()
 
 		create_master_account("master")
@@ -85,13 +84,16 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-		# sell from cdp 0: 		497.5100 REX
-		# get from rex:		 	5.0248 EOS
-		# add back to cdp 0:	0.0497 EOS
-		# cdp 0 should be: 		95.0249 EOS
+		# collateral 		100
+		# using col:		4.9752 # debt / (price + rf)
+		# dividends			0.0497
+
+		table(buck, "redprocess") 
 
 		# calculated leftover collateral for cdp 0
-		self.assertEqual(95.0249, amount(table(buck, "cdp", element="collateral")))
+		self.assertEqual(95.0248, amount(table(buck, "cdp", element="collateral")))
+
+		self.assertEqual(0.0497, amount(table(buck, "cdp", element="rex_dividends")))
 
 		# check redeem request gone
 		self.assertEqual(0, len(table(buck, "redeemreq")))
@@ -100,11 +102,9 @@ class Test(unittest.TestCase):
 		self.assertAlmostEqual(140, balance(buck, user2))
 
 		# value calculated with formula
-		self.assertAlmostEqual(4.9751, balance(eosio_token, user2))
+		self.assertAlmostEqual(4.9752, balance(eosio_token, user2))
 
 		table(buck, "cdp")
-
-
 
 		## redeem from 2 cdp
 
@@ -113,51 +113,21 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-
-
-		# total collateral:		49.7512 EOS
-		# gained collateral:	50.2487 EOS
-		# dividends: 			0.4975 EOS
-
-		# dividends for 1:		47.8559 * 0.4975 / 49.7512		= 0.4785 EOS
-		# dividends for 2:		1.8953 * 0.4975 / 49.7512		= 0.0189 EOS
-
-		# initial collateral	101 BUCK
-		# using debt: 			96.1904 BUCK
-		# using collateral:		47.8559 EOS
-		# new collateral:		53.1441 EOS
-		# sell from cdp 1:		4785.5900 REX
-		# get from rex:			48.3345 EOS
-		# add back to cdp:		0.4786 EOS
-		# cdp 1 should be: 		53.6227 EOS
-
-		# initial collateral	95.0249
-		# using debt:			3.8096 BUCK
-		# using collateral:		1.8953 EOS
-		# new collateral: 		93.1296 (was 95.0249)
-		# sell rex:				189.5300 REX
-		# get from rex:			0.0191 EOS
-		# add back to cdp:		0.0001 EOS
-		# cdp 0 should be: 		93.1296 EOS
-		# 95.0249 - 1.8953 + 0.0189 = 93.1485
-
-		# TO-DO: CALCULATE COLLATERAL CHANGE FOR CDPS IN REDEMPTION
-
 		self.assertAlmostEqual(40, balance(buck, user2))
 
 		# value calculated with formula
-		# 49.7512 + 4.9751 = 54.7263
-		self.assertAlmostEqual(54.7263, balance(eosio_token, user2))
+		# 49.7514 + 4.9752 = 54.7266
+		self.assertAlmostEqual(54.7266, balance(eosio_token, user2))
 
-		# check rex dividends added to cdp 0
+		# check rex dividends
 		table(buck, "cdp")
-
-		table(buck, "redprocess")
-
 
 
 		## test if not enough debtors
 
+
+
+		## test rounding 
 
 
 
