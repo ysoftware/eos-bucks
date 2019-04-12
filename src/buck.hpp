@@ -93,7 +93,7 @@ CONTRACT buck : public contract {
     TABLE rex_processing {
       uint64_t  cdp_id; // can also contain redeemer account.value; to-do rename
       asset     current_balance;
-      uint8_t   kind;
+      uint8_t   kind; // to-do not used? 
       
       uint64_t primary_key() const { return cdp_id; }
     };

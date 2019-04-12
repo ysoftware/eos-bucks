@@ -27,8 +27,6 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
    {}
 
 void buck::init() {
-  require_auth(_self);
-  
   if (_stat.begin() == _stat.end()) {
   
     _stat.emplace(_self, [&](auto& r) {

@@ -93,11 +93,21 @@ void buck::process(uint8_t kind) {
   }
   
   else if (kind == ProcessKind::reparam) {
+    auto gained_collateral = item.current_balance;
+    _rexprocess.erase(item);
+    
     auto reparam_itr = _reparamreq.find(item.cdp_id);
     auto& request_item = *reparam_itr;
     
     asset new_collateral = cdp_itr->collateral + request_item.change_collateral;
     asset change_debt = cdp_itr->debt;
+    
+    PRINT("cdp_itr->collateral", cdp_itr->collateral)
+    PRINT("request_item.change_collateral", request_item.change_collateral)
+    PRINT("new_collateral", new_collateral)
+    PRINT("cdp_itr->debt", cdp_itr->debt)
+
+    PRINT("gained_collateral", gained_collateral)
     
     // adding debt
     if (request_item.change_debt.amount > 0) {
@@ -128,22 +138,15 @@ void buck::process(uint8_t kind) {
       r.debt += change_debt;
     });
     
-    if (item.current_balance.amount > 0) {
-      inline_transfer(cdp_itr->account, item.current_balance, "collateral return (+ rex dividends)", EOSIO_TOKEN);
-    }
-    
-    if (_rexprocess.begin() != _rexprocess.end()) {
-      _rexprocess.erase(_rexprocess.begin());
+    if (gained_collateral.amount > 0) {
+      inline_transfer(cdp_itr->account, gained_collateral, "collateral return (+ rex dividends)", EOSIO_TOKEN);
     }
     
     _reparamreq.erase(request_item);
   }
   else if (kind == ProcessKind::redemption) {
     auto redeem_itr = _redeemreq.require_find(item.cdp_id, "to-do: remove. could not find the redemption request");
-    
-    auto previous_balance = item.current_balance;
-    auto current_balance = get_eos_rex_balance();
-    auto gained_collateral = previous_balance - current_balance;
+    auto gained_collateral = item.current_balance;
     _rexprocess.erase(item);
     
     // determine total collateral
@@ -193,20 +196,15 @@ void buck::process(uint8_t kind) {
     }
     
     _redeemreq.erase(redeem_itr);
-    
-    if (_rexprocess.begin() != _rexprocess.end()) {
-      _rexprocess.erase(_rexprocess.begin());
-    }
   }
   else if (kind == ProcessKind::closing) {
     auto close_itr = _closereq.require_find(item.cdp_id, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);
     _cdp.erase(cdp_itr);
-    
-    // to-do deal with this and 2 other cases above. this should make sense
-    if (_rexprocess.begin() != _rexprocess.end()) {
-      _rexprocess.erase(_rexprocess.begin());
-    }
+      
+    // to-do use rex dividends?
+    // auto gained_collateral = item.current_balance;
+    // _rexprocess.erase(item);
   }
 }
 

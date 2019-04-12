@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::update(double eos_price) {
-  require_auth(_self);
+  // require_auth(_self); // to-do disabled while debug
   init();
   
   auto previous_price = _stat.begin()->oracle_eos_price;

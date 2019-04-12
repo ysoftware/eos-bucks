@@ -113,9 +113,6 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-		table(buck, "maturityreq")
-		table(buck, "cdp")
-
 		sleep(4)
 		update(buck)
 
@@ -126,16 +123,18 @@ class Test(unittest.TestCase):
 
 		## - collateral
 
+		balance(eosio_token, user1)
+
 		reparam(buck, user1, 0, "0.0000 BUCK", "-50.0000 EOS")
 
 		sleep(2)
-		update(buck)
-
-		# check 50.5 eos came back to user1 (with rex 1%)
-		self.assertEqual(50.5, balance(eosio_token, user1))
+		update(buck) # rex.eos = 997
 
 		# check change collateral to 100 eos
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
+
+		# check 50.5843 eos came back to user1 (with rex dividends)
+		self.assertEqual(50.5843, balance(eosio_token, user1))
 
 
 
