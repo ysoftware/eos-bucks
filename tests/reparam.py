@@ -95,6 +95,8 @@ class Test(unittest.TestCase):
 		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
 
+
+
 		## + collateral
 
 		reparam(buck, user1, 0, "0.0000 BUCK", "50.0000 EOS")
@@ -121,15 +123,17 @@ class Test(unittest.TestCase):
 		sleep(3)
 		update(buck)
 
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
+
 		# check change to 150 eos
 		self.assertEqual(150, amount(table(buck, "cdp", element="collateral")))
 		
 		# check 100 debt did not change
 		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
-		# check requests were removed
-		self.assertEqual(0, len(table(buck, "maturityreq")))
-		self.assertEqual(0, len(table(buck, "reparamreq")))
+
 
 
 
@@ -143,6 +147,10 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck) # rex.eos = 997
 
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
+
 		# check change collateral to 100 eos
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
@@ -152,9 +160,8 @@ class Test(unittest.TestCase):
 		# check 100 debt did not change
 		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
-		# check requests were removed
-		self.assertEqual(0, len(table(buck, "maturityreq")))
-		self.assertEqual(0, len(table(buck, "reparamreq")))
+
+
 
 
 		## + debt
@@ -164,15 +171,18 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
+
 		# check updated buck balance 98 + 9.8
 		self.assertEqual(107.8, balance(buck, user1))
 
 		# check updated debt 100 + 10
 		self.assertEqual(110, amount(table(buck, "cdp", element="debt")))
 
-		# check requests were removed
-		self.assertEqual(0, len(table(buck, "maturityreq")))
-		self.assertEqual(0, len(table(buck, "reparamreq")))
+
+
 
 
 		## - debt
@@ -190,15 +200,19 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
+
 		# check previously updated balance
 		self.assertEqual(97.8, balance(buck, user1))
 
 		# check now updated cdp debt after request complete
 		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
-		# check requests were removed
-		self.assertEqual(0, len(table(buck, "maturityreq")))
-		self.assertEqual(0, len(table(buck, "reparamreq")))
+
+
+
 
 
 		## reparam removing collateral and changing debt
@@ -213,6 +227,10 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		# check requests were removed (1 left from unpaid request)
+		self.assertEqual(5, len(table(buck, "maturityreq")))
+		self.assertEqual(5, len(table(buck, "reparamreq")))
+
 		self.assertEqual(90, amount(table(buck, "cdp", element="collateral")))
 		self.assertEqual(90, amount(table(buck, "cdp", element="debt")))
 
@@ -224,9 +242,8 @@ class Test(unittest.TestCase):
 
 		# verify did not touch unpaid request
 
-		# check requests were removed (1 left from unpaid request)
-		self.assertEqual(5, len(table(buck, "maturityreq")))
-		self.assertEqual(5, len(table(buck, "reparamreq")))
+
+
 
 
 
