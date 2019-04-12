@@ -96,8 +96,8 @@ class Test(unittest.TestCase):
 		# check first cdp id (should be 1)
 		self.assertEqual(1, table(buck, "cdp", element="id"))
 
-		# check collateral return
-		self.assertEqual(50, balance(eosio_token, user1))
+		# check collateral return; rex.eos = 998
+		self.assertEqual(101.2024, balance(eosio_token, user1))
 
 		# check debt burned (left over from cdp #1)
 		self.assertEqual(58.5834, balance(buck, user1))

@@ -173,13 +173,16 @@ void buck::process(uint8_t kind) {
     _redeemreq.erase(redeem_itr);
   }
   else if (kind == ProcessKind::closing) {
+    const auto gained_collateral = item.current_balance;
+    _rexprocess.erase(item);
+    
     const auto close_itr = _closereq.require_find(item.cdp_id, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);
     _cdp.erase(cdp_itr);
-      
-    // to-do use rex dividends?
-    // auto gained_collateral = item.current_balance;
-    // _rexprocess.erase(item);
+    
+    if (gained_collateral.amount > 0) {
+      inline_transfer(cdp_itr->account, gained_collateral, "close cdp: return collateral (+ rex dividends)", EOSIO_TOKEN);
+    }
   }
 }
 
