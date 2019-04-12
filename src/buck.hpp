@@ -86,11 +86,11 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
-    TABLE rex_processing {
-      uint64_t  cdp_id; // can also contain redeemer account.value; to-do rename
+    TABLE processing {
+      uint64_t  identifier; /// cpp id or redeemer account
       asset     current_balance;
       
-      uint64_t primary_key() const { return cdp_id; }
+      uint64_t primary_key() const { return identifier; }
     };
     
     TABLE redeem_processing {
@@ -168,7 +168,7 @@ CONTRACT buck : public contract {
       indexed_by<"bytimestamp"_n, const_mem_fun<cdp_maturity_req, uint64_t, &cdp_maturity_req::by_time>>
         > cdp_maturity_req_i;
     
-    typedef multi_index<"rexprocess"_n, rex_processing> rex_processing_i;
+    typedef multi_index<"process"_n, processing> processing_i;
     typedef multi_index<"redprocess"_n, redeem_processing> red_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
@@ -184,7 +184,7 @@ CONTRACT buck : public contract {
       name    owner;
       asset   balance;
 
-      uint64_t primary_key()const { return owner.value; }
+      uint64_t primary_key() const { return owner.value; }
    };
 
     struct rex_balance {
@@ -233,6 +233,6 @@ CONTRACT buck : public contract {
     reparam_req_i       _reparamreq;
     redeem_req_i        _redeemreq;
     cdp_maturity_req_i  _maturityreq;
-    rex_processing_i    _rexprocess;
+    processing_i        _process;
     red_processing_i    _redprocess;
 };

@@ -30,7 +30,7 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
       _closereq(_self, _self.value),
       _redeemreq(_self, _self.value),
       _maturityreq(_self, _self.value),
-      _rexprocess(_self, _self.value),
+      _process(_self, _self.value),
       _redprocess(_self, _self.value)
    {}
 

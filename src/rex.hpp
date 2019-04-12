@@ -36,29 +36,27 @@ asset buck::get_eos_rex_balance() const {
 }
 
 bool buck::is_mature(uint64_t cdp_id) const {
-  const auto item = _maturityreq.find(cdp_id);
-  return item == _maturityreq.end() || item->maturity_timestamp < current_time_point();
+  const auto rexprocess_itr = _maturityreq.find(cdp_id);
+  return rexprocess_itr == _maturityreq.end() || rexprocess_itr->maturity_timestamp < current_time_point();
 }
 
 void buck::process(uint8_t kind) {
-  check(_rexprocess.begin() != _rexprocess.end(), "this action is not to be ran manually");
+  check(_process.begin() != _process.end(), "this action is not to be ran manually");
   
-  const auto& item = *_rexprocess.begin();
-  const auto cdp_itr = _cdp.find(item.cdp_id);
-  
-  PRINT("running process", kind);
+  const auto rexprocess_itr = _process.begin();
+  const auto cdp_itr = _cdp.find(rexprocess_itr->identifier);
   
   if (kind == ProcessKind::bought_rex) {
     // bought rex, determine how much
     
     // get previous balance, subtract current balance
-    const auto previos_balance = item.current_balance;
+    const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_rex_balance();
     const auto diff = current_balance - previos_balance;
-    _rexprocess.erase(item);
+    _process.erase(rexprocess_itr);
     
     // update maturity request
-    const auto maturity_itr = _maturityreq.require_find(item.cdp_id, "to-do: remove. did not find maturity");
+    const auto maturity_itr = _maturityreq.require_find(rexprocess_itr->identifier, "to-do: remove. did not find maturity");
     _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
     });
@@ -73,11 +71,11 @@ void buck::process(uint8_t kind) {
     // sold rex, determine for how much
     
     // to-do what if rex sold for 0 amount?
-    const auto previous_balance = item.current_balance;
+    const auto previous_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_eos_rex_balance();
     const auto diff = current_balance - previous_balance;
     
-    _rexprocess.modify(item, same_payer, [&](auto& r) {
+    _process.modify(rexprocess_itr, same_payer, [&](auto& r) {
       r.current_balance = diff;
     });
     
@@ -88,10 +86,10 @@ void buck::process(uint8_t kind) {
   }
   
   else if (kind == ProcessKind::reparam) {
-    const auto gained_collateral = item.current_balance;
-    _rexprocess.erase(item);
+    const auto gained_collateral = rexprocess_itr->current_balance;
+    _process.erase(rexprocess_itr);
     
-    const auto reparam_itr = _reparamreq.find(item.cdp_id);
+    const auto reparam_itr = _reparamreq.find(rexprocess_itr->identifier);
     
     const asset new_collateral = cdp_itr->collateral + reparam_itr->change_collateral;
     asset change_debt = reparam_itr->change_debt;
@@ -133,22 +131,22 @@ void buck::process(uint8_t kind) {
     _reparamreq.erase(reparam_itr);
   }
   else if (kind == ProcessKind::redemption) {
-    const auto redeem_itr = _redeemreq.require_find(item.cdp_id, "to-do: remove. could not find the redemption request");
-    const auto gained_collateral = item.current_balance;
-    _rexprocess.erase(item);
+    const auto redeem_itr = _redeemreq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find the redemption request");
+    const auto gained_collateral = rexprocess_itr->current_balance;
+    _process.erase(rexprocess_itr);
     
     // determine total collateral
     asset total_collateral = ZERO_EOS;
     asset total_rex = ZERO_REX;
-    for (auto& process_item: _redprocess) {
-      if (process_item.account == redeem_itr->account) {
-        total_collateral += process_item.collateral;
-        total_rex += process_item.rex;
+    for (auto& redprocess_item: _redprocess) {
+      if (redprocess_item.account == redeem_itr->account) {
+        total_collateral += redprocess_item.collateral;
+        total_rex += redprocess_item.rex;
       }
     }
     const asset dividends = gained_collateral - total_collateral;
     
-    // go through all redeem processing items and give dividends to cdps pro rata
+    // go through all redeem processing rexprocess_itrs and give dividends to cdps pro rata
     auto process_itr = _redprocess.begin();
     while (process_itr != _redprocess.end()) {
       if (process_itr->account != redeem_itr->account) {
@@ -173,10 +171,10 @@ void buck::process(uint8_t kind) {
     _redeemreq.erase(redeem_itr);
   }
   else if (kind == ProcessKind::closing) {
-    const auto gained_collateral = item.current_balance;
-    _rexprocess.erase(item);
+    const auto gained_collateral = rexprocess_itr->current_balance;
+    _process.erase(rexprocess_itr);
     
-    const auto close_itr = _closereq.require_find(item.cdp_id, "to-do: remove. could not find cdp (closing)");
+    const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);
     _cdp.erase(cdp_itr);
     
@@ -189,8 +187,8 @@ void buck::process(uint8_t kind) {
 void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
   
   // store info current rex balance and this cdp
-  _rexprocess.emplace(_self, [&](auto& r) {
-    r.cdp_id = cdp_id;
+  _process.emplace(_self, [&](auto& r) {
+    r.identifier = cdp_id;
     r.current_balance = get_rex_balance();
   });
   
@@ -210,11 +208,11 @@ void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
 }
 
 // quantity in EOS for how much of collateral we're about to sell
-void buck::sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind) {
+void buck::sell_rex(uint64_t identifier, const asset& quantity, ProcessKind kind) {
   
   // store info current eos balance in rex pool for this cdp
-  _rexprocess.emplace(_self, [&](auto& r) {
-    r.cdp_id = cdp_id;
+  _process.emplace(_self, [&](auto& r) {
+    r.identifier = identifier;
     r.current_balance = get_eos_rex_balance();
   });
   
@@ -223,7 +221,7 @@ void buck::sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind) {
     sell_rex = quantity;
   }
   else {
-    const auto cdp_itr = _cdp.require_find(cdp_id);
+    const auto cdp_itr = _cdp.require_find(identifier);
     const auto sell_rex_amount = cdp_itr->rex.amount * quantity.amount / cdp_itr->collateral.amount;
     sell_rex = asset(sell_rex_amount, REX);
     

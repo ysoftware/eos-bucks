@@ -61,6 +61,7 @@ class Test(unittest.TestCase):
 		SCENARIO("Test taxation")
 		update(buck)
 
+
 		
 
 		

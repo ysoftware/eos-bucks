@@ -8,4 +8,5 @@ python3 close.py &&
 python3 reparam.py &&
 python3 transfer.py &&
 python3 redeem.py &&
-python3 liquidation.py
+python3 liquidation.py &&
+python3 tax.py
