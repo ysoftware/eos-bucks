@@ -2,14 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-#include <cmath>
-#include <eosio/eosio.hpp>
-#include <eosio/print.hpp>
-#include <eosio/asset.hpp>
-#include <eosio/transaction.hpp>
-
-using namespace eosio;
-
 CONTRACT buck : public contract {
   public:
     using contract::contract;
@@ -31,8 +23,9 @@ CONTRACT buck : public contract {
     ACTION update(double eos_price);
     ACTION process(uint8_t kind);
     
-    // debug 
+    #if DEBUG
     ACTION zdestroy();
+    #endif
     
     [[eosio::on_notify("eosio.token::transfer")]]
     void notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);

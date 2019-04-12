@@ -2,11 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-name REX_ACCOUNT() {
-  if (REX_TESTING) { return "rexrexrexrex"_n; }
-  return EOSIO;
-}
-
 time_point_sec buck::get_maturity() const {
   time_point_sec cts{ current_time_point() };
   const uint32_t num_of_maturity_buckets = 5;
@@ -15,13 +10,15 @@ time_point_sec buck::get_maturity() const {
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   
   // maturity is 1 second
-  if (REX_TESTING) { return time_point_sec{ now + 1 }; }
+  #if REX_TESTING
+  return time_point_sec{ now + 1 };
+  #endif
   
   return rms;
 }
 
 asset buck::get_rex_balance() const {
-  rex_balance_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
+  rex_balance_i table(REX_ACCOUNT, REX_ACCOUNT.value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
     return asset(0, REX);
@@ -30,7 +27,7 @@ asset buck::get_rex_balance() const {
 }
 
 asset buck::get_eos_rex_balance() const {
-  rex_fund_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
+  rex_fund_i table(REX_ACCOUNT, REX_ACCOUNT.value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
     return asset(0, EOS);
@@ -85,7 +82,7 @@ void buck::process(uint8_t kind) {
     });
     
     action(permission_level{ _self, "active"_n },
-      REX_ACCOUNT(), "withdraw"_n,
+      REX_ACCOUNT, "withdraw"_n,
       std::make_tuple(_self, diff)
     ).send();
   }
@@ -221,13 +218,13 @@ void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
   
   // deposit
   action(permission_level{ _self, "active"_n },
-		REX_ACCOUNT(), "deposit"_n,
+		REX_ACCOUNT, "deposit"_n,
 		std::make_tuple(_self, quantity)
 	).send();
 	
   // buy rex
   action(permission_level{ _self, "active"_n },
-		REX_ACCOUNT(), "buyrex"_n,
+		REX_ACCOUNT, "buyrex"_n,
 		std::make_tuple(_self, quantity)
 	).send();
 	
@@ -259,7 +256,7 @@ void buck::sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind) {
 
   // sell rex
   action(permission_level{ _self, "active"_n },
-		REX_ACCOUNT(), "sellrex"_n,
+		REX_ACCOUNT, "sellrex"_n,
 		std::make_tuple(_self, sell_rex)
 	).send();
   

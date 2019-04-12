@@ -2,10 +2,12 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-static constexpr uint32_t seconds_per_day = 24 * 3600;
+/// defines if contract uses test rex environment
+#define REX_TESTING false
+/// defines if contract will print logs and enable debug features
+#define DEBUG false
 
-/// defines if contract uses test rex environment. should be false when deployed on the main net
-const bool REX_TESTING = true;
+static constexpr uint32_t seconds_per_day = 24 * 3600;
 
 const symbol& EOS   = eosio::symbol{"EOS", 4};
 const symbol& BUCK  = eosio::symbol{"BUCK", 4};
@@ -17,10 +19,17 @@ const asset& MIN_DEBT       = eosio::asset(500000, BUCK);
 const name& EOSIO_TOKEN = "eosio.token"_n;
 const name& EOSIO       = "eosio"_n;
 
-const double CR = 1.5;
-const double IF = 0.02;   // issuance tax
-const double LF = 0.1;    // liquidation fee
-const double LT = 0.025;  // liquidation tax
-const double RF = 0.01;   // redemption fee
-const double CF = 0.0125; // creator fee
-const double TT = 0.00085;// transaction tax
+#if REX_TESTING
+/// account on jungle/local test net
+const name& REX_ACCOUNT  = "rexrexrexrex"_n;
+#else
+const name& REX_ACCOUNT  = EOSIO;
+#endif
+
+const double CR = 1.5;      /// minimal collateral ratio
+const double IF = 0.02;     /// issuance tax
+const double LF = 0.1;      /// liquidation fee
+const double LT = 0.025;    /// liquidation tax
+const double RF = 0.01;     /// redemption fee
+const double CF = 0.0125;   /// creator fee
+const double TT = 0.00085;  /// transaction tax

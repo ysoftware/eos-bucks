@@ -2,8 +2,16 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-#include "buck.hpp"
+#include <cmath>
+#include <eosio/eosio.hpp>
+#include <eosio/print.hpp>
+#include <eosio/asset.hpp>
+#include <eosio/transaction.hpp>
+
+using namespace eosio;
+
 #include "constants.hpp"
+#include "buck.hpp"
 #include "debug.hpp"
 #include "actions.hpp"
 #include "methods.hpp"
