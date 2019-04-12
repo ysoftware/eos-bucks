@@ -3,9 +3,9 @@
 // Created by Yaroslav Erohin.
 
 /// defines if contract uses test rex environment
-#define REX_TESTING false
+#define REX_TESTING true
 /// defines if contract will print logs and enable debug features
-#define DEBUG false
+#define DEBUG true
 
 static constexpr uint32_t seconds_per_day = 24 * 3600;
 
