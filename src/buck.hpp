@@ -15,6 +15,7 @@ CONTRACT buck : public contract {
     ACTION changeacr(uint64_t cdp_id, double acr);
     
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
+    ACTION received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
     
     ACTION run(uint64_t max);

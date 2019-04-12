@@ -55,14 +55,28 @@ class Test(unittest.TestCase):
 	# tests 
 	
 	def test(self):
-		init(buck)
+		update(buck)
 
-		update(buck, 3.6545)
+		open(buck, user1, 2, 0)
+		transfer(eosio_token, user1, buck, "10000.0000 EOS", "")
 
-		open(buck, user1, 1.6, 0)
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		# oracle
+		sleep(1)
+		update(buck)
 
-		transfer(buck, user1, user2, "1.0000 BUCK", "")
+		# maturity
+		sleep(2)
+		update(buck)
+
+		# user1 balance is 9800
+
+		transfer(buck, user1, user2, "1000.0000 BUCK", "")
+
+		# 9800 - 1000
+		self.assertEqual(8800, balance(buck, user1))
+
+		# multiply by 0.99915
+		self.assertEqual(999.15, balance(buck, user2))
 
 
 # main
