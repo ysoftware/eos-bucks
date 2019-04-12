@@ -21,7 +21,7 @@ asset buck::get_rex_balance() const {
   rex_balance_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
   if (balance_itr == _balance.end()) {
-    return asset(0, REX);
+    return ZERO_REX;
   }
   return balance_itr->rex_balance;
 }
@@ -30,7 +30,7 @@ asset buck::get_eos_rex_balance() const {
   rex_fund_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
   if (balance_itr == _balance.end()) {
-    return asset(0, EOS);
+    return ZERO_EOS;
   }
   return balance_itr->balance;
 }
@@ -138,8 +138,8 @@ void buck::process(uint8_t kind) {
     _rexprocess.erase(item);
     
     // determine total collateral
-    asset total_collateral = asset(0, EOS);
-    asset total_rex = asset(0, REX);
+    asset total_collateral = ZERO_EOS;
+    asset total_rex = ZERO_REX;
     for (auto& process_item: _redprocess) {
       if (process_item.account == redeem_itr->account) {
         total_collateral += process_item.collateral;

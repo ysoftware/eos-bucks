@@ -48,7 +48,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
     
     const double collateral_amount = (double) quantity.amount;
     const double ccr = maturity_itr->ccr;
-    auto debt = asset(0, BUCK);
+    auto debt = ZERO_BUCK;
     
     if (ccr > 0) {
       
@@ -128,11 +128,11 @@ void buck::open(const name& account, double ccr, double acr) {
     r.id = id;
     r.account = account;
     r.acr = acr;
-    r.rex_dividends = asset(0, EOS);
-    r.collateral = asset(0, EOS);
+    r.rex_dividends = ZERO_EOS;
+    r.collateral = ZERO_EOS;
     r.timestamp = current_time_point();
-    r.rex = asset(0, REX);
-    r.debt = asset(0, BUCK);
+    r.rex = ZERO_REX;
+    r.debt = ZERO_BUCK;
   });
   
   // open account if doesn't exist
@@ -140,15 +140,15 @@ void buck::open(const name& account, double ccr, double acr) {
   auto account_itr = accounts.find(BUCK.code().raw());
   if (account_itr == accounts.end()) {
     accounts.emplace(account, [&](auto& r) {
-      r.balance = asset(0, BUCK);
+      r.balance = ZERO_BUCK;
     });
   }
   
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
     r.maturity_timestamp = get_maturity();
-    r.add_collateral = asset(0, EOS);
-    r.change_debt = asset(0, BUCK);
+    r.add_collateral = ZERO_EOS;
+    r.change_debt = ZERO_BUCK;
     r.cdp_id = id;
     r.ccr = ccr;
   });

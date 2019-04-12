@@ -9,21 +9,25 @@
 
 static constexpr uint32_t seconds_per_day = 24 * 3600;
 
-const symbol& EOS   = eosio::symbol{"EOS", 4};
-const symbol& BUCK  = eosio::symbol{"BUCK", 4};
-const symbol& REX   = eosio::symbol{"REX", 4};
+static const symbol& EOS   = symbol("EOS", 4);
+static const symbol& BUCK  = symbol("BUCK", 4);
+static const symbol& REX   = symbol("REX", 4);
 
-const asset& MIN_COLLATERAL = eosio::asset(50000, EOS);
-const asset& MIN_DEBT       = eosio::asset(500000, BUCK);
+static const asset& ZERO_EOS   = asset(0, EOS);
+static const asset& ZERO_BUCK  = asset(0, BUCK);
+static const asset& ZERO_REX   = asset(0, REX);
 
-const name& EOSIO_TOKEN = "eosio.token"_n;
-const name& EOSIO       = "eosio"_n;
+static const asset& MIN_COLLATERAL = asset(50000, EOS);
+static const asset& MIN_DEBT       = asset(500000, BUCK);
+
+static const name& EOSIO_TOKEN = "eosio.token"_n;
+static const name& EOSIO       = "eosio"_n;
 
 #if REX_TESTING
 /// account on jungle/local test net
-const name& REX_ACCOUNT  = "rexrexrexrex"_n;
+static const name& REX_ACCOUNT  = "rexrexrexrex"_n;
 #else
-const name& REX_ACCOUNT  = EOSIO;
+static const name& REX_ACCOUNT  = EOSIO;
 #endif
 
 const double CR = 1.5;      /// minimal collateral ratio

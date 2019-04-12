@@ -211,8 +211,8 @@ CONTRACT buck : public contract {
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
-    void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
-    void inline_process(ProcessKind kind);
+    inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
+    inline void inline_process(ProcessKind kind);
     
     void buy_rex(uint64_t cdp_id, const asset& quantity);
     void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);

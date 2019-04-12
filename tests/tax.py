@@ -46,7 +46,11 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
+		create_account("user2", master, "user2")
+		create_account("user3", master, "user3")
 		transfer(eosio_token, master, user1, "150.0000 EOS", "")
+		transfer(eosio_token, master, user2, "150.0000 EOS", "")
+		transfer(eosio_token, master, user3, "150.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -56,6 +60,8 @@ class Test(unittest.TestCase):
 	def test(self):
 		SCENARIO("Test taxation")
 		update(buck)
+
+		
 
 		
 

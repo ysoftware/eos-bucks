@@ -47,8 +47,8 @@ void buck::run_requests(uint64_t max) {
       // to-do sorting
       // to-do verify timestamp
       auto redeem_quantity = redeem_itr->quantity;
-      asset rex_return = asset(0, REX);
-      asset collateral_return = asset(0, EOS);
+      asset rex_return = ZERO_REX;
+      asset collateral_return = ZERO_EOS;
       
       // loop through available debtors until all amount is redeemed or our of debtors
       while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
@@ -115,7 +115,7 @@ void buck::run_requests(uint64_t max) {
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
         bool shouldRemove = true;
         
-        asset change_debt = asset(0, BUCK);
+        asset change_debt = ZERO_BUCK;
         asset new_collateral = cdp_itr->collateral;
         const double ccr = get_ccr(cdp_itr->collateral, cdp_itr->debt); // to-do use new ccr or old?
   
@@ -242,7 +242,6 @@ void buck::run_requests(uint64_t max) {
 }
 
 void buck::run_liquidation(uint64_t max) {
-  PRINT("running liquidation, max", max)
   uint64_t processed = 0;
   const auto eos_price = get_eos_price();
   
