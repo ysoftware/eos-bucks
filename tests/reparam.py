@@ -8,6 +8,7 @@ from eosfactory.eosf import *
 from methods import *
 from time import sleep
 import string
+import datetime
 
 verbosity([Verbosity.INFO, Verbosity.OUT, Verbosity.TRACE, Verbosity.DEBUG])
 
@@ -90,7 +91,8 @@ class Test(unittest.TestCase):
 		# check starting 100 eos
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
-
+		# check starting 100 debt
+		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
 
 		## + collateral
@@ -113,17 +115,28 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
-		sleep(4)
+		sleep(3)
+		update(buck)
+
+		sleep(3)
 		update(buck)
 
 		# check change to 150 eos
 		self.assertEqual(150, amount(table(buck, "cdp", element="collateral")))
+		
+		# check 100 debt did not change
+		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
+
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
 
 
 
 		## - collateral
 
 		balance(eosio_token, user1)
+		balance(buck, user1)
 
 		reparam(buck, user1, 0, "0.0000 BUCK", "-50.0000 EOS")
 
@@ -134,21 +147,32 @@ class Test(unittest.TestCase):
 		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
 
 		# check 50.5843 eos came back to user1 (with rex dividends)
-		self.assertEqual(50.5843, balance(eosio_token, user1))
+		self.assertEqual(50.6181, balance(eosio_token, user1))
 
+		# check 100 debt did not change
+		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
+
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
 
 
 		## + debt
 
-		reparam(buck, user1, 0, "10.5000 BUCK", "0.0000 EOS")
+		reparam(buck, user1, 0, "10.0000 BUCK", "0.0000 EOS")
 
 		sleep(2)
 		update(buck)
 
-		# check updated buck balance
-		self.assertEqual(108.29, balance(buck, user1))
-		self.assertEqual(110.5, amount(table(buck, "cdp", element="debt")))
+		# check updated buck balance 98 + 9.8
+		self.assertEqual(107.8, balance(buck, user1))
 
+		# check updated debt 100 + 10
+		self.assertEqual(110, amount(table(buck, "cdp", element="debt")))
+
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
 
 
 		## - debt
@@ -156,29 +180,32 @@ class Test(unittest.TestCase):
 		reparam(buck, user1, 0, "-10.0000 BUCK", "0.0000 EOS")
 
 		# check instantly updated balance
-		self.assertEqual(98.29, balance(buck, user1))
+		self.assertEqual(97.8, balance(buck, user1))
 
 		run(buck)
 
 		# check not yet updated cdp
-		self.assertEqual(110.5, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(110, amount(table(buck, "cdp", element="debt")))
 
 		sleep(2)
 		update(buck)
 
 		# check previously updated balance
-		self.assertEqual(98.29, balance(buck, user1))
+		self.assertEqual(97.8, balance(buck, user1))
 
 		# check now updated cdp debt after request complete
-		self.assertEqual(100.5, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(100, amount(table(buck, "cdp", element="debt")))
 
+		# check requests were removed
+		self.assertEqual(0, len(table(buck, "maturityreq")))
+		self.assertEqual(0, len(table(buck, "reparamreq")))
 
 
 		## reparam removing collateral and changing debt
 		## also having an unpaid request
 
 		# first create unpaid request
-		reparam(buck, user2, 1, "0.0000 BUCK", "10.0000 EOS")
+		reparam(buck, user2, 1, "0.0000 BUCK", "99.0000 EOS")
 
 		# create actual request
 		reparam(buck, user1, 0, "-10.0000 BUCK", "-10.0000 EOS")
@@ -187,17 +214,52 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		self.assertEqual(90, amount(table(buck, "cdp", element="collateral")))
-		self.assertEqual(90.5, amount(table(buck, "cdp", element="debt")))
+		self.assertEqual(90, amount(table(buck, "cdp", element="debt")))
 
-		# check 10.1 eos came back to user1 (with rex 1%)
-		self.assertEqual(60.6, balance(eosio_token, user1))
+		# check 10.1 eos came back to user1 (with rex dividends)
+		self.assertEqual(60.7519, balance(eosio_token, user1))
 
-		# check buck
-		self.assertEqual(88.29, balance(buck, user1))
+		# check buck balance (97.8 - 10)
+		self.assertEqual(87.8, balance(buck, user1))
+
+		# verify did not touch unpaid request
+
+		# check requests were removed (1 left from unpaid request)
+		self.assertEqual(5, len(table(buck, "maturityreq")))
+		self.assertEqual(5, len(table(buck, "reparamreq")))
 
 
 
 		## reparam adding collateral and changing debt
+
+		# create request
+		reparam(buck, user1, 0, "-10.0000 BUCK", "10.0000 EOS")
+
+		# transfer collateral
+		transfer(eosio_token, user1, buck, "10.0000 EOS", "r")	
+
+		sleep(5)
+		update(buck)
+
+		sleep(5)
+		update(buck)
+
+		sleep(5)
+		update(buck)
+
+		print(datetime.datetime.now())	
+
+		table(buck, "maturityreq")
+
+		self.assertEqual(100, amount(table(buck, "cdp", element="collateral")))
+		self.assertEqual(80, amount(table(buck, "cdp", element="debt")))
+
+		# check buck balance (87.8 - 10)
+		self.assertEqual(77.8, balance(buck, user1))
+
+		# check requests were removed (1 left from unpaid request)
+		self.assertEqual(5, len(table(buck, "maturityreq")))
+		self.assertEqual(5, len(table(buck, "reparamreq")))
 
 
 # main

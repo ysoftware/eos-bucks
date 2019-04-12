@@ -100,7 +100,7 @@ void buck::process(uint8_t kind) {
     auto& request_item = *reparam_itr;
     
     asset new_collateral = cdp_itr->collateral + request_item.change_collateral;
-    asset change_debt = cdp_itr->debt;
+    asset change_debt = request_item.change_debt;
     
     PRINT("cdp_itr->collateral", cdp_itr->collateral)
     PRINT("request_item.change_collateral", request_item.change_collateral)
@@ -112,6 +112,7 @@ void buck::process(uint8_t kind) {
     // adding debt
     if (request_item.change_debt.amount > 0) {
       
+      PRINT_("adding debt")
       // to-do check this
       
       double ccr = get_ccr(new_collateral, change_debt);
@@ -125,11 +126,15 @@ void buck::process(uint8_t kind) {
       auto fee = asset(fee_amount, BUCK);
       add_fee(fee);
       
+      PRINT("adding", change_debt - fee)
+      PRINT("fee", fee)
+      
       add_balance(cdp_itr->account, change_debt - fee, same_payer, true);
     }
     
     // removing debt
     else if (request_item.change_debt.amount < 0) {
+      PRINT_("removing debt")
       change_debt = request_item.change_debt; // add negative value
     }
     

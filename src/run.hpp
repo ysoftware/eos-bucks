@@ -3,9 +3,6 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint64_t max) {
-  
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-  
   // check if liquidation complete for this round
   if (_stat.begin()->liquidation_timestamp == _stat.begin()->oracle_timestamp) {
     run_requests(max);
@@ -17,6 +14,7 @@ void buck::run(uint64_t max) {
 
 void buck::run_requests(uint64_t max) {
   PRINT_("running requests")
+  
   uint64_t processed = 0;
   time_point_sec cts{ current_time_point() };
   auto price = get_eos_price();
@@ -79,14 +77,21 @@ void buck::run_requests(uint64_t max) {
           PRINT_("adding debt")
           
           double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
-          double di = (double) reparam_item->change_debt.amount;
-          uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, di));
+          double issue_debt = (double) reparam_item->change_debt.amount;
+          uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
           change_debt = asset(change_amount, BUCK);
           
           // take issuance fee
           uint64_t fee_amount = change_amount * IF;
           asset fee = asset(fee_amount, BUCK);
           add_fee(fee);
+          
+          PRINT("ccr", ccr)
+          PRINT("cdp_item->debt.amount", cdp_item->debt.amount)
+          PRINT("ccr_cr", ccr_cr)
+          PRINT("issue_debt", issue_debt)
+          PRINT("change_debt", change_debt)
+          PRINT("fee", fee)
           
           add_balance(cdp_item->account, change_debt - fee, same_payer, true);
         }
@@ -127,8 +132,8 @@ void buck::run_requests(uint64_t max) {
         }
         
         // to-do check new ccr parameters
-        // don't give debt if ccr < CR 
-
+        // don't give debt if ccr < CR
+  
         // not removing collateral here, update immediately
         if (reparam_item->change_collateral.amount == 0) {
           PRINT_("modifying cdp")
@@ -251,6 +256,10 @@ void buck::run_requests(uint64_t max) {
         change_debt = asset(floor(debt_amount), BUCK);
       }
       
+      PRINT("add_collateral", add_collateral)
+      PRINT("change_debt", change_debt)
+      PRINT("debt", cdp_item.debt)
+      
       _cdp.modify(cdp_item, same_payer, [&](auto& r) {
         r.collateral += add_collateral;
         r.debt += change_debt;
@@ -269,8 +278,6 @@ void buck::run_requests(uint64_t max) {
       // remove request
       maturity_item = maturity_index.erase(maturity_item);
     }
-    
-    break;
   }
 }
 
@@ -293,8 +300,6 @@ void buck::run_liquidation(uint64_t max) {
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
-      
-      check(_stat.begin() != _stat.end(), "contract is not yet initiated");
       
       _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
         r.liquidation_timestamp = _stat.begin()->oracle_timestamp;

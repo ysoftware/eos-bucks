@@ -25,8 +25,6 @@ void buck::add_balance(name owner, asset value, name ram_payer, bool change_supp
   }
   
   if (change_supply) {
-    check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-    
     _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
       r.supply += value;
     });
@@ -47,8 +45,6 @@ void buck::sub_balance(name owner, asset value, bool change_supply) {
   });
   
   if (change_supply) {
-    check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-    
     _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
       r.supply -= value;
     });
