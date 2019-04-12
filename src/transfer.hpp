@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::transfer(name from, name to, asset quantity, std::string memo) {
+void buck::transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   check(from != to, "cannot transfer to self");
   require_auth(from);
   check(is_account(to), "to account does not exist");
@@ -22,7 +22,7 @@ void buck::transfer(name from, name to, asset quantity, std::string memo) {
   run(3);
 }
 
-void buck::notify_transfer(name from, name to, asset quantity, std::string memo) {
+void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   if (to != _self || from == _self) { return; }
   require_auth(from);
   
@@ -102,7 +102,7 @@ void buck::notify_transfer(name from, name to, asset quantity, std::string memo)
   run(3);
 }
 
-void buck::open(name account, double ccr, double acr) {
+void buck::open(const name& account, double ccr, double acr) {
   require_auth(account);
   
   // check values

@@ -2,14 +2,12 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-const bool REX_TESTING = true;
-
 name REX_ACCOUNT() {
   if (REX_TESTING) { return "rexrexrexrex"_n; }
   return EOSIO;
 }
 
-time_point_sec buck::get_maturity() {
+time_point_sec buck::get_maturity() const {
   time_point_sec cts{ current_time_point() };
   const uint32_t num_of_maturity_buckets = 5;
   static const uint32_t now = cts.utc_seconds;
@@ -22,7 +20,7 @@ time_point_sec buck::get_maturity() {
   return rms;
 }
 
-asset buck::get_rex_balance() {
+asset buck::get_rex_balance() const {
   rex_balance_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
@@ -31,7 +29,7 @@ asset buck::get_rex_balance() {
   return item->rex_balance;
 }
 
-asset buck::get_eos_rex_balance() {
+asset buck::get_eos_rex_balance() const {
   rex_fund_i table(REX_ACCOUNT(), REX_ACCOUNT().value);
   auto item = table.find(_self.value);
   if (item == table.end()) {
@@ -40,7 +38,7 @@ asset buck::get_eos_rex_balance() {
   return item->balance;
 }
 
-bool buck::is_mature(uint64_t cdp_id) {
+bool buck::is_mature(uint64_t cdp_id) const {
   auto item = _maturityreq.find(cdp_id);
   return item == _maturityreq.end() || item->maturity_timestamp < current_time_point();
 }
@@ -213,7 +211,7 @@ void buck::process(uint8_t kind) {
   }
 }
 
-void buck::buy_rex(uint64_t cdp_id, asset quantity) {
+void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
   
   // store info current rex balance and this cdp
   _rexprocess.emplace(_self, [&](auto& r) {
@@ -237,7 +235,7 @@ void buck::buy_rex(uint64_t cdp_id, asset quantity) {
 }
 
 // quantity in EOS for how much of collateral we're about to sell
-void buck::sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind) {
+void buck::sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind) {
   
   // store info current eos balance in rex pool for this cdp
   _rexprocess.emplace(_self, [&](auto& r) {

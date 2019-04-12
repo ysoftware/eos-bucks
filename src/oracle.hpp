@@ -24,7 +24,7 @@ void buck::update(double eos_price) {
   }
 }
 
-double buck::get_eos_price() {
+double buck::get_eos_price() const {
   double price = _stat.begin()->oracle_eos_price;
   check(price != 0, "oracle prices are not yet set");
   return _stat.begin()->oracle_eos_price;

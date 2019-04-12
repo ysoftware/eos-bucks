@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::change(uint64_t cdp_id, asset change_debt, asset change_collateral) {
+void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
   auto position_item = _cdp.find(cdp_id);
   check(position_item != _cdp.end(), "debt position does not exist");
   
@@ -110,7 +110,7 @@ void buck::closecdp(uint64_t cdp_id) {
   run_requests(2);
 }
 
-void buck::redeem(name account, asset quantity) {
+void buck::redeem(const name& account, const asset& quantity) {
   require_auth(account);
   
   // validate

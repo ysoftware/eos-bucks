@@ -15,7 +15,7 @@
 #include "tax.hpp"
 
 buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
-    :contract(receiver,code,ds),
+    :contract(receiver, code, ds),
       _cdp(_self, _self.value),
       _stat(_self, _self.value),
       _reparamreq(_self, _self.value),

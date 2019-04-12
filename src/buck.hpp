@@ -17,13 +17,13 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(name account, double ccr, double acr);
+    ACTION open(const name& account, double ccr, double acr);
     ACTION closecdp(uint64_t cdp_id);
-    ACTION change(uint64_t cdp_id, asset change_debt, asset change_collateral);
+    ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
     ACTION changeacr(uint64_t cdp_id, double acr);
     
-    ACTION transfer(name from, name to, asset quantity, std::string memo);
-    ACTION redeem(name account, asset quantity);
+    ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
+    ACTION redeem(const name& account, const asset& quantity);
     
     ACTION run(uint64_t max);
     
@@ -35,7 +35,7 @@ CONTRACT buck : public contract {
     ACTION zdestroy();
     
     [[eosio::on_notify("eosio.token::transfer")]]
-    void notify_transfer(name from, name to, asset quantity, std::string memo);
+    void notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
   private:
       
@@ -44,7 +44,6 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset balance;
-      asset debt;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -54,12 +53,16 @@ CONTRACT buck : public contract {
       asset       max_supply;
       name        issuer;
       
-      time_point  liquidation_timestamp;
+      // oracle updates
       time_point  oracle_timestamp;
       double      oracle_eos_price;
       
-      asset   total_collateral;
+      // liquidation
+      time_point  liquidation_timestamp;
+      
+      // taxation
       asset   gathered_fees;
+      asset   total_collateral;
       asset   aggregated_collateral;
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
@@ -93,7 +96,6 @@ CONTRACT buck : public contract {
     TABLE rex_processing {
       uint64_t  cdp_id; // can also contain redeemer account.value; to-do rename
       asset     current_balance;
-      uint8_t   kind; // to-do not used? 
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -208,28 +210,28 @@ CONTRACT buck : public contract {
     
     // methods
     void init();
-    void add_balance(name owner, asset value, name ram_payer, bool change_supply);
-    void sub_balance(name owner, asset value, bool change_supply);
-    void add_fee(asset value);
+    void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
+    void sub_balance(const name& owner, const asset& value, bool change_supply);
+    void add_fee(const asset& value);
     void distribute_tax(uint64_t cdp_id);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
-    void inline_transfer(name account, asset quantity, std::string memo, name contract);
+    void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     void inline_process(ProcessKind kind);
     
-    void buy_rex(uint64_t cdp_id, asset quantity);
-    void sell_rex(uint64_t cdp_id, asset quantity, ProcessKind kind);
-    void sell_rex_redeem(asset quantity);
+    void buy_rex(uint64_t cdp_id, const asset& quantity);
+    void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);
+    void sell_rex_redeem(const asset& quantity);
     
     // getters
-    double get_eos_price();
-    double get_ccr(asset collateral, asset debt);
-    bool is_mature(uint64_t cdp_id);
-    time_point_sec get_maturity();
-    asset get_rex_balance();
-    asset get_eos_rex_balance();
+    double get_eos_price() const;
+    double get_ccr(const asset& collateral, const asset& debt) const;
+    bool is_mature(uint64_t cdp_id) const;
+    time_point_sec get_maturity() const;
+    asset get_rex_balance() const;
+    asset get_eos_rex_balance() const;
     
     // tables
     cdp_i               _cdp;

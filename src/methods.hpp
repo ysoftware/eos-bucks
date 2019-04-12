@@ -2,12 +2,12 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-double buck::get_ccr(asset collateral, asset debt) {
+double buck::get_ccr(const asset& collateral, const asset& debt) const {
   double price = get_eos_price();
   return (double) collateral.amount * price / (double) debt.amount;
 }
 
-void buck::add_balance(name owner, asset value, name ram_payer, bool change_supply) {
+void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
   PRINT("+ balance", value)
   
   accounts_i accounts(_self, owner.value);
@@ -31,7 +31,7 @@ void buck::add_balance(name owner, asset value, name ram_payer, bool change_supp
   }
 }
 
-void buck::sub_balance(name owner, asset value, bool change_supply) {
+void buck::sub_balance(const name& owner, const asset& value, bool change_supply) {
   PRINT("- balance", value)
   
   accounts_i accounts(_self, owner.value);
