@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "200.0000 EOS", "")
+		transfer(eosio_token, master, user1, "150.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)

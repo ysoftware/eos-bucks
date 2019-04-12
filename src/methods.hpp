@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin.
 
 double buck::get_ccr(const asset& collateral, const asset& debt) const {
-  double price = get_eos_price();
+  const double price = get_eos_price();
   return (double) collateral.amount * price / (double) debt.amount;
 }
 
@@ -35,7 +35,6 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   PRINT("- balance", value)
   
   accounts_i accounts(_self, owner.value);
-
   const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
   check(item.balance.amount >= value.amount, "overdrawn buck balance");
 

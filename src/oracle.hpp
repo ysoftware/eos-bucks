@@ -3,14 +3,13 @@
 // Created by Yaroslav Erohin.
 
 void buck::update(double eos_price) {
-  
   #if !DEBUG
   require_auth(_self);
   #endif
   
   init();
   
-  auto previous_price = _stat.begin()->oracle_eos_price;
+  const auto previous_price = _stat.begin()->oracle_eos_price;
   
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.oracle_timestamp = current_time_point();
@@ -29,7 +28,6 @@ void buck::update(double eos_price) {
 }
 
 double buck::get_eos_price() const {
-  double price = _stat.begin()->oracle_eos_price;
-  check(price != 0, "oracle prices are not yet set");
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   return _stat.begin()->oracle_eos_price;
 }

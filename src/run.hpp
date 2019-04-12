@@ -13,62 +13,57 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
-  PRINT_("running requests")
-  PRINT("time", time_point_sec{ current_time_point() }.utc_seconds)
-  
   uint64_t processed = 0;
   time_point_sec cts{ current_time_point() };
-  auto price = get_eos_price();
+  const auto price = get_eos_price();
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-  auto oracle_timestamp = _stat.begin()->oracle_timestamp;
+  const auto oracle_timestamp = _stat.begin()->oracle_timestamp;
   
   auto maturity_index = _maturityreq.get_index<"bytimestamp"_n>();
   auto debtor_index = _cdp.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
   
-  auto close_item = _closereq.begin();
-  auto reparam_item = _reparamreq.begin();
+  auto close_itr = _closereq.begin();
+  auto reparam_itr = _reparamreq.begin();
   // to-do redeem sorting
-  auto redeem_item = _redeemreq.begin();
+  auto redeem_itr = _redeemreq.begin();
   
-  auto debtor_item = debtor_index.begin();
-  auto maturity_item = maturity_index.begin();
+  auto debtor_itr = debtor_index.begin();
+  auto maturity_itr = maturity_index.begin();
   
   // loop until any requests exist and not over limit
   while (processed < max) {
     processed++;
     
     // close request
-    if (close_item != _closereq.end() && close_item->timestamp < oracle_timestamp) {
-      PRINT_("closing cdp")
+    if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
       
       // find cdp, should always exist
-      auto& cdp_item = _cdp.get(close_item->cdp_id, "to-do: remove. no cdp for this close request");
+      const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
       
       // sell rex
-      sell_rex(cdp_item.id, cdp_item.collateral, ProcessKind::closing);
+      sell_rex(cdp_itr->id, cdp_itr->collateral, ProcessKind::closing);
       
-      close_item++;
+      close_itr++;
     }
     
     // redeem request
-    if (redeem_item != _redeemreq.end() && redeem_item->timestamp < oracle_timestamp) {
-      PRINT("redeeming", redeem_item->account)
+    if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
       
       // to-do sorting
       // to-do verify timestamp
-      auto redeem_item = _redeemreq.begin();
-      auto redeem_quantity = redeem_item->quantity;
+      auto redeem_itr = _redeemreq.begin();
+      auto redeem_quantity = redeem_itr->quantity;
       asset rex_return = asset(0, REX);
       asset collateral_return = asset(0, EOS);
       
-      while (redeem_quantity.amount > 0 && debtor_item != debtor_index.end() && debtor_item->debt.amount > 0) {
-        auto next_debtor = debtor_item; // to-do remove this 
+      while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
+        auto next_debtor = debtor_itr; // to-do remove this 
         next_debtor++; 
         
-        uint64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_item->debt.amount);
+        uint64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
         uint64_t using_collateral_amount = ceil((double) using_debt_amount / (price + RF));
-        uint64_t using_rex_amount =  debtor_item->rex.amount * using_collateral_amount / debtor_item->collateral.amount;
+        uint64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
         
         asset using_debt = asset(using_debt_amount, BUCK);
         asset using_collateral = asset(using_collateral_amount, EOS);
@@ -80,57 +75,56 @@ void buck::run_requests(uint64_t max) {
         
         // to receive dividends after selling rex
         _redprocess.emplace(_self, [&](auto& r) {
-          r.account = redeem_item->account;
-          r.cdp_id = debtor_item->id;
+          r.account = redeem_itr->account;
+          r.cdp_id = debtor_itr->id;
           r.collateral = using_collateral;
           r.rex = using_rex;
         });
         
-        debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+        debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
           r.debt -= using_debt;
           r.collateral -= using_collateral;
           r.rex -= using_rex;
         });
 
         // next best debtor will be the first in table (after this one changed)
-        debtor_item = debtor_index.begin();
+        debtor_itr = debtor_index.begin();
       }
       
       // check if all bucks have been redeemed
       if (redeem_quantity.amount > 0) {
-        add_balance(redeem_item->account, redeem_quantity, _self, true);
+        add_balance(redeem_itr->account, redeem_quantity, _self, true);
       }
       
       if (collateral_return.amount == 0) {
   
         // to-do completely failed to redeem. what to do?
-        redeem_item = _redeemreq.erase(redeem_item);
+        redeem_itr = _redeemreq.erase(redeem_itr);
       }
       else {
-        sell_rex(redeem_item->account.value, rex_return, ProcessKind::redemption);
+        sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
         
         // transfer after selling rex
-        inline_transfer(redeem_item->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
+        inline_transfer(redeem_itr->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
         
         // next request (removed in process)
-        redeem_item++;
+        redeem_itr++;
       }
     }
     
     // reparam request
-    if (reparam_item != _reparamreq.end() && reparam_item->timestamp < oracle_timestamp) {
+    if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
       
       // to-do:
       // remove old unpaid requests in ~30 minutes. no need to return buck cuz unpaid
       // also remove maturity request if exists, and then skip
       
       // look for a first paid request
-      while (reparam_item != _reparamreq.end() && !reparam_item->isPaid) { reparam_item++; }
-      if (reparam_item != _reparamreq.end() && reparam_item->isPaid) {
-        PRINT_("reparametrizing cdp")
+      while (reparam_itr != _reparamreq.end() && !reparam_itr->isPaid) { reparam_itr++; }
+      if (reparam_itr != _reparamreq.end() && reparam_itr->isPaid) {
         
         // find cdp
-        auto cdp_item = _cdp.require_find(reparam_item->cdp_id);
+        auto cdp_item = _cdp.require_find(reparam_itr->cdp_id);
         bool shouldRemove = true;
         
         asset change_debt = asset(0, BUCK);
@@ -138,11 +132,10 @@ void buck::run_requests(uint64_t max) {
         auto ccr = get_ccr(cdp_item->collateral, cdp_item->debt);
   
         // adding debt
-        if (reparam_item->change_debt.amount > 0) {
-          PRINT_("adding debt")
+        if (reparam_itr->change_debt.amount > 0) {
           
           double ccr_cr = ((ccr / CR) - 1) * (double) cdp_item->debt.amount;
-          double issue_debt = (double) reparam_item->change_debt.amount;
+          double issue_debt = (double) reparam_itr->change_debt.amount;
           uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
           change_debt = asset(change_amount, BUCK);
           
@@ -151,48 +144,41 @@ void buck::run_requests(uint64_t max) {
           asset fee = asset(fee_amount, BUCK);
           add_fee(fee);
           
-          PRINT("ccr", ccr)
-          PRINT("cdp_item->debt.amount", cdp_item->debt.amount)
-          PRINT("ccr_cr", ccr_cr)
-          PRINT("issue_debt", issue_debt)
-          PRINT("change_debt", change_debt)
-          PRINT("fee", fee)
-          
           add_balance(cdp_item->account, change_debt - fee, same_payer, true);
         }
         
         // removing debt
-        else if (reparam_item->change_debt.amount < 0) {
-          change_debt = reparam_item->change_debt; // add negative value
+        else if (reparam_itr->change_debt.amount < 0) {
+          change_debt = reparam_itr->change_debt; // add negative value
         }
         
         // adding collateral
-        if (reparam_item->change_collateral.amount > 0) {
-          new_collateral += reparam_item->change_collateral;
+        if (reparam_itr->change_collateral.amount > 0) {
+          new_collateral += reparam_itr->change_collateral;
           
           // open maturity request
-          auto& maturity_item = _maturityreq.get(cdp_item->id, "to-do: remove. could not find maturity (run)");
-          _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
+          auto& maturity_itr = _maturityreq.get(cdp_item->id, "to-do: remove. could not find maturity (run)");
+          _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
             r.maturity_timestamp = get_maturity();
-            r.add_collateral = reparam_item->change_collateral;
+            r.add_collateral = reparam_itr->change_collateral;
             r.cdp_id = cdp_item->id;
             r.change_debt = change_debt;
             r.ccr = 0;
           });
           
           // buy rex for this cdp
-          buy_rex(cdp_item->id, reparam_item->change_collateral);
+          buy_rex(cdp_item->id, reparam_itr->change_collateral);
         }
         
         // removing collateral
-        else if (reparam_item->change_collateral.amount < 0) {
+        else if (reparam_itr->change_collateral.amount < 0) {
         
           auto cr_ccr = CR / ccr;
-          auto cwe = (double) -reparam_item->change_collateral.amount / (double) cdp_item->collateral.amount;
+          auto cwe = (double) -reparam_itr->change_collateral.amount / (double) cdp_item->collateral.amount;
           auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_item->collateral.amount), EOS);
           new_collateral -= change;
           
-          sell_rex(cdp_item->id, -reparam_item->change_collateral, ProcessKind::reparam);
+          sell_rex(cdp_item->id, -reparam_itr->change_collateral, ProcessKind::reparam);
           shouldRemove = false;
         }
         
@@ -200,8 +186,7 @@ void buck::run_requests(uint64_t max) {
         // don't give debt if ccr < CR
   
         // not removing collateral here, update immediately
-        if (reparam_item->change_collateral.amount == 0) {
-          PRINT_("modifying cdp")
+        if (reparam_itr->change_collateral.amount == 0) {
           _cdp.modify(cdp_item, same_payer, [&](auto& r) {
             r.collateral = new_collateral;
             r.debt += change_debt;
@@ -210,11 +195,10 @@ void buck::run_requests(uint64_t max) {
         
         // remove request
         if (shouldRemove) {
-          PRINT_("removing request")
-          reparam_item = _reparamreq.erase(reparam_item);
+          reparam_itr = _reparamreq.erase(reparam_itr);
         }
         else {
-          reparam_item++;
+          reparam_itr++;
         }
         
         break; // done with reparam round 
@@ -222,29 +206,28 @@ void buck::run_requests(uint64_t max) {
     }
     
     // maturity requests (issue bucks, add/remove cdp debt, add collateral)
-    if (maturity_item != maturity_index.end()) {
+    if (maturity_itr != maturity_index.end()) {
       
       // look for a first valid request
-      while (maturity_item != maturity_index.end() && !(maturity_item->maturity_timestamp < cts && maturity_item->maturity_timestamp.utc_seconds != 0)) { maturity_item++; }
-      if (maturity_item != maturity_index.end() && maturity_item->maturity_timestamp < cts && maturity_item->maturity_timestamp.utc_seconds != 0) {
-        PRINT_("running maturity request")
+      while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < cts && maturity_itr->maturity_timestamp.utc_seconds != 0)) { maturity_itr++; }
+      if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < cts && maturity_itr->maturity_timestamp.utc_seconds != 0) {
         
         // remove cdp if all collateral is 0 (and cdp was just created)
         
-        auto& cdp_item = _cdp.get(maturity_item->cdp_id, "to-do: remove. no cdp for this maturity");
+        auto& cdp_item = _cdp.get(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
         
         // to-do take fees
         
         // calculate new debt and collateral
-        auto change_debt = maturity_item->change_debt; // changing debt explicitly (or 0)
-        auto add_collateral = maturity_item->add_collateral;
+        auto change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
+        auto add_collateral = maturity_itr->add_collateral;
         
-        if (maturity_item->ccr > 0) {
+        if (maturity_itr->ccr > 0) {
           // opening cdp 
           
           // issue debt
           auto price = get_eos_price();
-          auto debt_amount = (price * (double) add_collateral.amount / maturity_item->ccr);
+          auto debt_amount = (price * (double) add_collateral.amount / maturity_itr->ccr);
           change_debt = asset(floor(debt_amount), BUCK);
         }
         
@@ -264,7 +247,7 @@ void buck::run_requests(uint64_t max) {
         }
         
         // remove request
-        maturity_item = maturity_index.erase(maturity_item);
+        maturity_itr = maturity_index.erase(maturity_itr);
         break; // done with maturity round
       }
     }
@@ -279,14 +262,14 @@ void buck::run_liquidation(uint64_t max) {
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   
-  auto debtor_item = debtor_index.begin();
-  auto liquidator_item = liquidator_index.begin();
+  auto debtor_itr = debtor_index.begin();
+  auto liquidator_itr = liquidator_index.begin();
   
   // loop through debtors
-  while (debtor_item != debtor_index.end() && processed < max) {
+  while (debtor_itr != debtor_index.end() && processed < max) {
     
-    double debt = (double) debtor_item->debt.amount;
-    double debtor_ccr = (double) debtor_item->collateral.amount * eos_price / debt;
+    double debt = (double) debtor_itr->debt.amount;
+    double debtor_ccr = (double) debtor_itr->collateral.amount * eos_price / debt;
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
@@ -302,7 +285,7 @@ void buck::run_liquidation(uint64_t max) {
     
     double bad_debt = (CR - debtor_ccr) * debt;
     
-    PRINT("debtor", debtor_item->id)
+    PRINT("debtor", debtor_itr->id)
     PRINT("ccr", debtor_ccr)
     
     // loop through liquidators
@@ -312,18 +295,18 @@ void buck::run_liquidation(uint64_t max) {
       PRINT_("")
     
       // to-do check debt not 0
-      double liquidator_collateral = (double) liquidator_item->collateral.amount;
-      double liquidator_debt = (double) liquidator_item->debt.amount;
-      double liquidator_acr = liquidator_item->acr;
+      double liquidator_collateral = (double) liquidator_itr->collateral.amount;
+      double liquidator_debt = (double) liquidator_itr->debt.amount;
+      double liquidator_acr = liquidator_itr->acr;
       double liquidator_ccr = liquidator_collateral * eos_price / liquidator_debt;
       
-      PRINT("checking liquidator", liquidator_item->id)
+      PRINT("checking liquidator", liquidator_itr->id)
       PRINT("ccr", liquidator_ccr)
       PRINT("acr", liquidator_acr)
       PRINT_("")
       
       // this and all further liquidators can not bail out anymore bad debt 
-      if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_item == liquidator_index.end()) {
+      if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
         
         // to-do allow requests to run but still look for liquidation opportunity
         // to-do how about this? run_requests(max - processed);
@@ -354,19 +337,19 @@ void buck::run_liquidation(uint64_t max) {
       PRINT("sending collateral", used_collateral)
       PRINT_("")
       
-      debtor_index.modify(debtor_item, same_payer, [&](auto& r) {
+      debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
         r.collateral -= used_collateral;
         r.debt -= used_debt;
       });
       
-      liquidator_index.modify(liquidator_item, same_payer, [&](auto& r) {
+      liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
         r.collateral += used_collateral;
         r.debt += used_debt;
       });
       
       // if liquidator did not bail out all of bad debt, continue with the next one  
       if (bad_debt > bailable) { 
-        liquidator_item++;
+        liquidator_itr++;
       }
       
       // update values
@@ -378,6 +361,6 @@ void buck::run_liquidation(uint64_t max) {
     
     // continue to the next debtor
     processed++;
-    debtor_item++;
+    debtor_itr++;
   }
 }
