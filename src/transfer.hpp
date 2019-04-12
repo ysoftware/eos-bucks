@@ -15,7 +15,7 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   check(quantity.symbol == BUCK, "symbol precision mismatch");
   check(memo.size() <= 256, "memo has more than 256 bytes");
   
-  auto payer = has_auth(to) ? to : from;
+  const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity, false);
   add_balance(to, quantity, payer, false);
   
@@ -44,17 +44,17 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
     
     check(cdp_itr != index.end(), "open a debt position first");
     
-    auto& maturity_item = _maturityreq.get(cdp_itr->id, "maturity has to exist for a new cdp");
+    const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "maturity has to exist for a new cdp");
     
-    auto collateral_amount = (double) quantity.amount;
+    const double collateral_amount = (double) quantity.amount;
+    const double ccr = maturity_itr->ccr;
     auto debt = asset(0, BUCK);
-    auto ccr = maturity_item.ccr;
     
     if (ccr > 0) {
       
       // check if current debt amount is above the limit
-      auto price = get_eos_price();
-      auto debt_amount = (price * collateral_amount / ccr);
+      const auto price = get_eos_price();
+      const auto debt_amount = (price * collateral_amount / ccr);
       debt = asset(floor(debt_amount), BUCK);
       check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
     }
@@ -69,7 +69,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
     }
     
     // setup maturity
-    _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
+    _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
       r.ccr = ccr;
       r.add_collateral = quantity;
@@ -81,20 +81,20 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   else if (memo == "r") { // reparametrizing cdp
     
     auto index = _cdp.get_index<"byaccount"_n>();
-    auto cdp_item = index.find(from.value);
-    auto reparam_item = _reparamreq.find(cdp_item->id);
+    auto cdp_itr = index.find(from.value);
+    auto reparam_itr = _reparamreq.find(cdp_itr->id);
     
-    while (cdp_item != index.end()) {
-      if (!reparam_item->isPaid) { break; }
-      cdp_item++;
-      reparam_item = _reparamreq.find(cdp_item->id);
+    while (cdp_itr != index.end()) {
+      if (!reparam_itr->isPaid) { break; }
+      cdp_itr++;
+      reparam_itr = _reparamreq.find(cdp_itr->id);
     }
-    check(reparam_item != _reparamreq.end(), "could not find a reparametrization request");
+    check(reparam_itr != _reparamreq.end(), "could not find a reparametrization request");
 
-    check(quantity == reparam_item->change_collateral,
+    check(quantity == reparam_itr->change_collateral,
       "you must transfer the exact amount of collateral you wish to increase");
     
-    _reparamreq.modify(reparam_item, same_payer, [&](auto& r) {
+    _reparamreq.modify(reparam_itr, same_payer, [&](auto& r) {
       r.isPaid = true;
     });
   }
@@ -115,16 +115,15 @@ void buck::open(const name& account, double ccr, double acr) {
   
   // to-do assert no other cdp without collateral opened
   auto account_index = _cdp.get_index<"byaccount"_n>();
-  auto cdp_item = account_index.begin();
-  while (cdp_item != account_index.end()) {
-      check(cdp_item->rex.amount > 0 || cdp_item->collateral.amount > 0,
+  auto cdp_itr = account_index.begin();
+  while (cdp_itr != account_index.end()) {
+      check(cdp_itr->rex.amount > 0 || cdp_itr->collateral.amount > 0,
         "you already have created an unfinished debt position created");
-        
-      cdp_item++;
+      cdp_itr++;
   }
   
   // open cdp
-  auto id = _cdp.available_primary_key();
+  const auto id = _cdp.available_primary_key();
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
@@ -138,14 +137,14 @@ void buck::open(const name& account, double ccr, double acr) {
   
   // open account if doesn't exist
   accounts_i accounts(_self, account.value);
-  auto item = accounts.find(BUCK.code().raw());
-  if (item == accounts.end()) {
+  auto account_itr = accounts.find(BUCK.code().raw());
+  if (account_itr == accounts.end()) {
     accounts.emplace(account, [&](auto& r) {
       r.balance = asset(0, BUCK);
     });
   }
   
-  // open maturity request
+  // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
     r.maturity_timestamp = get_maturity();
     r.add_collateral = asset(0, EOS);

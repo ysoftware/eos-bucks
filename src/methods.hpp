@@ -11,15 +11,15 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
   PRINT("+ balance", value)
   
   accounts_i accounts(_self, owner.value);
-  auto item = accounts.find(value.symbol.code().raw());
+  auto account_itr = accounts.find(value.symbol.code().raw());
   
-  if (item == accounts.end()) {
+  if (account_itr == accounts.end()) {
     accounts.emplace(ram_payer, [&](auto& r) {
       r.balance = value;
     });
   }
   else {
-    accounts.modify(item, same_payer, [&](auto& r) {
+    accounts.modify(account_itr, same_payer, [&](auto& r) {
       r.balance += value;
     });
   }
@@ -35,11 +35,11 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   PRINT("- balance", value)
   
   accounts_i accounts(_self, owner.value);
-  const auto& item = accounts.get(value.symbol.code().raw(), "no balance object found");
-  check(item.balance.amount >= value.amount, "overdrawn buck balance");
+  const auto account_itr = accounts.require_find(value.symbol.code().raw(), "no balance object found");
+  check(account_itr->balance.amount >= value.amount, "overdrawn buck balance");
 
   // to-do ram payer should always be replaced by owner when possible
-  accounts.modify(item, same_payer, [&](auto& r) {
+  accounts.modify(account_itr, same_payer, [&](auto& r) {
     r.balance -= value;
   });
   

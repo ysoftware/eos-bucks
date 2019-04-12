@@ -58,8 +58,8 @@ void buck::process(uint8_t kind) {
     _rexprocess.erase(item);
     
     // update maturity request
-    const auto& maturity_item = _maturityreq.get(item.cdp_id, "to-do: remove. did not find maturity");
-    _maturityreq.modify(maturity_item, same_payer, [&](auto& r) {
+    const auto maturity_itr = _maturityreq.require_find(item.cdp_id, "to-do: remove. did not find maturity");
+    _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
     });
     
@@ -220,11 +220,11 @@ void buck::sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind) {
     sell_rex = quantity;
   }
   else {
-    const auto& cdp_item = _cdp.get(cdp_id);
-    const auto sell_rex_amount = cdp_item.rex.amount * quantity.amount / cdp_item.collateral.amount;
+    const auto cdp_itr = _cdp.require_find(cdp_id);
+    const auto sell_rex_amount = cdp_itr->rex.amount * quantity.amount / cdp_itr->collateral.amount;
     sell_rex = asset(sell_rex_amount, REX);
     
-    _cdp.modify(cdp_item, same_payer, [&](auto& r) {
+    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.rex -= sell_rex;
     });
   }
