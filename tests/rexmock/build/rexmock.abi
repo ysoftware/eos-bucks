@@ -46,6 +46,11 @@
             ]
         },
         {
+            "name": "resetstat",
+            "base": "",
+            "fields": []
+        },
+        {
             "name": "rex_balance",
             "base": "",
             "fields": [
@@ -141,6 +146,11 @@
         {
             "name": "deposit",
             "type": "deposit",
+            "ricardian_contract": ""
+        },
+        {
+            "name": "resetstat",
+            "type": "resetstat",
             "ricardian_contract": ""
         },
         {

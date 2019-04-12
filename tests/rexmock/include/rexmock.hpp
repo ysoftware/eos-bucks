@@ -21,6 +21,8 @@ CONTRACT rexmock : public contract {
     ACTION buyrex( const name& from, const asset& amount );
     
     ACTION sellrex( const name& from, const asset& rex );
+    
+    ACTION resetstat();
 
   private:
   

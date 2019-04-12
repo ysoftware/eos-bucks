@@ -3,6 +3,13 @@
 const uint64_t eos_price = 1000; // in REX
 const double dividends_multiplier = 1.01;
 
+ACTION rexmock::resetstat() {
+  stats_table _stat(_self, _self.value);
+  if (_stat.begin() != _stat.end()) {
+    _stat.erase(_stat.begin());
+  }
+}
+
 ACTION rexmock::deposit( const name& owner, const asset& amount ) {
   eosio::print("deposit: "); eosio::print(amount);
   
