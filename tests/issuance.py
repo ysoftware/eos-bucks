@@ -71,7 +71,7 @@ class Test(unittest.TestCase):
 
 		# check rex
 		self.assertEqual(0, amount(table(rex, "rexfund", element="balance")))
-		self.assertEqual(10000, amount(table(rex, "rexbal", element="rex_balance")))
+		self.assertEqual(100000, amount(table(rex, "rexbal", element="rex_balance")))
 
 		# issuance formula
 		price = 2
@@ -88,7 +88,7 @@ class Test(unittest.TestCase):
 		cdp = table(buck, "cdp")
 		self.assertEqual(100, amount(cdp["collateral"]))
 		self.assertEqual(debt, amount(cdp["debt"]))
-		self.assertEqual(10000, amount(cdp["rex"]))
+		self.assertEqual(100000, amount(cdp["rex"]))
 		self.assertAlmostEqual(0, float(cdp["acr"]))
 		self.assertEqual("user1", cdp["account"])
 
