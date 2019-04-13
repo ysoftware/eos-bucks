@@ -17,7 +17,10 @@ static const asset& ZERO_EOS   = asset(0, EOS);
 static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
 
+/// minimal collateral is 5 EOS
 static const asset& MIN_COLLATERAL = asset(50000, EOS);
+
+/// minimal cdp debt is 50 BUCK
 static const asset& MIN_DEBT       = asset(500000, BUCK);
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;

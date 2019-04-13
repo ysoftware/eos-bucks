@@ -14,7 +14,6 @@ void buck::run(uint64_t max) {
 
 void buck::run_requests(uint64_t max) {
   uint64_t processed = 0;
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   time_point_sec cts{ current_time_point() };
   const auto price = get_eos_price();
@@ -214,7 +213,6 @@ void buck::run_requests(uint64_t max) {
           // opening cdp 
           
           // issue debt
-          const auto price = get_eos_price();
           const auto debt_amount = (price * (double) add_collateral.amount / maturity_itr->ccr);
           change_debt = asset(floor(debt_amount), BUCK);
         }
@@ -243,7 +241,7 @@ void buck::run_requests(uint64_t max) {
 
 void buck::run_liquidation(uint64_t max) {
   uint64_t processed = 0;
-  const auto eos_price = get_eos_price();
+  const auto price = get_eos_price();
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
@@ -255,7 +253,7 @@ void buck::run_liquidation(uint64_t max) {
   while (debtor_itr != debtor_index.end() && processed < max) {
     
     const double debt = (double) debtor_itr->debt.amount;
-    const double debtor_ccr = (double) debtor_itr->collateral.amount * eos_price / debt;
+    const double debtor_ccr = (double) debtor_itr->collateral.amount * price / debt;
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
@@ -276,27 +274,25 @@ void buck::run_liquidation(uint64_t max) {
       const double liquidator_collateral = (double) liquidator_itr->collateral.amount;
       const double liquidator_debt = (double) liquidator_itr->debt.amount;
       const double liquidator_acr = liquidator_itr->acr;
-      const double liquidator_ccr = liquidator_collateral * eos_price / liquidator_debt;
+      const double liquidator_ccr = liquidator_collateral * price / liquidator_debt;
       
       // this and all further liquidators can not bail out anymore bad debt 
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
-        
-        // to-do allow requests to run but still look for liquidation opportunity
-        // to-do how about this? run_requests(max - processed);
         
         // to-do or instead of liquidation_timestamp use 
         // liquidation_status: complete / processing / no available liquidators
         
         // no more liquidators
+        run_requests(max - processed);
         return;
       }
       
       const double bailable = liquidator_debt == 0 ? 
-          liquidator_collateral / liquidator_acr * eos_price :
-          liquidator_collateral / ((liquidator_ccr / liquidator_acr) - 1) * eos_price;
+          liquidator_collateral / liquidator_acr * price :
+          liquidator_collateral / ((liquidator_ccr / liquidator_acr) - 1) * price;
       
       const double used_debt_amount = fmin(bad_debt, bailable);
-      const double used_collateral_amount = used_debt_amount / (eos_price * (1 - LF));
+      const double used_collateral_amount = used_debt_amount / (price * (1 - LF));
       
       // to-do check rounding
       const asset used_debt = asset(ceil(used_debt_amount), BUCK);
