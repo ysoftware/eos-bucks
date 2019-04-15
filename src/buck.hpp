@@ -54,7 +54,8 @@ CONTRACT buck : public contract {
       
       // taxation
       asset     tax_pool;               // total tax pool
-      uint32_t  current_round;          // current tax round
+      asset     collected_taxes;        // total taxes collected in this round
+      double    current_round;          // current tax round
       asset     collected_collateral;   // CVt
       asset     aggregated_collateral;  // ACVt
       

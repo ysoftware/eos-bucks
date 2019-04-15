@@ -67,10 +67,11 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
     
     if (ccr > 0) {
       
-      // check if current debt amount is above the limit
+      // check if debt amount is above the limit
       const auto price = get_eos_price();
-      const auto debt_amount = (price * collateral_amount / ccr);
+      const auto debt_amount = price * collateral_amount / ccr;
       debt = asset(floor(debt_amount), BUCK);
+      PRINT("debt", debt)
       check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
     }
     else {

@@ -17,13 +17,12 @@ void buck::zdestroy() {
   RM(redeem_req_i)
   RM(close_req_i)
   RM(reparam_req_i)
+  RM(cdp_i)
   
-  cdp_i table(_self, _self.value);
-  auto item = table.begin();
-  while (item != table.end()) {
-    RMS(accounts_i, item->account.value)
-    item = table.erase(item);
-  }
+  RMS(accounts_i, "yaroslaveroh"_n.value)
+  RMS(accounts_i, "buckbuckbuck"_n.value)
+  RMS(accounts_i, "testaccountp"_n.value)
+  RMS(accounts_i, "scrugescruge"_n.value)
 }
 
 #else

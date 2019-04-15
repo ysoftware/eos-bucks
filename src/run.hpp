@@ -214,12 +214,18 @@ void buck::run_requests(uint64_t max) {
         const auto add_collateral = maturity_itr->add_collateral;
         
         if (maturity_itr->ccr > 0) {
-          // opening cdp 
+          // opening cdp
+          
+          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+            r.modified_round = _stat.begin()->current_round;
+          });
           
           // issue debt
           const auto debt_amount = (price * (double) add_collateral.amount / maturity_itr->ccr);
           change_debt = asset(floor(debt_amount), BUCK);
         }
+        
+        update_collateral(add_collateral);
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += add_collateral;

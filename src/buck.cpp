@@ -51,6 +51,7 @@ bool buck::init() {
     
     r.current_round = now;
     r.tax_pool = ZERO_BUCK;
+    r.collected_taxes = ZERO_BUCK;
     r.aggregated_collateral = ZERO_EOS;
     r.collected_collateral = ZERO_EOS;
   });

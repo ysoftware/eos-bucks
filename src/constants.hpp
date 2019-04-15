@@ -7,7 +7,8 @@
 /// defines if contract will print logs and enable debug features
 #define DEBUG true
 
-static constexpr uint32_t seconds_per_day = 24 * 3600;
+static constexpr uint32_t seconds_per_day = 24 * 3'600;
+static constexpr uint32_t ROUND_DURATION = 1'800;
 
 static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);
@@ -18,10 +19,10 @@ static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
 
 /// minimal collateral is 5 EOS
-static const asset& MIN_COLLATERAL = asset(50000, EOS);
+static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 
 /// minimal cdp debt is 50 BUCK
-static const asset& MIN_DEBT       = asset(500000, BUCK);
+static const asset& MIN_DEBT       = asset(50'0000, BUCK);
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;
 static const name& EOSIO       = "eosio"_n;

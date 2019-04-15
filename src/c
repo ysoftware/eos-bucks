@@ -1,0 +1,1 @@
+cp buck.abi build/buck.abi && cp buck.wasm build/buck.wasm

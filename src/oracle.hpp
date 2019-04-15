@@ -7,9 +7,9 @@ void buck::update(double eos_price) {
   require_auth(_self);
   #endif
   
-  if (init()) { return; }
-  
-  process_taxes();
+  if (!init()) {
+    process_taxes();
+  }
   
   const auto& stats = *_stat.begin();
   const auto previous_price = stats.oracle_eos_price;

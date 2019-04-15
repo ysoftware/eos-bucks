@@ -30,6 +30,7 @@ class Test(unittest.TestCase):
 		create_master_account("master")
 		create_account("eosio_token", master, "eosio.token")
 		create_account("rex", master, "rexrexrexrex")
+		create_account("scruge", master, "scrugescruge")
 		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)
@@ -61,6 +62,73 @@ class Test(unittest.TestCase):
 		SCENARIO("Test taxation")
 		update(buck)
 
+		# rex gives dividents, mock contract doesn't.
+		# we need to have spare eos on contract to ensure proper workflow
+		# when taking out collateral
+		transfer(eosio_token, master, buck, "100.0000 EOS", "rex fund") 
+
+		open(buck, user1, 2, 0) # 0
+		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+
+		sleep(2)
+		update(buck)
+
+		open(buck, user1, 2, 0) # 1 request to get more bucks for closing
+		transfer(eosio_token, user1, buck, "50.0000 EOS", "")
+
+		sleep(2)
+		update(buck)
+
+		sleep(2)
+		update(buck)
+
+		table(buck, "cdp")
+
+		self.assertEqual(147, balance(buck, user1))
+		self.assertEqual(0.36, balance(buck, scruge))
+		self.assertEqual(2.64, amount(table(buck, "stat", element="tax_pool")))
+
+		## close
+
+		close(buck, user1, 0)
+
+		# check close request
+		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
+
+		run(buck)
+
+		# check close request still there
+		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
+
+
+		table(buck, "stat")
+
+		sleep(2)
+		update(buck)
+
+		table(buck, "stat")
+
+		sleep(2)
+		run(buck)
+
+		balance(buck, user1)
+		balance(buck, scruge)
+
+		# check close request gone
+		self.assertEqual(0, len(table(buck, "closereq")))
+
+		# check first cdp id (should be 1)
+		self.assertEqual(1, table(buck, "cdp", element="id"))
+
+		# check collateral return; rex.eos = 998
+		self.assertEqual(101.2024, balance(eosio_token, user1))
+
+		# 0.88 is tax dividends
+		# check debt burned (left over from cdp #1)
+		# 59.4634 ??
+		self.assertEqual(58.5834, balance(buck, user1))
+
+		table(buck, "stat")
 
 		
 
