@@ -71,6 +71,9 @@ void buck::run_requests(uint64_t max) {
           r.rex = using_rex;
         });
         
+        auto cdp_itr = _cdp.require_find(debtor_itr->id);
+        distribute_tax(cdp_itr);
+        
         debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
           r.debt -= using_debt;
           r.collateral -= using_collateral;
@@ -93,6 +96,7 @@ void buck::run_requests(uint64_t max) {
         redeem_itr = _redeemreq.erase(redeem_itr);
       }
       else {
+        update_collateral(collateral_return);
         sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
         inline_transfer(redeem_itr->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
         redeem_itr++; // this request will be removed in process method
@@ -126,12 +130,12 @@ void buck::run_requests(uint64_t max) {
           uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
           change_debt = asset(change_amount, BUCK);
           
-          // take issuance fee
-          const uint64_t fee_amount = change_amount * IF;
-          const asset fee = asset(fee_amount, BUCK);
-          add_fee(fee);
+          // pay issuance tax
+          const uint64_t tax_amount = change_amount * IF;
+          const asset tax = asset(tax_amount, BUCK);
+          pay_tax(tax);
           
-          add_balance(cdp_itr->account, change_debt - fee, same_payer, true);
+          add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
         }
         
         // removing debt
@@ -224,12 +228,12 @@ void buck::run_requests(uint64_t max) {
         
         if (change_debt.amount > 0) {
           
-          // take issuance fee
-          const uint64_t fee_amount = (uint64_t) ((double) change_debt.amount * IF);
-          const asset fee = asset(fee_amount, BUCK);
-          add_fee(fee);
+          // pay issuance tax
+          const uint64_t tax_amount = (uint64_t) ((double) change_debt.amount * IF);
+          const asset tax = asset(tax_amount, BUCK);
+          pay_tax(tax);
           
-          add_balance(cdp_itr->account, change_debt - fee, cdp_itr->account, true);
+          add_balance(cdp_itr->account, change_debt - tax, cdp_itr->account, true);
         }
         
         maturity_itr = maturity_index.erase(maturity_itr); // remove request

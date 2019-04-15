@@ -14,3 +14,10 @@ inline void buck::inline_process(ProcessKind kind) {
     _self, "process"_n, std::make_tuple(kind)
   ).send();
 }
+
+inline void buck::inline_received(const name& from, const name& to, const asset& quantity, const std::string& memo) {
+  action(permission_level{ _self, "active"_n },
+		_self, "received"_n,
+		std::make_tuple(from, to, quantity, memo)
+	).send();
+}

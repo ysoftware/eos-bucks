@@ -7,11 +7,13 @@ void buck::update(double eos_price) {
   require_auth(_self);
   #endif
   
-  init();
+  if (init()) { return; }
   
-  const auto previous_price = _stat.begin()->oracle_eos_price;
+  process_taxes();
   
-  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+  const auto& stats = *_stat.begin();
+  const auto previous_price = stats.oracle_eos_price;
+  _stat.modify(stats, same_payer, [&](auto& r) {
     r.oracle_timestamp = current_time_point();
     r.oracle_eos_price = eos_price;
   });
@@ -20,8 +22,8 @@ void buck::update(double eos_price) {
     run_liquidation(50);
   }
   else {
-    _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-      r.liquidation_timestamp = _stat.begin()->oracle_timestamp;
+    _stat.modify(stats, same_payer, [&](auto& r) {
+      r.liquidation_timestamp = stats.oracle_timestamp;
     });
     run_requests(5);
   }

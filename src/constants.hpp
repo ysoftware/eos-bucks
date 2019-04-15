@@ -25,6 +25,7 @@ static const asset& MIN_DEBT       = asset(500000, BUCK);
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;
 static const name& EOSIO       = "eosio"_n;
+static const name& SCRUGE      = "scrugescruge"_n;
 
 #if REX_TESTING
 /// account on jungle/local test net
@@ -40,3 +41,4 @@ const double LT = 0.025;    /// liquidation tax
 const double RF = 0.01;     /// redemption fee
 const double CF = 0.0125;   /// creator fee
 const double TT = 0.00085;  /// transaction tax
+const double SP = 0.12;     /// part of taxes for scruge

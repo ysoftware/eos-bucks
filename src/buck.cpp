@@ -34,21 +34,25 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
       _redprocess(_self, _self.value)
    {}
 
-void buck::init() {
-  if (_stat.begin() == _stat.end()) {
+bool buck::init() {
+  if (_stat.begin() != _stat.end()) { return false; }
   
-    _stat.emplace(_self, [&](auto& r) {
-      r.supply = asset(0, BUCK);
-      r.max_supply = asset(1'000'000'000'000'0000, BUCK);
-      r.issuer = _self;
-      
-      r.oracle_timestamp = time_point(microseconds(0));
-      r.oracle_eos_price = 0;
-      r.liquidation_timestamp = time_point(microseconds(0));
-      
-      r.aggregated_collateral = asset(0, EOS);
-      r.total_collateral = asset(0, EOS);
-      r.gathered_fees = asset(0, BUCK);
-    });
-  }
+  time_point_sec cts{ current_time_point() };
+  static const uint32_t now = cts.utc_seconds;
+  
+  _stat.emplace(_self, [&](auto& r) {
+    r.supply = ZERO_BUCK;
+    r.max_supply = asset(1'000'000'000'000'0000, BUCK);
+    r.issuer = _self;
+    
+    r.liquidation_timestamp = time_point(microseconds(0));
+    r.oracle_timestamp = time_point(microseconds(0));
+    r.oracle_eos_price = 0;
+    
+    r.current_round = now;
+    r.tax_pool = ZERO_BUCK;
+    r.aggregated_collateral = ZERO_EOS;
+    r.collected_collateral = ZERO_EOS;
+  });
+  return true;
 }

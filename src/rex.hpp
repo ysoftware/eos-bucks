@@ -9,7 +9,7 @@ time_point_sec buck::get_maturity() const {
   static const uint32_t r   = now % seconds_per_day;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   
-  // maturity is 1 second
+  // maturity for testing is 1 second
   #if REX_TESTING
   return time_point_sec{ now + 1 };
   #endif
@@ -20,18 +20,14 @@ time_point_sec buck::get_maturity() const {
 asset buck::get_rex_balance() const {
   rex_balance_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
-  if (balance_itr == _balance.end()) {
-    return ZERO_REX;
-  }
+  if (balance_itr == _balance.end()) { return ZERO_REX; }
   return balance_itr->rex_balance;
 }
 
 asset buck::get_eos_rex_balance() const {
   rex_fund_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
-  if (balance_itr == _balance.end()) {
-    return ZERO_EOS;
-  }
+  if (balance_itr == _balance.end()) { return ZERO_EOS; }
   return balance_itr->balance;
 }
 
@@ -105,12 +101,12 @@ void buck::process(uint8_t kind) {
       const uint64_t change_amount = ceil(fmin(ccr_cr, di));
       change_debt = asset(change_amount, BUCK);
       
-      // take issuance fee
-      const uint64_t fee_amount = change_amount * IF;
-      const auto fee = asset(fee_amount, BUCK);
-      add_fee(fee);
+      // pay issuance tax
+      const uint64_t tax_amount = change_amount * IF;
+      const auto tax = asset(tax_amount, BUCK);
+      pay_tax(tax);
       
-      add_balance(cdp_itr->account, change_debt - fee, same_payer, true);
+      add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
     }
     
     // removing debt
@@ -123,6 +119,9 @@ void buck::process(uint8_t kind) {
       r.collateral = new_collateral;
       r.debt += change_debt;
     });
+    
+    update_collateral(reparam_itr->change_collateral);
+    distribute_tax(cdp_itr);
     
     if (gained_collateral.amount > 0) {
       inline_transfer(cdp_itr->account, gained_collateral, "collateral return (+ rex dividends)", EOSIO_TOKEN);
@@ -173,6 +172,9 @@ void buck::process(uint8_t kind) {
   else if (kind == ProcessKind::closing) {
     const auto gained_collateral = rexprocess_itr->current_balance;
     _process.erase(rexprocess_itr);
+    
+    update_collateral(-cdp_itr->collateral);
+    distribute_tax(cdp_itr);
     
     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);

@@ -30,6 +30,7 @@ class Test(unittest.TestCase):
 		create_master_account("master")
 		create_account("eosio_token", master, "eosio.token")
 		create_account("rex", master, "rexrexrexrex")
+		create_account("rex", master, "scrugescruge")
 		
 		key = CreateKey(is_verbose=False)
 		create_account("buck", master, "buck", key)

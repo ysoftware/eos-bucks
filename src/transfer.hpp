@@ -15,21 +15,18 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   check(quantity.symbol == BUCK, "symbol precision mismatch");
   check(memo.size() <= 256, "memo has more than 256 bytes");
   
-  // calculate fee
-  const uint64_t fee_amount = ceil((double) quantity.amount * TT);
-  const asset fee = asset(fee_amount, BUCK);
-  const asset receive_quantity = quantity - fee;
-  add_fee(fee);
+  // pay stability tax
+  const uint64_t tax_amount = ceil((double) quantity.amount * TT);
+  const asset tax = asset(tax_amount, BUCK);
+  const asset receive_quantity = quantity - tax;
+  pay_tax(tax);
   
   const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity, false);
   add_balance(to, receive_quantity, payer, false);
   
   // send notification to receiver with actually received quantity
-  action(permission_level{ _self, "active"_n },
-		_self, "received"_n,
-		std::make_tuple(from, to, receive_quantity, memo)
-	).send();
+  inline_received(from, to, receive_quantity, memo);
 	
   run(3);
 }
@@ -151,6 +148,7 @@ void buck::open(const name& account, double ccr, double acr) {
     r.timestamp = current_time_point();
     r.rex = ZERO_REX;
     r.debt = ZERO_BUCK;
+    r.modified_round = 0;
   });
   
   // open account if doesn't exist

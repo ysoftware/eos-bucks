@@ -13,16 +13,14 @@ CONTRACT buck : public contract {
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
     ACTION changeacr(uint64_t cdp_id, double acr);
-    
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
-    ACTION received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
-    
     ACTION run(uint64_t max);
     
     // admin
     ACTION update(double eos_price);
     ACTION process(uint8_t kind);
+    ACTION received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
     #if DEBUG
     ACTION zdestroy();
@@ -55,9 +53,10 @@ CONTRACT buck : public contract {
       time_point  liquidation_timestamp;
       
       // taxation
-      asset   gathered_fees;
-      asset   total_collateral;
-      asset   aggregated_collateral;
+      asset     tax_pool;               // total tax pool
+      uint32_t  current_round;          // current tax round
+      asset     collected_collateral;   // CVt
+      asset     aggregated_collateral;  // ACVt
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
@@ -123,6 +122,7 @@ CONTRACT buck : public contract {
       asset       collateral;
       asset       rex;
       time_point  timestamp;
+      uint32_t    modified_round;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
@@ -203,17 +203,21 @@ CONTRACT buck : public contract {
     typedef multi_index<"rexfund"_n, rex_fund> rex_fund_i;
     
     // methods
-    void init();
+    bool init();
     void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
     void sub_balance(const name& owner, const asset& value, bool change_supply);
-    void add_fee(const asset& value);
-    void distribute_tax(uint64_t cdp_id);
+    
+    void pay_tax(const asset& value);
+    void distribute_tax(const cdp_i::const_iterator& cdp_itr);
+    void update_collateral(const asset& value);
+    void process_taxes();
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
     
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     inline void inline_process(ProcessKind kind);
+    inline void inline_received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
     void buy_rex(uint64_t cdp_id, const asset& quantity);
     void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);
