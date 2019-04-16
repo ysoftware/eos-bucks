@@ -122,6 +122,14 @@ def redeem(contract, user, quantity):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
+def withdraw(contract, user, quantity):
+	contract.push_action("redeem",
+		{
+			"from": user,
+			"quantity": quantity
+		},
+		permission=[(user, Permission.ACTIVE)])
+
 # requests
 
 def balance(token, account, unwrap=True):

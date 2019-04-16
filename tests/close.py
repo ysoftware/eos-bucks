@@ -99,7 +99,8 @@ class Test(unittest.TestCase):
 		self.assertEqual(101.2024, balance(eosio_token, user1))
 
 		# check debt burned (left over from cdp #1)
-		self.assertEqual(58.5834, balance(buck, user1))
+		# to-do find fund by userid
+		self.assertEqual(58.5834, amount(table(buck, "fund", element="balance"))
 
 
 # main
