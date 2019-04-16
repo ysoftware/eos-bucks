@@ -7,6 +7,29 @@ double buck::get_ccr(const asset& collateral, const asset& debt) const {
   return (double) collateral.amount * price / (double) debt.amount;
 }
 
+void buck::sub_funds(const name& from, const asset& quantity) {
+  auto fund_itr = _fund.require_find(from.value, "no fund balance found");
+  check(fund_itr->balance >= quantity, "overdrawn fund balance");
+  _fund.modify(fund_itr, from, [&](auto& r) {
+    r.balance -= quantity;
+  });
+}
+
+void buck::add_funds(const name& from, const asset& quantity) {
+  auto fund_itr = _fund.find(from.value);
+  if (fund_itr != _fund.end()) {
+    _fund.modify(fund_itr, same_payer, [&](auto& r) {
+      r.balance += quantity;
+    });
+  }
+  else {
+    _fund.emplace(_self, [&](auto& r) {
+      r.balance = quantity;
+      r.account = from;
+    });
+  }
+}
+
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
   PRINT("+ balance", value)
   PRINT("@", owner)

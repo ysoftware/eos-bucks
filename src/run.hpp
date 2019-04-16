@@ -98,101 +98,90 @@ void buck::run_requests(uint64_t max) {
       else {
         update_collateral(collateral_return);
         sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
-        inline_transfer(redeem_itr->account, collateral_return, "bucks redemption", EOSIO_TOKEN);
+        add_funds(redeem_itr->account, collateral_return); // to-do receipt
         redeem_itr++; // this request will be removed in process method
       }
     }
     
     // reparam request
     if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
+    
+      // find cdp
+      const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
+      bool shouldRemove = true;
       
-      // to-do:
-      // remove old unpaid requests in ~30 minutes. no need to return buck cuz unpaid
-      // also remove maturity request if exists, and then skip
+      asset change_debt = ZERO_BUCK;
+      asset new_collateral = cdp_itr->collateral;
+      const double ccr = get_ccr(cdp_itr->collateral, cdp_itr->debt); // to-do use new ccr or old?
+
+      // adding debt
+      if (reparam_itr->change_debt.amount > 0) {
+        
+        const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
+        const double issue_debt = (double) reparam_itr->change_debt.amount;
+        uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
+        change_debt = asset(change_amount, BUCK);
+        
+        // pay issuance tax
+        const uint64_t tax_amount = change_amount * IF;
+        const asset tax = asset(tax_amount, BUCK);
+        pay_tax(tax);
+        
+        add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
+      }
       
-      // look for a first paid request
-      while (reparam_itr != _reparamreq.end() && !reparam_itr->isPaid) { reparam_itr++; }
-      if (reparam_itr != _reparamreq.end() && reparam_itr->isPaid) {
+      // removing debt
+      else if (reparam_itr->change_debt.amount < 0) {
+        change_debt = reparam_itr->change_debt; // add negative value
+      }
+      
+      // adding collateral
+      if (reparam_itr->change_collateral.amount > 0) {
+        new_collateral += reparam_itr->change_collateral;
         
-        // find cdp
-        const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
-        bool shouldRemove = true;
+        // open maturity request
+        const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "to-do: remove. could not find maturity (run)");
+        _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
+          r.maturity_timestamp = get_maturity();
+          r.add_collateral = reparam_itr->change_collateral;
+          r.cdp_id = cdp_itr->id;
+          r.change_debt = change_debt;
+          r.ccr = 0;
+        });
         
-        asset change_debt = ZERO_BUCK;
-        asset new_collateral = cdp_itr->collateral;
-        const double ccr = get_ccr(cdp_itr->collateral, cdp_itr->debt); // to-do use new ccr or old?
-  
-        // adding debt
-        if (reparam_itr->change_debt.amount > 0) {
-          
-          const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
-          const double issue_debt = (double) reparam_itr->change_debt.amount;
-          uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
-          change_debt = asset(change_amount, BUCK);
-          
-          // pay issuance tax
-          const uint64_t tax_amount = change_amount * IF;
-          const asset tax = asset(tax_amount, BUCK);
-          pay_tax(tax);
-          
-          add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
-        }
+        // buy rex for this cdp
+        buy_rex(cdp_itr->id, reparam_itr->change_collateral);
+      }
+      
+      // removing collateral
+      else if (reparam_itr->change_collateral.amount < 0) {
+      
+        const auto cr_ccr = CR / ccr;
+        const auto cwe = (double) -reparam_itr->change_collateral.amount / (double) cdp_itr->collateral.amount;
+        const auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_itr->collateral.amount), EOS);
+        new_collateral -= change;
         
-        // removing debt
-        else if (reparam_itr->change_debt.amount < 0) {
-          change_debt = reparam_itr->change_debt; // add negative value
-        }
-        
-        // adding collateral
-        if (reparam_itr->change_collateral.amount > 0) {
-          new_collateral += reparam_itr->change_collateral;
-          
-          // open maturity request
-          const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "to-do: remove. could not find maturity (run)");
-          _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-            r.maturity_timestamp = get_maturity();
-            r.add_collateral = reparam_itr->change_collateral;
-            r.cdp_id = cdp_itr->id;
-            r.change_debt = change_debt;
-            r.ccr = 0;
-          });
-          
-          // buy rex for this cdp
-          buy_rex(cdp_itr->id, reparam_itr->change_collateral);
-        }
-        
-        // removing collateral
-        else if (reparam_itr->change_collateral.amount < 0) {
-        
-          const auto cr_ccr = CR / ccr;
-          const auto cwe = (double) -reparam_itr->change_collateral.amount / (double) cdp_itr->collateral.amount;
-          const auto change = asset(ceil(fmin(cr_ccr, cwe) * cdp_itr->collateral.amount), EOS);
-          new_collateral -= change;
-          
-          sell_rex(cdp_itr->id, -reparam_itr->change_collateral, ProcessKind::reparam);
-          shouldRemove = false;
-        }
-        
-        // to-do check new ccr parameters
-        // don't give debt if ccr < CR
-  
-        // not removing collateral here, update immediately
-        if (reparam_itr->change_collateral.amount == 0) {
-          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral = new_collateral;
-            r.debt += change_debt;
-          });
-        }
-        
-        // check if request should be removed here or is handled in process method
-        if (shouldRemove) {
-          reparam_itr = _reparamreq.erase(reparam_itr);
-        }
-        else {
-          reparam_itr++;
-        }
-        
-        break; // done with reparam round 
+        sell_rex(cdp_itr->id, -reparam_itr->change_collateral, ProcessKind::reparam);
+        shouldRemove = false;
+      }
+      
+      // to-do check new ccr parameters
+      // don't give debt if ccr < CR
+
+      // not removing collateral here, update immediately
+      if (reparam_itr->change_collateral.amount == 0) {
+        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+          r.collateral = new_collateral;
+          r.debt += change_debt;
+        });
+      }
+      
+      // check if request should be removed here or is handled in process method
+      if (shouldRemove) {
+        reparam_itr = _reparamreq.erase(reparam_itr);
+      }
+      else {
+        reparam_itr++;
       }
     }
     

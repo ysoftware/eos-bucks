@@ -26,7 +26,7 @@ class Test(unittest.TestCase):
 	@classmethod
 	def setUpClass(cls):
 		reset()
-
+		
 		create_master_account("master")
 		create_account("eosio_token", master, "eosio.token")
 		create_account("rex", master, "rexrexrexrex")
@@ -60,8 +60,7 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		# create cdp, transfer collateral
-		open(buck, user1, 1.6, 0)
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		open(buck, user1, 1.6, 0, "100.0000 EOS", eosio_token)
 
 		# maturity
 		sleep(2)

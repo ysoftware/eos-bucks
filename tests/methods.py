@@ -49,6 +49,9 @@ def create_issue(contract, to, symbol):
 		},
 		permission=[(to, Permission.ACTIVE)])
 
+def destroy(contract):
+	contract.push_action("zdestroy", "[]", permission=[(contract, Permission.ACTIVE)])
+
 def transfer(contract, fromAccount, to, quantity, memo=""):
 	contract.push_action("transfer",
 		{
@@ -64,12 +67,14 @@ def buyram(contract):
 
 # contract actions
 
-def open(contract, user, ccr, acr):
+def open(contract, user, ccr, acr, quantity, token_contract):
+	transfer(token_contract, user, contract, quantity, "deposit")
 	contract.push_action("open",
 		{
 			"account": user,
 			"ccr": ccr,
-			"acr": acr
+			"acr": acr,
+			"quantity": quantity
 		},
 		permission=[(user, Permission.ACTIVE)])
 

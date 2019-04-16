@@ -9,7 +9,8 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(const name& account, double ccr, double acr);
+    ACTION open(const name& account, const asset& quantity, double ccr, double acr);
+    ACTION withdraw(const name& from, const asset& quantity);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
     ACTION changeacr(uint64_t cdp_id, double acr);
@@ -69,6 +70,13 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
+    TABLE fund {
+      name  account;
+      asset balance;
+      
+      uint64_t primary_key() const { return account.value; }
+    };
+    
     TABLE redeem_req {
       name        account;
       asset       quantity;
@@ -82,7 +90,6 @@ CONTRACT buck : public contract {
       asset       change_collateral;
       asset       change_debt;
       time_point  timestamp;
-      bool        isPaid;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -161,6 +168,7 @@ CONTRACT buck : public contract {
     
     typedef multi_index<"accounts"_n, account> accounts_i;
     typedef multi_index<"stat1"_n, currency_stats> stats_i;
+    typedef multi_index<"fund"_n, fund> fund_i;
     
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
@@ -207,6 +215,8 @@ CONTRACT buck : public contract {
     bool init();
     void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
     void sub_balance(const name& owner, const asset& value, bool change_supply);
+    void add_funds(const name& from, const asset& quantity);
+    void sub_funds(const name& from, const asset& quantity);
     
     void pay_tax(const asset& value);
     void distribute_tax(const cdp_i::const_iterator& cdp_itr);
@@ -235,6 +245,7 @@ CONTRACT buck : public contract {
     // tables
     cdp_i               _cdp;
     stats_i             _stat;
+    fund_i              _fund;
     close_req_i         _closereq;
     reparam_req_i       _reparamreq;
     redeem_req_i        _redeemreq;

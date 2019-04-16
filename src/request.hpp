@@ -49,6 +49,10 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   }
   
   if (change_collateral.amount > 0) {
+    sub_funds(cdp_itr->account, change_collateral);
+  }
+  
+  if (change_collateral.amount > 0) {
     
     // open maturity request
     _maturityreq.emplace(account, [&](auto& r) {
@@ -65,7 +69,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     r.timestamp = current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
-    r.isPaid = change_collateral.amount <= 0; // isPaid if not adding collateral
   });
   
   run_requests(2);

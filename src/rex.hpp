@@ -52,7 +52,7 @@ void buck::process(uint8_t kind) {
     _process.erase(rexprocess_itr);
     
     // update maturity request
-    const auto maturity_itr = _maturityreq.require_find(rexprocess_itr->identifier, "to-do: remove. did not find maturity");
+    const auto maturity_itr = _maturityreq.require_find(rexprocess_itr->identifier, "to-do: remove. did not find maturity?");
     _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
       r.maturity_timestamp = get_maturity();
     });
@@ -124,7 +124,7 @@ void buck::process(uint8_t kind) {
     distribute_tax(cdp_itr);
     
     if (gained_collateral.amount > 0) {
-      inline_transfer(cdp_itr->account, gained_collateral, "collateral return (+ rex dividends)", EOSIO_TOKEN);
+      add_funds(cdp_itr->account, gained_collateral); // to-do receipt
     }
     
     _reparamreq.erase(reparam_itr);
@@ -181,7 +181,7 @@ void buck::process(uint8_t kind) {
     _cdp.erase(cdp_itr);
     
     if (gained_collateral.amount > 0) {
-      inline_transfer(cdp_itr->account, gained_collateral, "close cdp: return collateral (+ rex dividends)", EOSIO_TOKEN);
+      add_funds(cdp_itr->account, gained_collateral); // to-do receipt
     }
   }
 }

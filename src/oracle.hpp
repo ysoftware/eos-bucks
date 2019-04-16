@@ -29,5 +29,6 @@ void buck::update(double eos_price) {
 }
 
 inline double buck::get_eos_price() const {
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   return _stat.begin()->oracle_eos_price;
 }

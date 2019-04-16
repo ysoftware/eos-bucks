@@ -37,8 +37,18 @@ void buck::received(const name& from, const name& to, const asset& quantity, con
   require_recipient(to);
 }
 
+void buck::withdraw(const name& from, const asset& quantity) {
+  require_auth(from);
+  check(quantity.symbol == EOS, "symbol precision mismatch");
+  
+  sub_funds(from, quantity);
+  
+  inline_transfer(from, quantity, "withdraw funds", EOSIO_TOKEN);
+}
+
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
-  if (to != _self || from == _self) { return; }
+  if (to != _self || from == _self || memo != "deposit") { return; }
+
   require_auth(from);
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
@@ -47,78 +57,12 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  if (memo == "") { // opening cdp 
-    check(quantity > MIN_COLLATERAL, "you have to supply a larger amount");
-    
-    // find cdps
-    auto index = _cdp.get_index<"byaccount"_n>();
-    auto cdp_itr = index.find(from.value);
-    while (cdp_itr->collateral.amount != 0 && cdp_itr != index.end()) {
-      cdp_itr++;
-    }
-    
-    check(cdp_itr != index.end(), "open a debt position first");
-    
-    const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "maturity has to exist for a new cdp");
-    
-    const double collateral_amount = (double) quantity.amount;
-    const double ccr = maturity_itr->ccr;
-    auto debt = ZERO_BUCK;
-    
-    if (ccr > 0) {
-      
-      // check if debt amount is above the limit
-      const auto price = get_eos_price();
-      const auto debt_amount = price * collateral_amount / ccr;
-      debt = asset(floor(debt_amount), BUCK);
-      PRINT("debt", debt)
-      check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
-    }
-    else {
-      
-      // if ccr == 0, not issuing any debt
-      index.modify(cdp_itr, same_payer, [&](auto& r) {
-        r.debt = debt;
-        r.timestamp = current_time_point();
-        r.collateral = asset(collateral_amount, EOS);
-      });
-    }
-    
-    // setup maturity
-    _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-      r.maturity_timestamp = get_maturity();
-      r.ccr = ccr;
-      r.add_collateral = quantity;
-    });
-    
-    // buy rex with user's collateral
-    buy_rex(cdp_itr->id, quantity);
-  }
-  else if (memo == "r") { // reparametrizing cdp
-    
-    auto index = _cdp.get_index<"byaccount"_n>();
-    auto cdp_itr = index.find(from.value);
-    auto reparam_itr = _reparamreq.find(cdp_itr->id);
-    
-    while (cdp_itr != index.end()) {
-      if (!reparam_itr->isPaid) { break; }
-      cdp_itr++;
-      reparam_itr = _reparamreq.find(cdp_itr->id);
-    }
-    check(reparam_itr != _reparamreq.end(), "could not find a reparametrization request");
+  add_funds(from, quantity);
 
-    check(quantity == reparam_itr->change_collateral,
-      "you must transfer the exact amount of collateral you wish to increase");
-    
-    _reparamreq.modify(reparam_itr, same_payer, [&](auto& r) {
-      r.isPaid = true;
-    });
-  }
-  
   run(3);
 }
 
-void buck::open(const name& account, double ccr, double acr) {
+void buck::open(const name& account, const asset& quantity, double ccr, double acr) {
   require_auth(account);
   
   // check values
@@ -129,13 +73,17 @@ void buck::open(const name& account, double ccr, double acr) {
   check(ccr < 1000, "ccr value is too high");
   check(acr < 1000, "acr value is too high");
   
-  // to-do assert no other cdp without collateral opened
-  auto account_index = _cdp.get_index<"byaccount"_n>();
-  auto cdp_itr = account_index.begin();
-  while (cdp_itr != account_index.end()) {
-      check(cdp_itr->rex.amount > 0 || cdp_itr->collateral.amount > 0,
-        "you already have created an unfinished debt position created");
-      cdp_itr++;
+  sub_funds(account, quantity);
+  
+  auto debt = ZERO_BUCK;
+  
+  if (ccr > 0) {
+    
+    // check if debt amount is above the limit
+    const auto price = get_eos_price();
+    const auto debt_amount = price * (double) quantity.amount / ccr;
+    debt = asset(floor(debt_amount), BUCK);
+    check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
   // open cdp
@@ -164,11 +112,13 @@ void buck::open(const name& account, double ccr, double acr) {
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
     r.maturity_timestamp = get_maturity();
-    r.add_collateral = ZERO_EOS;
+    r.add_collateral = quantity;
     r.change_debt = ZERO_BUCK;
     r.cdp_id = id;
     r.ccr = ccr;
   });
+  
+  buy_rex(id, quantity);
   
   run(3);
 }

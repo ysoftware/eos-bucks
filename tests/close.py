@@ -63,14 +63,12 @@ class Test(unittest.TestCase):
 		# when taking out collateral
 		transfer(eosio_token, master, buck, "100.0000 EOS", "rex fund") 
 
-		open(buck, user1, 1.5, 0) # 0
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		open(buck, user1, 1.5, 0, "100.0000 EOS", eosio_token) # 0
 
 		sleep(2)
 		update(buck)
 
-		open(buck, user1, 1.6, 0) # 1 request to get more bucks for closing
-		transfer(eosio_token, user1, buck, "50.0000 EOS", "")
+		open(buck, user1, 1.6, 0, "50.0000 EOS", eosio_token) # 1 request to get more bucks for closing
 
 		table(buck, "maturityreq")
 		table(buck, "cdp")
