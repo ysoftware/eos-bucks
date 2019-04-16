@@ -55,9 +55,9 @@ CONTRACT buck : public contract {
       // taxation
       asset     tax_pool;               // total tax pool
       asset     collected_taxes;        // total taxes collected in this round
-      double    current_round;          // current tax round
-      asset     collected_collateral;   // CVt
-      asset     aggregated_collateral;  // ACVt
+      uint32_t  current_round;          // current tax round
+      asset     total_collateral;       // CV
+      asset     aggregated_collateral;  // ACV
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
@@ -160,7 +160,7 @@ CONTRACT buck : public contract {
     };
     
     typedef multi_index<"accounts"_n, account> accounts_i;
-    typedef multi_index<"stat"_n, currency_stats> stats_i;
+    typedef multi_index<"stat1"_n, currency_stats> stats_i;
     
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;

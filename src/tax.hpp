@@ -5,15 +5,14 @@
 void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
   const auto& stats = *_stat.begin();
   
-  const auto tax_pool_amount = stats.tax_pool.amount;
-  const auto collateral_amount = cdp_itr->collateral.amount;
   const double delta_round = stats.current_round - cdp_itr->modified_round;
-  const auto dividends_amount = tax_pool_amount * collateral_amount * delta_round / stats.aggregated_collateral.amount;
+  const auto dividends_amount = stats.tax_pool.amount * cdp_itr->collateral.amount * delta_round / (stats.aggregated_collateral.amount * ROUND_DURATION);
   const auto dividends = asset(dividends_amount, BUCK);
   
-  PRINT("tax_pool_amount", tax_pool_amount)
-  PRINT("collateral_amount", collateral_amount)
+  PRINT("tax_pool", stats.tax_pool)
+  PRINT("collateral", cdp_itr->collateral)
   PRINT("delta_round", delta_round)
+  PRINT("aggregated_collateral", stats.aggregated_collateral)
   PRINT("dividends", dividends)
   
   add_balance(cdp_itr->account, dividends, same_payer, true);
@@ -42,10 +41,18 @@ void buck::process_taxes() {
   time_point_sec cts{ current_time_point() };
   static const uint32_t now = cts.utc_seconds;
   
+  const uint64_t aggregate_amount = stats.total_collateral.amount * (now - stats.current_round) / ROUND_DURATION;
+  const auto add_aggregated = asset(aggregate_amount, EOS);
+  
+  PRINT("time diff", now - stats.current_round)
+  PRINT("round diff", (now - stats.current_round)/ROUND_DURATION)
+  PRINT("total_collateral", stats.total_collateral)
+  PRINT("add_aggregated", add_aggregated)
+  
   // update values
   _stat.modify(stats, same_payer, [&](auto& r) {
     r.current_round = now;
-    r.aggregated_collateral += stats.collected_collateral;
+    r.aggregated_collateral += add_aggregated;
     r.tax_pool += stats.collected_taxes - scruge_taxes_part;
     r.collected_taxes = ZERO_BUCK;
   });
@@ -53,7 +60,7 @@ void buck::process_taxes() {
 
 void buck::update_collateral(const asset& value) {
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-    r.collected_collateral += value;
+    r.total_collateral += value;
   });
 }
 

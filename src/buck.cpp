@@ -53,7 +53,7 @@ bool buck::init() {
     r.tax_pool = ZERO_BUCK;
     r.collected_taxes = ZERO_BUCK;
     r.aggregated_collateral = ZERO_EOS;
-    r.collected_collateral = ZERO_EOS;
+    r.total_collateral = ZERO_EOS;
   });
   return true;
 }
