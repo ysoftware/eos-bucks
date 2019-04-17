@@ -8,7 +8,7 @@
 #define DEBUG true
 
 static constexpr uint32_t seconds_per_day = 24 * 3'600;
-static constexpr uint32_t ROUND_DURATION = 1'800;
+static constexpr uint32_t BASE_ROUND_DURATION = 7'200;
 
 static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);

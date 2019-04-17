@@ -6,7 +6,7 @@ void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
   const auto& stats = *_stat.begin();
   
   const uint64_t delta_round = stats.current_round - cdp_itr->modified_round;
-  const double round_weight = (double) delta_round / (double) ROUND_DURATION;
+  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
   const uint64_t user_aggregated_amount = floor((double) cdp_itr->collateral.amount * round_weight);
   const double user_part = user_aggregated_amount / (double) stats.aggregated_collateral.amount;
   const uint64_t dividends_amount = floor((double) stats.tax_pool.amount * user_part);
@@ -24,8 +24,6 @@ void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
     r.tax_pool -= dividends;
     r.aggregated_collateral -= user_aggregated;
   });
-  
-  // inline_received(_self, cdp_itr->account, dividends, "dividends");
 }
 
 void buck::process_taxes() {
@@ -41,7 +39,7 @@ void buck::process_taxes() {
   time_point_sec cts{ current_time_point() };
   static const uint32_t now = cts.utc_seconds;
   
-  const uint64_t aggregate_amount = stats.total_collateral.amount * (now - stats.current_round) / ROUND_DURATION;
+  const uint64_t aggregate_amount = stats.total_collateral.amount * (now - stats.current_round) / BASE_ROUND_DURATION;
   const auto add_aggregated = asset(aggregate_amount, EOS);
   
   // update values
