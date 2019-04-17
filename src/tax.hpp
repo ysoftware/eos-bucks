@@ -14,13 +14,6 @@ void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, BUCK);
   
-  PRINT("tax_pool", stats.tax_pool)
-  PRINT("collateral", cdp_itr->collateral)
-  PRINT("delta_round", delta_round)
-  PRINT("aggregated_collateral", stats.aggregated_collateral)
-  PRINT("part", user_part)
-  PRINT("dividends", dividends)
-  
   add_balance(cdp_itr->account, dividends, same_payer, true);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -50,11 +43,6 @@ void buck::process_taxes() {
   
   const uint64_t aggregate_amount = stats.total_collateral.amount * (now - stats.current_round) / ROUND_DURATION;
   const auto add_aggregated = asset(aggregate_amount, EOS);
-  
-  PRINT("time diff", now - stats.current_round)
-  PRINT("round diff", (now - stats.current_round)/ROUND_DURATION)
-  PRINT("total_collateral", stats.total_collateral)
-  PRINT("add_aggregated", add_aggregated)
   
   // update values
   _stat.modify(stats, same_payer, [&](auto& r) {
