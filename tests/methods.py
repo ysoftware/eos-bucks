@@ -130,6 +130,9 @@ def withdraw(contract, user, quantity):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
+def fundbalance(buck, user):
+	return amount(table(buck, "fund", field="account", value=user, element="balance"))
+
 # requests
 
 def balance(token, account, unwrap=True):
@@ -143,19 +146,33 @@ def balance(token, account, unwrap=True):
 		return balance
 
 def amount(quantity, force=True, default=0):
-	split = quantity.split(" ")
+	split = []
+	if isinstance(quantity, str):
+		split = quantity.split(" ")
+	elif force: assert("value is not an asset")
+	else: return default
+
 	if isinstance(split, list):
 		if len(split) == 2: return float(split[0])
 		elif force: assert("value is not an asset")
 		else: return default
 	assert("value is not an asset")
 
-def table(contract, table, scope=None, row=0, element=None):
+def table(contract, table, scope=None, row=0, element=None, field=None, value=None):
 	if scope == None: scope = contract
 	data = contract.table(table, scope).json["rows"]
-	if len(data) > 0: data = data[row] 
 
-	if element != None: return data[element]
+	# query
+	if field is not None and value is not None:
+		if len(data) > 0:
+			for s in data:
+				if str(s[field]) == str(value):
+					row = None
+					data = s
+	
+	# row/element
+	if row is not None and len(data) > 0: data = data[row]
+	if element is not None: return data[element]
 	else: return data
 
 # assert

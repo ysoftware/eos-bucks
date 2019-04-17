@@ -100,7 +100,8 @@ class Test(unittest.TestCase):
 
 		# check debt burned (left over from cdp #1)
 		# to-do find fund by userid
-		self.assertEqual(58.5834, amount(table(buck, "fund", element="balance"))
+		self.assertEqual(58.5834, amount(table(buck, "fund", element="balance")))
+
 
 
 # main

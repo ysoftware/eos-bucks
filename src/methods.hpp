@@ -31,8 +31,10 @@ void buck::add_funds(const name& from, const asset& quantity) {
 }
 
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
-  PRINT("+ balance", value)
-  PRINT("@", owner)
+  eosio::print("+ ");
+  eosio::print(value);
+  eosio::print("@ ");
+  eosio::print(owner);
   
   accounts_i accounts(_self, owner.value);
   auto account_itr = accounts.find(value.symbol.code().raw());
@@ -56,8 +58,10 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
 }
 
 void buck::sub_balance(const name& owner, const asset& value, bool change_supply) {
-  PRINT("- balance", value)
-  PRINT("@", owner)
+  eosio::print("- ");
+  eosio::print(value);
+  eosio::print("@ ");
+  eosio::print(owner);
   
   accounts_i accounts(_self, owner.value);
   const auto account_itr = accounts.require_find(value.symbol.code().raw(), "no balance object found");

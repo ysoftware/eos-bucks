@@ -5,14 +5,20 @@
 void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
   const auto& stats = *_stat.begin();
   
-  const double delta_round = stats.current_round - cdp_itr->modified_round;
-  const auto dividends_amount = stats.tax_pool.amount * cdp_itr->collateral.amount * delta_round / (stats.aggregated_collateral.amount * ROUND_DURATION);
+  const uint64_t delta_round = stats.current_round - cdp_itr->modified_round;
+  const double round_weight = (double) delta_round / (double) ROUND_DURATION;
+  const uint64_t user_aggregated_amount = floor((double) cdp_itr->collateral.amount * round_weight);
+  const double user_part = user_aggregated_amount / (double) stats.aggregated_collateral.amount;
+  const uint64_t dividends_amount = floor((double) stats.tax_pool.amount * user_part);
+  
+  const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, BUCK);
   
   PRINT("tax_pool", stats.tax_pool)
   PRINT("collateral", cdp_itr->collateral)
   PRINT("delta_round", delta_round)
   PRINT("aggregated_collateral", stats.aggregated_collateral)
+  PRINT("part", user_part)
   PRINT("dividends", dividends)
   
   add_balance(cdp_itr->account, dividends, same_payer, true);
@@ -23,16 +29,17 @@ void buck::distribute_tax(const cdp_i::const_iterator& cdp_itr) {
   
   _stat.modify(stats, same_payer, [&](auto& r) {
     r.tax_pool -= dividends;
+    r.aggregated_collateral -= user_aggregated;
   });
   
-  inline_received(_self, cdp_itr->account, dividends, "dividends");
+  // inline_received(_self, cdp_itr->account, dividends, "dividends");
 }
 
 void buck::process_taxes() {
   const auto& stats = *_stat.begin();
   
   // send part of collected taxes to Scruge
-  const auto scruge_amount = stats.collected_taxes.amount * SP;
+  const uint64_t scruge_amount = stats.collected_taxes.amount * SP;
   const auto scruge_taxes_part = asset(scruge_amount, BUCK);
   if (scruge_amount > 0) {
     add_balance(SCRUGE, scruge_taxes_part, _self, true);

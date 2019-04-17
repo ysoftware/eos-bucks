@@ -11,7 +11,7 @@ ACTION rexmock::resetstat() {
 }
 
 ACTION rexmock::deposit( const name& owner, const asset& amount ) {
-  eosio::print("deposit: "); eosio::print(amount); eosio::print("\n");
+  // eosio::print("deposit: "); eosio::print(amount); eosio::print("\n");
   
   check(amount.amount > 0, "can not deposit negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
@@ -29,7 +29,7 @@ ACTION rexmock::deposit( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
-  eosio::print("withdraw: "); eosio::print(amount); eosio::print("\n");
+  // eosio::print("withdraw: "); eosio::print(amount); eosio::print("\n");
   
   check(amount.amount > 0, "can not withdraw negative amount");
   rex_fund_table _rexfunds(_self, _self.value);
@@ -41,7 +41,7 @@ ACTION rexmock::withdraw( const name& owner, const asset& amount ) {
 }
 
 ACTION rexmock::buyrex( const name& from, const asset& amount ) {
-  eosio::print("buy: "); eosio::print(amount); eosio::print("\n");
+  // eosio::print("buy: "); eosio::print(amount); eosio::print("\n");
   
   check(amount.amount > 0, "can not buy negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
@@ -61,7 +61,7 @@ ACTION rexmock::buyrex( const name& from, const asset& amount ) {
 }
 
 ACTION rexmock::sellrex( const name& from, const asset& rex ) {
-  eosio::print("sell: "); eosio::print(rex); eosio::print("\n");
+  // eosio::print("sell: "); eosio::print(rex); eosio::print("\n");
   
   check(rex.amount > 0, "can not sell negative amount");
   rex_balance_table _rexbalance(_self, _self.value);
@@ -88,6 +88,6 @@ uint64_t rexmock::get_eos_price() {
     });
   }
   auto price = _stat.begin()->eos_price;
-  eosio::print("eos price: "); eosio::print(price); eosio::print("\n");
+  // eosio::print("eos price: "); eosio::print(price); eosio::print("\n");
   return price;
 }

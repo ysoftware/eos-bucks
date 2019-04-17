@@ -67,14 +67,12 @@ class Test(unittest.TestCase):
 		# when taking out collateral
 		transfer(eosio_token, master, buck, "100.0000 EOS", "rex fund") 
 
-		open(buck, user1, 2, 0) # 0
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		open(buck, user1, 2, 0, "100.0000 EOS", eosio_token) # 0
 
 		sleep(2)
 		update(buck)
 
-		open(buck, user1, 2, 0) # 1 request to get more bucks for closing
-		transfer(eosio_token, user1, buck, "50.0000 EOS", "")
+		open(buck, user1, 2, 0, "50.0000 EOS", eosio_token) # 1 request to get more bucks for closing
 
 		sleep(2)
 		update(buck)
@@ -86,7 +84,7 @@ class Test(unittest.TestCase):
 
 		self.assertEqual(147, balance(buck, user1))
 		self.assertEqual(0.36, balance(buck, scruge))
-		self.assertEqual(2.64, amount(table(buck, "stat", element="tax_pool")))
+		self.assertEqual(2.64, amount(table(buck, "stat1", element="tax_pool")))
 
 		## close
 
@@ -101,12 +99,12 @@ class Test(unittest.TestCase):
 		self.assertEqual(0, table(buck, "closereq", element="cdp_id"))
 
 
-		table(buck, "stat")
+		table(buck, "stat1")
 
 		sleep(20)
 		update(buck)
 
-		table(buck, "stat")
+		table(buck, "stat1")
 
 		sleep(2)
 		run(buck)
@@ -121,14 +119,12 @@ class Test(unittest.TestCase):
 		self.assertEqual(1, table(buck, "cdp", element="id"))
 
 		# check collateral return; rex.eos = 998
-		self.assertEqual(101.2024, balance(eosio_token, user1))
+		self.assertEqual(101.2024, fundbalance(buck, user1))
 
-		# 0.88 is tax dividends
-		# check debt burned (left over from cdp #1)
-		# 59.4634 ??
+		# check debt burned (49 left over from cdp #1 + dividends)
 		self.assertEqual(58.5834, balance(buck, user1))
 
-		table(buck, "stat")
+		table(buck, "stat1")
 
 		
 
