@@ -78,3 +78,23 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
     });
   }
 }
+
+void buck::set_liquidation_status(LiquidationStatus status) {
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+    r.processing_status |= r.processing_status & 0b0011 | status; // bits 1100
+  });
+}
+
+void buck::set_processing_status(ProcessingStatus status) {
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+    r.processing_status |= r.processing_status & 0b00 | status; // bits 0011
+  });
+}
+
+buck::ProcessingStatus buck::get_processing_status() const {
+  return static_cast<ProcessingStatus>(_stat.begin()->processing_status >> 2);
+}
+
+buck::LiquidationStatus buck::get_liquidation_status() const {
+  return static_cast<LiquidationStatus>(_stat.begin()->processing_status & (uint8_t) 0b11);
+}

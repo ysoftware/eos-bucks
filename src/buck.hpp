@@ -34,6 +34,10 @@ CONTRACT buck : public contract {
       
     enum ProcessKind: uint8_t { bought_rex = 0, sold_rex = 1, reparam = 2, 
                                 closing = 3, redemption = 4 };
+    
+    enum LiquidationStatus: uint8_t { liquidation_complete = 0, failed = 1, processing_liquidation = 2 }; 
+    
+    enum ProcessingStatus: uint8_t { processing_complete = 0, processing_redemption_requests = 1, processing_cdp_requests = 2 };
 
     TABLE account {
       asset balance;
@@ -50,9 +54,10 @@ CONTRACT buck : public contract {
       time_point  oracle_timestamp;
       double      oracle_eos_price;
       
-      // liquidation
-      time_point  liquidation_timestamp;
-      
+      // 2 bytes for liquidation status
+      // 2 bytes for requests status
+      uint8_t     processing_status;
+    
       // taxation
       asset     tax_pool;               // total tax pool
       asset     collected_taxes;        // total taxes collected in this round
@@ -102,10 +107,11 @@ CONTRACT buck : public contract {
     };
     
     TABLE redeem_processing {
-      uint64_t  cdp_id;
-      asset     collateral;
-      asset     rex;
-      name      account;
+      uint64_t    cdp_id;
+      asset       collateral;
+      asset       rex;
+      name        account;
+      time_point  timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -225,6 +231,8 @@ CONTRACT buck : public contract {
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
+    void set_liquidation_status(LiquidationStatus status);
+    void set_processing_status(ProcessingStatus status);
     
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     inline void inline_process(ProcessKind kind);
@@ -241,6 +249,8 @@ CONTRACT buck : public contract {
     time_point_sec get_maturity() const;
     asset get_rex_balance() const;
     asset get_eos_rex_balance() const;
+    ProcessingStatus get_processing_status() const;
+    LiquidationStatus get_liquidation_status() const;
     
     // tables
     cdp_i               _cdp;

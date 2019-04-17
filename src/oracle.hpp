@@ -17,13 +17,13 @@ void buck::update(double eos_price) {
     r.oracle_eos_price = eos_price;
   });
   
+  set_processing_status(ProcessingStatus::processing_cdp_requests);
+  
   if (eos_price < previous_price) {
+    set_liquidation_status(LiquidationStatus::processing_liquidation);
     run_liquidation(50);
   }
   else {
-    _stat.modify(stats, same_payer, [&](auto& r) {
-      r.liquidation_timestamp = stats.oracle_timestamp;
-    });
     run_requests(5);
   }
 }
