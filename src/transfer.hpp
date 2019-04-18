@@ -14,27 +14,12 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   check(quantity.amount > 0, "must transfer positive quantity");
   check(quantity.symbol == BUCK, "symbol precision mismatch");
   check(memo.size() <= 256, "memo has more than 256 bytes");
-  
-  // pay stability tax
-  const uint64_t tax_amount = ceil((double) quantity.amount * TT);
-  const asset tax = asset(tax_amount, BUCK);
-  const asset receive_quantity = quantity - tax;
-  pay_tax(tax);
-  
+
   const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity, false);
-  add_balance(to, receive_quantity, payer, false);
-  
-  // send notification to receiver with actually received quantity
-  inline_received(from, to, receive_quantity, memo);
+  add_balance(to, quantity, payer, false);
 	
   run(3);
-}
-
-void buck::received(const name& from, const name& to, const asset& quantity, const std::string& memo) {
-  require_auth(_self);
-  require_recipient(from);
-  require_recipient(to);
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {

@@ -58,14 +58,12 @@ class Test(unittest.TestCase):
 		SCENARIO("Test buck redeem")
 		update(buck)
 
-		open(buck, user1, 2.0, 0) # cdp 0 # rex.eos = 1000
-		transfer(eosio_token, user1, buck, "100.0000 EOS", "")
+		open(buck, user1, 2.0, 0, "100.0000 EOS", eosio_token) # cdp 0 # rex.eos = 1000
 
 		sleep(2)
 		update(buck)
 
-		open(buck, user1, 2.1, 0) # cdp 1 # rex.eos = 999
-		transfer(eosio_token, user1, buck, "101.0000 EOS", "")
+		open(buck, user1, 2.1, 0, "101.0000 EOS", eosio_token) # cdp 1 # rex.eos = 999
 
 		sleep(2)
 		update(buck)

@@ -21,7 +21,6 @@ CONTRACT buck : public contract {
     // admin
     ACTION update(double eos_price);
     ACTION process(uint8_t kind);
-    ACTION received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
     #if DEBUG
     ACTION zdestroy();
@@ -236,7 +235,6 @@ CONTRACT buck : public contract {
     
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     inline void inline_process(ProcessKind kind);
-    inline void inline_received(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
     void buy_rex(uint64_t cdp_id, const asset& quantity);
     void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);
