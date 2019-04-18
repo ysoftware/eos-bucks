@@ -9,6 +9,7 @@
 
 static constexpr uint32_t seconds_per_day = 24 * 3'600;
 static constexpr uint64_t BASE_ROUND_DURATION = 1'000;
+static const uint32_t year = 31'557'600;
 
 static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);
@@ -42,4 +43,7 @@ const double LT = 0.025;    /// liquidation tax
 const double RF = 0.01;     /// redemption fee
 const double CF = 0.0125;   /// creator fee
 const double TT = 0.00085;  /// transaction tax
-const double SP = 0.12;     /// part of taxes for scruge
+const double SP = 0.06;     /// part of taxes for scruge (x2)
+const double AR = 1.4;      /// annual interest rate
+const double SR = 1.0;      /// savings ratio
+const double IR = 1.0;      /// insurance ratio

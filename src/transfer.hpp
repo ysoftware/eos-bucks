@@ -18,17 +18,25 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity, false);
   add_balance(to, quantity, payer, false);
+	withdraw_savings(from);
 	
   run(3);
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {
   require_auth(from);
-  check(quantity.symbol == EOS, "symbol precision mismatch");
+  
+  check(quantity.symbol == EOS, "you have to transfer EOS");
+  check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
+
+  check(quantity.symbol.is_valid(), "invalid quantity");
+	check(quantity.amount > 0, "must transfer positive quantity");
   
   sub_funds(from, quantity);
   
   inline_transfer(from, quantity, "withdraw funds", EOSIO_TOKEN);
+  
+  run(3);
 }
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
@@ -42,7 +50,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  add_funds(from, quantity);
+  add_funds(from, quantity, _self);
 
   run(3);
 }
@@ -82,17 +90,14 @@ void buck::open(const name& account, const asset& quantity, double ccr, double a
     r.timestamp = current_time_point();
     r.rex = ZERO_REX;
     r.debt = ZERO_BUCK;
+    r.accrued_debt = ZERO_BUCK;
     r.modified_round = 0;
+    r.accrued_timestamp = current_time_point();
   });
   
   // open account if doesn't exist
-  accounts_i accounts(_self, account.value);
-  auto account_itr = accounts.find(BUCK.code().raw());
-  if (account_itr == accounts.end()) {
-    accounts.emplace(account, [&](auto& r) {
-      r.balance = ZERO_BUCK;
-    });
-  }
+  add_balance(account, ZERO_BUCK, account, false);
+  add_funds(account, ZERO_EOS, account);
   
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {

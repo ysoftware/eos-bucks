@@ -15,15 +15,15 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   });
 }
 
-void buck::add_funds(const name& from, const asset& quantity) {
+void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
-    _fund.modify(fund_itr, same_payer, [&](auto& r) {
+    _fund.modify(fund_itr, ram_payer, [&](auto& r) {
       r.balance += quantity;
     });
   }
   else {
-    _fund.emplace(_self, [&](auto& r) {
+    _fund.emplace(ram_payer, [&](auto& r) {
       r.balance = quantity;
       r.account = from;
     });

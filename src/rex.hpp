@@ -120,11 +120,11 @@ void buck::process(uint8_t kind) {
       r.debt += change_debt;
     });
     
-    update_collateral(reparam_itr->change_collateral);
-    distribute_tax(cdp_itr);
+    update_excess_collateral(reparam_itr->change_collateral);
+    withdraw_insurance(cdp_itr);
     
     if (gained_collateral.amount > 0) {
-      add_funds(cdp_itr->account, gained_collateral); // to-do receipt
+      add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt
     }
     
     _reparamreq.erase(reparam_itr);
@@ -173,15 +173,15 @@ void buck::process(uint8_t kind) {
     const auto gained_collateral = rexprocess_itr->current_balance;
     _process.erase(rexprocess_itr);
     
-    update_collateral(-cdp_itr->collateral);
-    distribute_tax(cdp_itr);
+    update_excess_collateral(-cdp_itr->collateral);
+    withdraw_insurance(cdp_itr);
     
     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);
     _cdp.erase(cdp_itr);
     
     if (gained_collateral.amount > 0) {
-      add_funds(cdp_itr->account, gained_collateral); // to-do receipt
+      add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt
     }
   }
 }

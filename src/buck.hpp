@@ -39,7 +39,8 @@ CONTRACT buck : public contract {
     enum ProcessingStatus: uint8_t { processing_complete = 0, processing_redemption_requests = 1, processing_cdp_requests = 2 };
 
     TABLE account {
-      asset balance;
+      asset     balance;
+      uint32_t  modified_round;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -56,15 +57,24 @@ CONTRACT buck : public contract {
       // 2 bytes for liquidation status
       // 2 bytes for requests status
       uint8_t     processing_status;
-    
-      // taxation
-      asset     tax_pool;               // total tax pool
-      asset     collected_taxes;        // total taxes collected in this round
-      uint32_t  current_round;          // current tax round
-      asset     total_collateral;       // CV
-      asset     aggregated_collateral;  // ACV
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
+    };
+    
+    TABLE taxation_stats {
+      uint32_t  current_round;
+      
+      asset     insurance_pool;
+      asset     collected_excess;
+      asset     total_excess;
+      asset     aggregated_excess;
+      
+      asset     savings_pool;
+      asset     collected_savings;
+      asset     total_savings;
+      asset     aggregated_savings;
+      
+      uint64_t primary_key() const { return 0; }
     };
     
     TABLE close_req {
@@ -131,14 +141,17 @@ CONTRACT buck : public contract {
       double      acr;
       name        account;
       asset       debt;
+      asset       accrued_debt;
       asset       rex_dividends;
       asset       collateral;
       asset       rex;
       time_point  timestamp;
+      time_point  accrued_timestamp;
       uint32_t    modified_round;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
+      uint32_t by_accrued_time() const { return time_point_sec(accrued_timestamp).utc_seconds; }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {
@@ -174,6 +187,7 @@ CONTRACT buck : public contract {
     typedef multi_index<"accounts"_n, account> accounts_i;
     typedef multi_index<"stat1"_n, currency_stats> stats_i;
     typedef multi_index<"fund"_n, fund> fund_i;
+    typedef multi_index<"taxation"_n, taxation_stats> taxation_i;
     
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
@@ -220,13 +234,15 @@ CONTRACT buck : public contract {
     bool init();
     void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
     void sub_balance(const name& owner, const asset& value, bool change_supply);
-    void add_funds(const name& from, const asset& quantity);
+    void add_funds(const name& from, const asset& quantity, const name& ram_payer);
     void sub_funds(const name& from, const asset& quantity);
     
-    void pay_tax(const asset& value);
-    void distribute_tax(const cdp_i::const_iterator& cdp_itr);
-    void update_collateral(const asset& value);
     void process_taxes();
+    void pay_tax(const asset& value);
+    void accrue_interest(const cdp_i::const_iterator& cdp_itr);
+    void update_excess_collateral(const asset& value);
+    void withdraw_insurance(const cdp_i::const_iterator& cdp_itr);
+    void withdraw_savings(const name& account);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);
@@ -253,6 +269,7 @@ CONTRACT buck : public contract {
     // tables
     cdp_i               _cdp;
     stats_i             _stat;
+    taxation_i          _tax;
     fund_i              _fund;
     close_req_i         _closereq;
     reparam_req_i       _reparamreq;

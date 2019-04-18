@@ -32,7 +32,8 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
       _maturityreq(_self, _self.value),
       _process(_self, _self.value),
       _redprocess(_self, _self.value),
-      _fund(_self, _self.value)
+      _fund(_self, _self.value),
+      _tax(_self, _self.value)
    {}
 
 bool buck::init() {
@@ -49,12 +50,21 @@ bool buck::init() {
     r.processing_status = 0;
     r.oracle_timestamp = time_point(microseconds(0));
     r.oracle_eos_price = 0;
-    
-    r.current_round = now;
-    r.tax_pool = ZERO_BUCK;
-    r.collected_taxes = ZERO_BUCK;
-    r.aggregated_collateral = ZERO_EOS;
-    r.total_collateral = ZERO_EOS;
   });
+  
+  _tax.emplace(_self, [&](auto& r) {
+    r.current_round = 0;
+    
+    r.insurance_pool = ZERO_EOS;
+    r.collected_excess = ZERO_EOS;
+    r.total_excess = ZERO_EOS;
+    r.aggregated_excess = ZERO_EOS;
+    
+    r.savings_pool = ZERO_BUCK;
+    r.collected_savings = ZERO_BUCK;
+    r.total_savings = ZERO_BUCK;
+    r.aggregated_savings = ZERO_BUCK;
+  });
+  
   return true;
 }

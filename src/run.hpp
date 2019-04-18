@@ -149,12 +149,12 @@ void buck::run_requests(uint64_t max) {
             change_debt = asset(floor(debt_amount), BUCK);
           }
           
-          update_collateral(add_collateral);
+          update_excess_collateral(add_collateral);
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
             r.debt += change_debt;
-            r.modified_round = _stat.begin()->current_round;
+            r.modified_round = _tax.begin()->current_round;
           });
           
           if (change_debt.amount > 0) {
@@ -214,7 +214,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           auto cdp_itr = _cdp.require_find(debtor_itr->id);
-          distribute_tax(cdp_itr);
+          withdraw_insurance(cdp_itr);
           
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
@@ -238,9 +238,9 @@ void buck::run_requests(uint64_t max) {
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         else {
-          update_collateral(collateral_return);
+          update_excess_collateral(collateral_return);
           sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
-          add_funds(redeem_itr->account, collateral_return); // to-do receipt
+          add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
           redeem_itr++; // this request will be removed in process method
         }
       }
@@ -327,7 +327,7 @@ void buck::run_liquidation(uint64_t max) {
         r.debt += used_debt;
       });
       
-      // if liquidator did not bail out all of bad debt, continue with the next one  
+      // if liquidator did not bail out all of bad debt, continue with the next one
       if (bad_debt > bailable) { 
         liquidator_itr++;
       }
