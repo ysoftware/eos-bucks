@@ -76,6 +76,11 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		sleep(2)
+		update(buck)
+
+		taxpool = amount(table(buck, "stat1", element="tax_pool"))
+
 		close(buck, user1, 0)
 
 		# check close request
@@ -89,6 +94,8 @@ class Test(unittest.TestCase):
 		sleep(2)
 		update(buck)
 
+		taxpool_left = amount(table(buck, "stat1", element="tax_pool"))
+
 		# check close request gone
 		self.assertEqual(0, len(table(buck, "closereq")))
 
@@ -96,11 +103,13 @@ class Test(unittest.TestCase):
 		self.assertEqual(1, table(buck, "cdp", element="id"))
 
 		# check collateral return; rex.eos = 998
-		self.assertEqual(101.2024, balance(eosio_token, user1))
+		self.assertEqual(101.2024, fundbalance(buck, user1))
 
 		# check debt burned (left over from cdp #1)
 		# to-do find fund by userid
-		self.assertEqual(58.5834, amount(table(buck, "fund", element="balance")))
+		return_amount = 58.5834 + taxpool - taxpool_left
+
+		self.assertEqual(return_amount, balance(buck, user1))
 
 
 

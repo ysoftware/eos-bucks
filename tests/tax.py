@@ -101,7 +101,7 @@ class Test(unittest.TestCase):
 
 		table(buck, "stat1")
 
-		sleep(20)
+		sleep(2)
 		update(buck)
 
 		table(buck, "stat1")

@@ -29,12 +29,12 @@ void buck::run_requests(uint64_t max) {
   
   // loop until any requests exist and not over limit
   for (int i = 0; i < max; i++) {
+    
     if (status == ProcessingStatus::processing_cdp_requests) {
       bool did_work = false;
 
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
-        
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         sell_rex(cdp_itr->id, cdp_itr->collateral, ProcessKind::closing);
         close_itr++; // this request will be removed in process method
@@ -122,7 +122,7 @@ void buck::run_requests(uint64_t max) {
           reparam_itr++;
         }
         did_work = true;
-    }
+      }
       
       // maturity requests (issue bucks, add/remove cdp debt, add collateral)
       if (maturity_itr != maturity_index.end()) {
@@ -174,7 +174,7 @@ void buck::run_requests(uint64_t max) {
     }
       
       if (!did_work) {
-        i--;
+        i--; // don't count this pass
         set_processing_status(ProcessingStatus::processing_redemption_requests);
         status = ProcessingStatus::processing_redemption_requests;
         continue;
