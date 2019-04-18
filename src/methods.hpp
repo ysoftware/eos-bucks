@@ -42,6 +42,7 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
   if (account_itr == accounts.end()) {
     accounts.emplace(ram_payer, [&](auto& r) {
       r.balance = value;
+      r.withdrawn_round = _tax.begin()->current_round;
     });
   }
   else {

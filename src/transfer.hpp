@@ -50,6 +50,8 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
+  // to-do to protect from spam, check if depositing more than 1 EOS
+  
   add_funds(from, quantity, _self);
 
   run(3);

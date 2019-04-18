@@ -36,7 +36,7 @@ void buck::withdraw_savings(const name& account) {
   auto account_itr = _accounts.find(BUCK.code().raw());
   if (account_itr == _accounts.end()) { return; }
   
-  const uint64_t delta_round = tax.current_round - account_itr->modified_round;
+  const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
   const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
   const uint64_t user_aggregated_amount = floor((double) account_itr->balance.amount * round_weight);
   const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
@@ -48,7 +48,7 @@ void buck::withdraw_savings(const name& account) {
   add_balance(account, dividends, same_payer, true);
   
   _accounts.modify(account_itr, same_payer, [&](auto& r) {
-    r.modified_round = tax.current_round;
+    r.withdrawn_round = tax.current_round;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
@@ -108,7 +108,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   // to-do do rounding
   
   const uint32_t time_delta = now - last;
-  const double years_held = (double) time_delta / (double) year;
+  const double years_held = (double) time_delta / (double) YEAR;
   const double accrued_amount = (double) cdp_itr->debt.amount * exp(AR * time_delta);
   const uint64_t accrued_collateral_amount = ceil(accrued_amount * IR / price);
   const uint64_t accrued_debt_amount = ceil(accrued_amount * SR);

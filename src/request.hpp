@@ -30,9 +30,9 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   const auto maturity_itr = _maturityreq.find(cdp_id);
   if (maturity_itr != _maturityreq.end()) {
-    if (maturity_itr->maturity_timestamp.utc_seconds == 0) {
-      _maturityreq.erase(maturity_itr);
-    }
+    
+    // to-do
+    // fail? request has been paid for already (from fund)
   }
   
   // to-do validate arguments

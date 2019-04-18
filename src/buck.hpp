@@ -40,7 +40,7 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset     balance;
-      uint32_t  modified_round;
+      uint32_t  withdrawn_round;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -130,10 +130,10 @@ CONTRACT buck : public contract {
       asset           change_debt;
       asset           add_collateral;
       double          ccr;
-      time_point_sec  maturity_timestamp;
+      time_point      maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
-      uint64_t by_time() const { return maturity_timestamp.utc_seconds; }
+      uint64_t by_time() const { return time_point_sec(maturity_timestamp).utc_seconds; }
     };
     
     TABLE cdp {
@@ -151,7 +151,7 @@ CONTRACT buck : public contract {
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
-      uint32_t by_accrued_time() const { return time_point_sec(accrued_timestamp).utc_seconds; }
+      uint64_t by_accrued_time() const { return time_point_sec(accrued_timestamp).utc_seconds; }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {
@@ -203,6 +203,7 @@ CONTRACT buck : public contract {
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
       indexed_by<"liquidator"_n, const_mem_fun<cdp, double, &cdp::liquidator>>,
+      indexed_by<"accrued"_n, const_mem_fun<cdp, uint64_t, &cdp::by_accrued_time>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
     

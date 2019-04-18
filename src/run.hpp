@@ -13,10 +13,10 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
-  time_point_sec cts{ current_time_point() };
-  auto status = get_processing_status();
+  const time_point now = current_time_point();
   const auto price = get_eos_price();
   const auto oracle_timestamp = _stat.begin()->oracle_timestamp;
+  auto status = get_processing_status();
   
   auto maturity_index = _maturityreq.get_index<"bytimestamp"_n>();
   auto debtor_index = _cdp.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
@@ -128,8 +128,8 @@ void buck::run_requests(uint64_t max) {
       if (maturity_itr != maturity_index.end()) {
         
         // look for a first valid request
-        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < cts && maturity_itr->maturity_timestamp.utc_seconds != 0)) { maturity_itr++; }
-        if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < cts && maturity_itr->maturity_timestamp.utc_seconds != 0) {
+        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now)) { maturity_itr++; }
+        if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now) {
           
           // remove cdp if all collateral is 0 (and cdp was just created)
           
@@ -252,13 +252,13 @@ void buck::run_requests(uint64_t max) {
     }
   }
   
-  for (int i=0; i < max; i++) {
-    
-    
-    // interest accrual
-    
-    
-    // if none left, break
+  auto accrual_index = _cdp.get_index<"accrued"_n>();
+  auto accrual_item = accrual_index.begin();
+  
+  int i = 0;
+  while (i < max && accrual_item != accrual_index.end() && time_point(accrual_item->accrued_timestamp - now) > ACCRUAL_PERIOD) {
+    i++;
+    accrue_interest(_cdp.require_find(accrual_item->id));
   }
 }
 

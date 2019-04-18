@@ -3,17 +3,16 @@
 // Created by Yaroslav Erohin.
 
 time_point_sec buck::get_maturity() const {
-  time_point_sec cts{ current_time_point() };
-  const uint32_t num_of_maturity_buckets = 5;
-  static const uint32_t now = cts.utc_seconds;
-  static const uint32_t r   = now % seconds_per_day;
-  static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
-  
+  static const uint32_t now = time_point_sec(current_time_point()).utc_seconds;
+
   // maturity for testing is 1 second
   #if REX_TESTING
-  return time_point_sec{ now + 1 };
+  return time_point_sec(now + 1);
   #endif
   
+  static const uint32_t r   = now % seconds_per_day;
+  const uint32_t num_of_maturity_buckets = 5;
+  static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   return rms;
 }
 

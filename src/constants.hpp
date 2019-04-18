@@ -7,9 +7,10 @@
 /// defines if contract will print logs and enable debug features
 #define DEBUG true
 
-static constexpr uint32_t seconds_per_day = 24 * 3'600;
-static constexpr uint64_t BASE_ROUND_DURATION = 1'000;
-static const uint32_t year = 31'557'600;
+static const uint32_t seconds_per_day = 86'400;
+static const uint32_t BASE_ROUND_DURATION = 1'000;
+static const uint32_t YEAR = 31'557'600;
+static const time_point ACCRUAL_PERIOD = time_point(time_point_sec(2'629'800));
 
 static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);
