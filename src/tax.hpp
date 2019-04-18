@@ -60,18 +60,18 @@ void buck::withdraw_savings(const name& account) {
 void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
-  // send part of collected insurance (EOS) to Scruge
+  // send part of collected insurance to Scruge
   const uint64_t scruge_insurance_amount = round(tax.collected_excess.amount * SP);
   const auto scruge_insurance = asset(scruge_insurance_amount, EOS);
   if (scruge_insurance_amount > 0) {
-    add_balance(SCRUGE, scruge_insurance, _self, true);
+    add_funds(SCRUGE, scruge_insurance, _self);
   }
   
-   // send part of collected savings (BUCK) to Scruge
+   // send part of collected savings to Scruge
   const uint64_t scruge_savings_amount = round(tax.collected_savings.amount * SP);
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
-    add_funds(SCRUGE, scruge_savings, same_payer);
+    add_balance(SCRUGE, scruge_savings, _self, true);
   }
   
   time_point_sec cts{ current_time_point() };

@@ -282,6 +282,7 @@ void buck::run_liquidation(uint64_t max) {
     if (debtor_ccr >= CR) {
       
       set_liquidation_status(LiquidationStatus::liquidation_complete);
+      run_requests(max - processed);
       break;
     }
     
