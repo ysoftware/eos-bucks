@@ -3,6 +3,8 @@
 // Created by Yaroslav Erohin.
 
 void buck::transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  
   check(from != to, "cannot transfer to self");
   check(is_account(to), "to account does not exist");
   
@@ -24,6 +26,8 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  
   require_auth(from);
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
@@ -41,6 +45,8 @@ void buck::withdraw(const name& from, const asset& quantity) {
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   if (to != _self || from == _self || memo != "deposit") { return; }
+  
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
 
   require_auth(from);
   
@@ -58,6 +64,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
 }
 
 void buck::open(const name& account, const asset& quantity, double ccr, double acr) {
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
   
   // check values

@@ -3,7 +3,8 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint64_t max) {
-  // check liquidation is still going for this round
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
     run_liquidation(max);
   }
