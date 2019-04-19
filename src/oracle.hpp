@@ -24,7 +24,7 @@ void buck::update(double eos_price) {
     run_liquidation(50);
   }
   else {
-    run_requests(5);
+    run_requests(10);
   }
 }
 

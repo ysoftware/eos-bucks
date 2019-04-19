@@ -13,6 +13,8 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
+  PRINT("running requests", max)
+  
   const time_point now = current_time_point();
   const auto price = get_eos_price();
   const auto oracle_timestamp = _stat.begin()->oracle_timestamp;
@@ -35,6 +37,9 @@ void buck::run_requests(uint64_t max) {
 
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
+        
+        PRINT_("doing a close request")
+        
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         sell_rex(cdp_itr->id, cdp_itr->collateral, ProcessKind::closing);
         close_itr++; // this request will be removed in process method
@@ -43,6 +48,8 @@ void buck::run_requests(uint64_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
+      
+        PRINT_("doing a reparam request")
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
@@ -127,6 +134,8 @@ void buck::run_requests(uint64_t max) {
       // maturity requests (issue bucks, add/remove cdp debt, add collateral)
       if (maturity_itr != maturity_index.end()) {
         
+        PRINT_("doing a maturity request")
+        
         // look for a first valid request
         while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now)) { maturity_itr++; }
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now) {
@@ -169,14 +178,14 @@ void buck::run_requests(uint64_t max) {
           
           maturity_itr = maturity_index.erase(maturity_itr); // remove request
           did_work = true;
-          break; // done with maturity round
         }
-    }
+      }
       
       if (!did_work) {
         i--; // don't count this pass
         set_processing_status(ProcessingStatus::processing_redemption_requests);
         status = ProcessingStatus::processing_redemption_requests;
+        PRINT_("cdp requests done")
         continue;
       }
     }
@@ -184,6 +193,8 @@ void buck::run_requests(uint64_t max) {
       
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
+        
+        PRINT_("doing a redeem request")
         
         // to-do sorting
         // to-do verify timestamp
@@ -247,6 +258,7 @@ void buck::run_requests(uint64_t max) {
       else {
         // no more redemption requests
         set_processing_status(ProcessingStatus::processing_complete);
+        PRINT_("redeem requests done")
         break;
       }
     }
@@ -256,9 +268,13 @@ void buck::run_requests(uint64_t max) {
   auto accrual_item = accrual_index.begin();
   
   int i = 0;
-  while (i < max && accrual_item != accrual_index.end() && time_point(accrual_item->accrued_timestamp - now) > ACCRUAL_PERIOD) {
-    i++;
+  while (i < max && accrual_item != accrual_index.end() &&
+        accrual_item->debt.amount > 0 &&
+        time_point_sec(time_point(accrual_item->accrued_timestamp - now)).utc_seconds > ACCRUAL_PERIOD) {
+    PRINT_("running accrue interest")
     accrue_interest(_cdp.require_find(accrual_item->id));
+    i++;
+    accrual_item = accrual_index.begin(); // take first element after index updated
   }
 }
 
@@ -281,9 +297,10 @@ void buck::run_liquidation(uint64_t max) {
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR) {
       
+      PRINT_("liquidation complete")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
-      break;
+      return;
     }
     
     double bad_debt = (CR - debtor_ccr) * debt;
@@ -300,9 +317,9 @@ void buck::run_liquidation(uint64_t max) {
       // this and all further liquidators can not bail out anymore bad debt 
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
         
-        set_liquidation_status(LiquidationStatus::failed);
-        
         // no more liquidators
+        PRINT_("liquidation failed")
+        set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
       }

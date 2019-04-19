@@ -151,7 +151,12 @@ CONTRACT buck : public contract {
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
-      uint64_t by_accrued_time() const { return time_point_sec(accrued_timestamp).utc_seconds; }
+      uint64_t by_accrued_time() const {
+        if (debt.amount == 0) {
+          return UINT64_MAX;
+        }
+        return time_point_sec(accrued_timestamp).utc_seconds; 
+      }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {

@@ -19,6 +19,7 @@ void buck::zdestroy() {
   RM(reparam_req_i)
   RM(cdp_i)
   RM(fund_i)
+  RM(taxation_i)
   
   RMS(accounts_i, "yaroslaveroh"_n.value)
   RMS(accounts_i, "buckbuckbuck"_n.value)
