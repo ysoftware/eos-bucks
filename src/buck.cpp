@@ -56,14 +56,16 @@ bool buck::init() {
     r.current_round = 0;
     
     r.insurance_pool = ZERO_EOS;
-    r.collected_excess = ZERO_EOS;
+    r.collected_insurance = ZERO_EOS;
     r.total_excess = ZERO_EOS;
     r.aggregated_excess = ZERO_EOS;
+    r.changed_excess = ZERO_EOS;
     
     r.savings_pool = ZERO_BUCK;
     r.collected_savings = ZERO_BUCK;
-    r.total_savings = ZERO_BUCK;
-    r.aggregated_savings = ZERO_BUCK;
+    r.total_bucks = ZERO_BUCK;
+    r.aggregated_bucks = ZERO_BUCK;
+    r.changed_bucks = ZERO_BUCK;
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self, false);

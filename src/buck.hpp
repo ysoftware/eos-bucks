@@ -54,8 +54,8 @@ CONTRACT buck : public contract {
       time_point  oracle_timestamp;
       double      oracle_eos_price;
       
-      // 2 bytes for liquidation status
-      // 2 bytes for requests status
+      // 2 bits for liquidation status
+      // 2 bits for requests status
       uint8_t     processing_status;
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
@@ -64,14 +64,25 @@ CONTRACT buck : public contract {
     TABLE taxation_stats {
       uint32_t  current_round;
       
+      // actual processed taxes
       asset     insurance_pool;
       asset     savings_pool;
+      
+      // taxes added in this round
+      asset     collected_insurance;     
+      asset     collected_savings;  
+      
+      // current amount of money in the system
       asset     total_excess;
-      asset     total_savings;
+      asset     total_bucks;
+      
+      // aggregated amount of money
       asset     aggregated_excess;
-      asset     aggregated_savings;
-      asset     collected_excess;
-      asset     collected_savings;
+      asset     aggregated_bucks;
+      
+      // money added in this round
+      asset     changed_excess;
+      asset     changed_bucks;
       
       uint64_t primary_key() const { return 0; }
     };
@@ -245,6 +256,7 @@ CONTRACT buck : public contract {
     void process_taxes();
     void accrue_interest(const cdp_i::const_iterator& cdp_itr);
     void update_excess_collateral(const asset& value);
+    void update_bucks_supply(const asset& value);
     void withdraw_insurance(const cdp_i::const_iterator& cdp_itr);
     void withdraw_savings(const name& account);
     

@@ -49,6 +49,8 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
   }
   
   if (change_supply) {
+    update_bucks_supply(value);
+    
     _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
       r.supply += value;
     });
@@ -68,6 +70,8 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   });
   
   if (change_supply) {
+    update_bucks_supply(ZERO_BUCK - value);
+    
     _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
       r.supply -= value;
     });

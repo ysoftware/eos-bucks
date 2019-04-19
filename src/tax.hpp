@@ -41,7 +41,7 @@ void buck::withdraw_savings(const name& account) {
   const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
   const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
   const uint64_t user_aggregated_amount = floor((double) account_itr->balance.amount * round_weight);
-  const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
+  const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
   const uint64_t dividends_amount = floor((double) tax.insurance_pool.amount * user_part);
   
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
@@ -57,7 +57,7 @@ void buck::withdraw_savings(const name& account) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.savings_pool -= dividends;
-    r.aggregated_savings -= user_aggregated;
+    r.aggregated_bucks -= user_aggregated;
   });
 }
 
@@ -65,7 +65,7 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
-  const uint64_t scruge_insurance_amount = round(tax.collected_excess.amount * SP);
+  const uint64_t scruge_insurance_amount = round(tax.collected_insurance.amount * SP);
   const auto scruge_insurance = asset(scruge_insurance_amount, EOS);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
@@ -80,25 +80,45 @@ void buck::process_taxes() {
   
   time_point_sec cts{ current_time_point() };
   static const uint32_t now = cts.utc_seconds;
+  const auto delta_round = now - tax.current_round;
   
   // update excess collateral
-  const uint64_t add_excess_amount = tax.total_excess.amount * (now - tax.current_round) / BASE_ROUND_DURATION;
-  const auto add_excess = asset(add_excess_amount, EOS);
+  const auto new_total_excess = tax.total_excess + tax.changed_excess;
+  const uint64_t aggregate_excess_amount = new_total_excess.amount * delta_round / BASE_ROUND_DURATION;
+  const auto aggregate_excess = asset(aggregate_excess_amount, EOS);
   
   // update savings
-  const uint64_t add_savings_amount = tax.total_savings.amount * (now - tax.current_round) / BASE_ROUND_DURATION;
-  const auto add_savings = asset(add_savings_amount, BUCK);
+  const auto new_total_bucks = tax.total_bucks + tax.changed_bucks;
+  const uint64_t aggregate_bucks_amount = new_total_bucks.amount * delta_round / BASE_ROUND_DURATION;
+  const auto aggregate_bucks = asset(aggregate_bucks_amount, BUCK);
+  
+  PRINT("tax.changed_bucks", tax.changed_bucks)
+  PRINT("tax.changed_excess", tax.changed_excess)
+  PRINT("new_total_excess", new_total_excess)
+  PRINT("tax.changed_bucks", tax.changed_bucks)
+  PRINT("new_total_bucks", new_total_bucks)
+  PRINT("scruge_savings", scruge_savings)
+  PRINT("scruge_insurance", scruge_insurance)
+  PRINT("tax.collected_insurance", tax.collected_insurance)
+  PRINT("tax.collected_savings", tax.collected_savings)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.current_round = now;
     
-    r.insurance_pool += tax.collected_excess - scruge_insurance;
-    r.collected_excess = ZERO_EOS;
-    r.aggregated_excess += add_excess;
-    
+    r.insurance_pool += tax.collected_insurance - scruge_insurance;
     r.savings_pool += tax.collected_savings - scruge_savings;
+    
+    r.collected_insurance = ZERO_EOS;
     r.collected_savings = ZERO_BUCK;
-    r.aggregated_savings += add_savings;
+    
+    r.aggregated_excess += aggregate_excess;
+    r.aggregated_bucks += aggregate_bucks;
+    
+    r.total_excess = new_total_excess;
+    r.total_bucks = new_total_bucks;
+    
+    r.changed_excess = ZERO_EOS;
+    r.changed_bucks = ZERO_BUCK;
   });
 }
 
@@ -125,7 +145,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.collected_excess += accrued_collateral;
+    r.collected_insurance += accrued_collateral;
     r.collected_savings += accrued_debt;
   });
   
@@ -134,6 +154,12 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 
 void buck::update_excess_collateral(const asset& value) {
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-    r.collected_excess += value;
+    r.changed_excess += value;
+  });
+}
+
+void buck::update_bucks_supply(const asset& value) {
+  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+    r.changed_bucks += value;
   });
 }
