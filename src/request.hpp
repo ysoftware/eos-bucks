@@ -5,6 +5,8 @@
 void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
+  // to-do validation
+  
   const auto cdp_itr = _cdp.find(cdp_id);
   check(cdp_itr != _cdp.end(), "debt position does not exist");
   
@@ -79,6 +81,11 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
 void buck::changeacr(uint64_t cdp_id, double acr) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
+  // to-do validation
+  
+  const auto maturity_itr = _maturityreq.find(cdp_id);
+  check(maturity_itr == _maturityreq.end(), "cdp is being updated right now");
+  
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr < 1000, "acr value is too high");
   
@@ -95,6 +102,11 @@ void buck::changeacr(uint64_t cdp_id, double acr) {
 
 void buck::closecdp(uint64_t cdp_id) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  
+  // to-do validation
+  
+  const auto maturity_itr = _maturityreq.find(cdp_id);
+  check(maturity_itr == _maturityreq.end(), "cdp is being updated right now");
   
   const auto cdp_itr = _cdp.find(cdp_id);
   check(cdp_itr != _cdp.end(), "debt position does not exist");
