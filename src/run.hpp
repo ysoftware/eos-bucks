@@ -270,11 +270,12 @@ void buck::run_requests(uint64_t max) {
   int i = 0;
   while (i < max && accrual_item != accrual_index.end() &&
         accrual_item->debt.amount > 0 &&
-        time_point_sec(time_point(accrual_item->accrued_timestamp - now)).utc_seconds > ACCRUAL_PERIOD) {
+        time_point_sec(time_point(now - accrual_item->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
     PRINT_("running accrue interest")
+    
     accrue_interest(_cdp.require_find(accrual_item->id));
-    i++;
     accrual_item = accrual_index.begin(); // take first element after index updated
+    i++;
   }
 }
 

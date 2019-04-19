@@ -108,14 +108,18 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   // to-do rounding
   
-  const uint32_t time_delta = now - last;
-  const double years_held = (double) time_delta / (double) YEAR;
+  const double years_held = (double) (now - last) / (double) YEAR;
   const double accrued_amount = (double) cdp_itr->debt.amount * exp(AR * years_held);
   const uint64_t accrued_collateral_amount = ceil(accrued_amount * IR / price);
   const uint64_t accrued_debt_amount = ceil(accrued_amount * SR);
   
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
+  
+  PRINT("delta", now - last)
+  PRINT("cdp_itr->debt", cdp_itr->debt)
+  PRINT("years_held", years_held)
+  PRINT("accrued_amount", accrued_amount)
   
   PRINT("accrued_collateral", accrued_collateral)
   PRINT("accrued_debt", accrued_debt)
