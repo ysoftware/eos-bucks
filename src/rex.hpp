@@ -105,7 +105,6 @@ void buck::process(uint8_t kind) {
     
     // removing debt
     else if (reparam_itr->change_debt.amount < 0) {
-      PRINT_("removing debt")
       change_debt = reparam_itr->change_debt; // add negative value
     }
     

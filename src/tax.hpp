@@ -17,6 +17,8 @@ void buck::withdraw_insurance(const cdp_i::const_iterator& cdp_itr) {
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, EOS);
   
+  PRINT("withdraw insurance dividends", dividends)
+  
   add_funds(cdp_itr->account, dividends, same_payer);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -44,6 +46,8 @@ void buck::withdraw_savings(const name& account) {
   
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
+  
+  PRINT("withdraw savings dividends", dividends)
   
   add_balance(account, dividends, same_payer, true);
   
@@ -88,11 +92,11 @@ void buck::process_taxes() {
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.current_round = now;
     
-    r.insurance_pool = tax.collected_excess - scruge_insurance;
+    r.insurance_pool += tax.collected_excess - scruge_insurance;
     r.collected_excess = ZERO_EOS;
     r.aggregated_excess += add_excess;
     
-    r.savings_pool = tax.collected_savings - scruge_savings;
+    r.savings_pool += tax.collected_savings - scruge_savings;
     r.collected_savings = ZERO_BUCK;
     r.aggregated_savings += add_savings;
   });
@@ -106,23 +110,13 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
-  // to-do rounding
-  
   const double years_held = (double) (now - last) / (double) YEAR;
-  const double accrued_amount = (double) cdp_itr->debt.amount * exp(AR * years_held);
-  const uint64_t accrued_collateral_amount = ceil(accrued_amount * IR / price);
-  const uint64_t accrued_debt_amount = ceil(accrued_amount * SR);
+  const double accrued_amount = (double) cdp_itr->debt.amount * (exp(AR * years_held) - 1);
+  const uint64_t accrued_collateral_amount = round(accrued_amount * IR / price);
+  const uint64_t accrued_debt_amount = round(accrued_amount * SR);
   
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
-  
-  PRINT("delta", now - last)
-  PRINT("cdp_itr->debt", cdp_itr->debt)
-  PRINT("years_held", years_held)
-  PRINT("accrued_amount", accrued_amount)
-  
-  PRINT("accrued_collateral", accrued_collateral)
-  PRINT("accrued_debt", accrued_debt)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -132,7 +126,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.collected_excess += accrued_collateral;
-    r.collected_savings -= accrued_debt;
+    r.collected_savings += accrued_debt;
   });
   
   // to-do check ccr for liquidation

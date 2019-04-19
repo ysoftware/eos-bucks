@@ -65,14 +65,13 @@ CONTRACT buck : public contract {
       uint32_t  current_round;
       
       asset     insurance_pool;
-      asset     collected_excess;
-      asset     total_excess;
-      asset     aggregated_excess;
-      
       asset     savings_pool;
-      asset     collected_savings;
+      asset     total_excess;
       asset     total_savings;
+      asset     aggregated_excess;
       asset     aggregated_savings;
+      asset     collected_excess;
+      asset     collected_savings;
       
       uint64_t primary_key() const { return 0; }
     };
