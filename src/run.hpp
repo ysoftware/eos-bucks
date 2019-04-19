@@ -147,6 +147,7 @@ void buck::run_requests(uint64_t max) {
           }
           
           update_excess_collateral(add_collateral);
+          withdraw_insurance(cdp_itr);
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
@@ -156,6 +157,7 @@ void buck::run_requests(uint64_t max) {
           
           if (change_debt.amount > 0) {
             
+            withdraw_savings(cdp_itr->account);
             add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
           }
           
@@ -203,9 +205,6 @@ void buck::run_requests(uint64_t max) {
             r.collateral = using_collateral;
             r.rex = using_rex;
           });
-          
-          auto cdp_itr = _cdp.require_find(debtor_itr->id);
-          withdraw_insurance(cdp_itr);
           
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
@@ -298,6 +297,13 @@ void buck::run_liquidation(uint64_t max) {
         set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
+      }
+      
+      // to-do check if right
+      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
+      if (cdp_itr->debt.amount == 0) {
+        update_excess_collateral(-cdp_itr->collateral);
+        withdraw_insurance(cdp_itr);
       }
       
       const double bailable = liquidator_debt == 0 ? 

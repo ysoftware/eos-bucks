@@ -113,8 +113,11 @@ void buck::process(uint8_t kind) {
       r.debt += change_debt;
     });
     
-    update_excess_collateral(reparam_itr->change_collateral);
-    withdraw_insurance(cdp_itr);
+    // to-do check if right
+    if (cdp_itr->debt.amount == 0) {
+      update_excess_collateral(reparam_itr->change_collateral);
+      withdraw_insurance(cdp_itr);
+    }
     
     if (gained_collateral.amount > 0) {
       add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt
@@ -166,8 +169,11 @@ void buck::process(uint8_t kind) {
     const auto gained_collateral = rexprocess_itr->current_balance;
     _process.erase(rexprocess_itr);
     
-    update_excess_collateral(-cdp_itr->collateral);
-    withdraw_insurance(cdp_itr);
+    // to-do check if right
+    if (cdp_itr->debt.amount == 0) {
+      update_excess_collateral(-cdp_itr->collateral);
+      withdraw_insurance(cdp_itr);
+    }
     
     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);

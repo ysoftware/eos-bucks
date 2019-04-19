@@ -4,20 +4,24 @@
 
 /// issue cdp dividends from the insurance pool
 void buck::withdraw_insurance(const cdp_i::const_iterator& cdp_itr) {
-  const auto& tax = *_tax.begin();
-  
   if (cdp_itr->debt.amount != 0) { return; }
+  const auto& tax = *_tax.begin();
   
   const uint64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = floor((double) cdp_itr->collateral.amount * round_weight);
+  const uint64_t user_aggregated_amount = round((double) cdp_itr->collateral.amount * round_weight);
   const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
-  const uint64_t dividends_amount = floor((double) tax.insurance_pool.amount * user_part);
+  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
   
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, EOS);
   
+  PRINT("cdp_itr->id", cdp_itr->id)
+  PRINT("cdp_itr->collateral", cdp_itr->collateral)
+  PRINT("round_weight", round_weight)
   PRINT("withdraw insurance dividends", dividends)
+  PRINT("tax.aggregated_excess", tax.aggregated_excess)
+  PRINT("user_aggregated", user_aggregated)
   
   add_funds(cdp_itr->account, dividends, same_payer);
   
@@ -40,14 +44,18 @@ void buck::withdraw_savings(const name& account) {
   
   const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
   const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = floor((double) account_itr->balance.amount * round_weight);
+  const uint64_t user_aggregated_amount = round((double) account_itr->balance.amount * round_weight);
   const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
-  const uint64_t dividends_amount = floor((double) tax.insurance_pool.amount * user_part);
+  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
   
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
   
+  PRINT("account_itr->balance", account_itr->balance)
+  PRINT("round_weight", round_weight)
   PRINT("withdraw savings dividends", dividends)
+  PRINT("tax.aggregated_bucks", tax.aggregated_bucks)
+  PRINT("user_aggregated", user_aggregated)
   
   add_balance(account, dividends, same_payer, true);
   
@@ -92,16 +100,6 @@ void buck::process_taxes() {
   const uint64_t aggregate_bucks_amount = new_total_bucks.amount * delta_round / BASE_ROUND_DURATION;
   const auto aggregate_bucks = asset(aggregate_bucks_amount, BUCK);
   
-  PRINT("tax.changed_bucks", tax.changed_bucks)
-  PRINT("tax.changed_excess", tax.changed_excess)
-  PRINT("new_total_excess", new_total_excess)
-  PRINT("tax.changed_bucks", tax.changed_bucks)
-  PRINT("new_total_bucks", new_total_bucks)
-  PRINT("scruge_savings", scruge_savings)
-  PRINT("scruge_insurance", scruge_insurance)
-  PRINT("tax.collected_insurance", tax.collected_insurance)
-  PRINT("tax.collected_savings", tax.collected_savings)
-  
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.current_round = now;
     
@@ -137,6 +135,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
+  
+  PRINT("accrued_collateral", accrued_collateral)
+  PRINT("accrued_debt", accrued_debt)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
