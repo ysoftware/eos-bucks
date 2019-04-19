@@ -100,12 +100,7 @@ void buck::process(uint8_t kind) {
       const uint64_t change_amount = ceil(fmin(ccr_cr, di));
       change_debt = asset(change_amount, BUCK);
       
-      // pay issuance tax
-      const uint64_t tax_amount = change_amount * IF;
-      const auto tax = asset(tax_amount, BUCK);
-      pay_tax(tax);
-      
-      add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
+      add_balance(cdp_itr->account, change_debt, same_payer, true);
     }
     
     // removing debt

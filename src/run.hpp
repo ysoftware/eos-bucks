@@ -67,12 +67,7 @@ void buck::run_requests(uint64_t max) {
           uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
           change_debt = asset(change_amount, BUCK);
           
-          // pay issuance tax
-          const uint64_t tax_amount = change_amount * IF;
-          const asset tax = asset(tax_amount, BUCK);
-          pay_tax(tax);
-          
-          add_balance(cdp_itr->account, change_debt - tax, same_payer, true);
+          add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         
         // removing debt
@@ -168,12 +163,7 @@ void buck::run_requests(uint64_t max) {
           
           if (change_debt.amount > 0) {
             
-            // pay issuance tax
-            const uint64_t tax_amount = (uint64_t) ((double) change_debt.amount * IF);
-            const asset tax = asset(tax_amount, BUCK);
-            pay_tax(tax);
-            
-            add_balance(cdp_itr->account, change_debt - tax, cdp_itr->account, true);
+            add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
           }
           
           maturity_itr = maturity_index.erase(maturity_itr); // remove request

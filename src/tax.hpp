@@ -143,9 +143,3 @@ void buck::update_excess_collateral(const asset& value) {
     r.collected_excess += value;
   });
 }
-
-void buck::pay_tax(const asset& value) {
-  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-    
-  });
-}
