@@ -42,7 +42,7 @@ void buck::withdraw_savings(const name& account) {
   const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
   const uint64_t dividends_amount = floor((double) tax.insurance_pool.amount * user_part);
   
-  const auto user_aggregated = asset(user_aggregated_amount, EOS);
+  const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
   
   add_balance(account, dividends, same_payer, true);
