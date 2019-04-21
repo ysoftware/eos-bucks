@@ -125,7 +125,28 @@ def liquidation(table, price, cr, lf)
 				cdp_insert(table, debtor)
 				cdp_insert(table, liquidator)
 		return table
+
+def redemption(table, amount, price, cr, rf):
+	len_table = len(table)
+	while amount > 0:
+		for i in range (len_table, -1, -1):
+			cdp = table.pop(i)
+			if cdp.cd * price >= 1 + rf:
+				if amount <= cdp.debt:
+					add_debt(cdp, -amount)
+					add_collateral(cdp, -(amount)/(price-rf))
+					amount = 0
+					break
+				else:
+					d = cdp.debt
+					add_debt(cdp, -d)
+					add_collateral(cdp, -d/(price-rf))
+					amount -= d
+	return table
 	
+			
+			
+			
 			
 			
 # Round 1 starts	
