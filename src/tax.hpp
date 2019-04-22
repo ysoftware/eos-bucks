@@ -13,15 +13,11 @@ void buck::withdraw_insurance(const cdp_i::const_iterator& cdp_itr) {
   const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
   const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
   
+  // don't update modified_round if dividends calculated is 0
+  if (dividends_amount == 0) { return; }
+  
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, EOS);
-  
-  PRINT("cdp_itr->id", cdp_itr->id)
-  PRINT("cdp_itr->collateral", cdp_itr->collateral)
-  PRINT("round_weight", round_weight)
-  PRINT("withdraw insurance dividends", dividends)
-  PRINT("tax.aggregated_excess", tax.aggregated_excess)
-  PRINT("user_aggregated", user_aggregated)
   
   add_funds(cdp_itr->account, dividends, same_payer);
   
@@ -48,14 +44,11 @@ void buck::withdraw_savings(const name& account) {
   const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
   const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
   
+  // don't update modified_round if dividends calculated is 0
+  if (dividends_amount == 0) { return; }
+  
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
-  
-  PRINT("account_itr->balance", account_itr->balance)
-  PRINT("round_weight", round_weight)
-  PRINT("withdraw savings dividends", dividends)
-  PRINT("tax.aggregated_bucks", tax.aggregated_bucks)
-  PRINT("user_aggregated", user_aggregated)
   
   add_balance(account, dividends, same_payer, true);
   
@@ -136,9 +129,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   
-  PRINT("accrued_collateral", accrued_collateral)
-  PRINT("accrued_debt", accrued_debt)
-  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
     r.accrued_debt += accrued_debt;
@@ -147,7 +137,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.collected_insurance += accrued_collateral;
-    r.collected_savings += accrued_debt;
+    // r.collected_savings += accrued_debt; // goes to pool only after redemption/reparametrization
   });
   
   // to-do check ccr for liquidation

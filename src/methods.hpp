@@ -2,11 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-double buck::get_ccr(const asset& collateral, const asset& debt) const {
-  const double price = get_eos_price();
-  return (double) collateral.amount * price / (double) debt.amount;
-}
-
 void buck::sub_funds(const name& from, const asset& quantity) {
   auto fund_itr = _fund.require_find(from.value, "no fund balance found");
   check(fund_itr->balance >= quantity, "overdrawn fund balance");

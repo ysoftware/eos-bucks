@@ -88,13 +88,15 @@ void buck::process(uint8_t kind) {
     
     const asset new_collateral = cdp_itr->collateral + reparam_itr->change_collateral;
     asset change_debt = reparam_itr->change_debt;
+    asset change_accrued_debt = asset(0, BUCK);
     
     // adding debt
     if (reparam_itr->change_debt.amount > 0) {
       
       // to-do check this
       
-      const double ccr = get_ccr(new_collateral, change_debt);
+      const auto price = get_eos_price();
+      const double ccr = (double) new_collateral.amount * price / (double) change_debt.amount;
       const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
       const double di = (double) reparam_itr->change_debt.amount;
       const uint64_t change_amount = ceil(fmin(ccr_cr, di));
@@ -106,12 +108,23 @@ void buck::process(uint8_t kind) {
     // removing debt
     else if (reparam_itr->change_debt.amount < 0) {
       change_debt = reparam_itr->change_debt; // add negative value
+      
+      const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+      change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
+      change_debt += change_accrued_debt; // change is negative
     }
     
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.collateral = new_collateral;
+      r.accrued_debt += change_accrued_debt;
       r.debt += change_debt;
     });
+    
+    if (change_accrued_debt.amount < 0) {
+      _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+        r.collected_savings += -change_accrued_debt; // add bucks to savings pool
+      });
+    }
     
     // to-do check if right
     if (cdp_itr->debt.amount == 0) {
