@@ -162,7 +162,10 @@ void buck::run_requests(uint64_t max) {
             change_debt = asset(floor(debt_amount), BUCK);
           }
           
-          update_excess_collateral(add_collateral);
+          if (cdp_itr->debt.amount == 0) {
+            update_excess_collateral(add_collateral);
+          }
+          
           withdraw_insurance(cdp_itr);
           
           if (change_debt.amount > 0) {
@@ -270,7 +273,6 @@ void buck::run_requests(uint64_t max) {
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         else {
-          update_excess_collateral(collateral_return);
           sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
           add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
           redeem_itr++; // this request will be removed in process method

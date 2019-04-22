@@ -48,8 +48,8 @@ def generate_debtors(k, n, price):
 		debtor.add_debt(debtor.collateral * price / debtor.cd)
 		debtors.insert(0, debtor)
 	return debtors
-		
-		
+
+
 def gen(k, n, price):
 	liquidators = generate_liquidators(k)
 	debtors = generate_debtors(k, n, price)

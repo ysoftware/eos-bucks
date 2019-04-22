@@ -57,8 +57,7 @@ class Test(unittest.TestCase):
 	def test(self):
 		update(buck)
 
-		open(buck, user1, 2, 0)
-		transfer(eosio_token, user1, buck, "10000.0000 EOS", "")
+		open(buck, user1, 2, 0, "10000.0000 EOS", eosio_token)
 
 		# oracle
 		sleep(1)
@@ -70,13 +69,12 @@ class Test(unittest.TestCase):
 
 		# user1 balance is 9800
 
-		transfer(buck, user1, user2, "1000.0000 BUCK", "")
+		transfer(buck, user1, user2, "1000.000 BUCK", "")
 
 		# 9800 - 1000
-		self.assertEqual(8800, balance(buck, user1))
+		self.assertEqual(99000, balance(buck, user1))
 
-		# multiply by 0.99915
-		self.assertEqual(999.15, balance(buck, user2))
+		self.assertEqual(1000, balance(buck, user2))
 
 
 # main
