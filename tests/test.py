@@ -26,7 +26,7 @@ class CDP:
 
 def generate_liquidators(k):
 	liquidators = []
-	rand = random.randint(100,1000)
+	rand = float(random.randint(100,1000))
 	rand2 = float(random.randint(150,155))/100
 	liquidator = CDP(rand, 0, 9999999, rand2, 0)
 	liquidators.append(liquidator)
@@ -38,13 +38,13 @@ def generate_liquidators(k):
 
 def generate_debtors(k, n, price):
 	debtors = []
-	rand = random.randint(100,1000) 
+	rand = float(random.randint(100,1000) )
 	rand2 = float(random.randint(150,155))/100 
 	debtor = CDP(rand, 0, rand2,0, k+1)
 	debtor.add_debt(round(debtor.collateral * price / debtor.cd,3))
 	debtors.append(debtor)
 	for i in range (k+1,n):
-		rand = random.randint(100,1000)
+		rand = float(random.randint(100,1000))
 		helper = int(debtors[0].cd*100)
 		rand2 = (float(random.randint(helper, helper +50)))/100 
 		debtor = CDP(rand, 0, rand2, 0, i+1)
@@ -64,39 +64,59 @@ def gen(k, n, price):
 # Function for inserting CDP into the table
 	
 def cdp_insert(table, cdp):
+	if table == []:
+		return [cdp]
 	c = cdp.collateral
 	d = cdp.debt
 	acr = cdp.acr
 	cd = cdp.cd
 	len_table = len(table)
-	if d == 0:
-		for i in range(0, len_table):
-			cdp2 = table[i]
-			c2 = cdp2.collateral
-			d2 = cdp2.debt
-			acr2 = cdp2.acr
-			if d2 != 0 or c/acr > c2/acr2:
-				table.insert(i, cdp)
-				return table
-		return table.append(cdp)
-	else:
-		for i in range (len_table - 1, -1, -1):
+	if d == 0 and acr == 0:
+		return table
+	elif d == 0:
+		for i in range(0,len_table):
 			cdp2 = table[i]
 			c2 = cdp2.collateral
 			d2 = cdp2.debt
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
-			if d2 == 0 or cd <= cd2:
-				table.insert(i+1,cdp)
+			if d2 != 0:
+				table.insert(i,cdp)
 				return table
-		table = table.insert(0,cdp)
+			elif acr2 == 0:
+				table.insert(i, cdp)
+				return table
+			else:
+				if c/acr > c2/acr2:
+					table.insert(i,cdp)
+					return table
+		table.append(cdp)
 		return table
+	else:
+		for i in range(0, len_table):
+			cdp2 = table[i]
+			c2 = cdp2.collateral
+			d2 = cdp2.debt
+			acr2 = cdp2.acr
+			cd2 = cdp2.cd
+			if d2 != 0:
+				if c/d >= c2/d2:
+					table.insert(i,cdp)
+					return table
+		table.append(cdp)
+		return table
+	table.append(cdp)
+	return table
 	
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(table, id):
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
+	print("\n")
+	print("holy fuck")
+	print("\n")
+	return table
 			
 			
 			
@@ -119,7 +139,8 @@ def print_table(table):
 # Helper functions for calculations
 
 def calc_ccr(cdp, price):
-	return cdp.collateral / cdp.debt * price
+	ccr = (cdp.collateral / cdp.debt) * price
+	return ccr
 	
 def calc_lf(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
@@ -131,70 +152,52 @@ def calc_lf(cdp, price, cr, lf):
 		l = ccr - 1
 	return l
 	
+def x_value(d, l, c, p):
+		x = (0.75 * d * (1+l) - 0.5*c*p*(1+l))/(0.5-1.5*l)
+		return x
 		
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
-	def x_value(d, l, c, p):
-		x = (0.75 * d * (1+l) - 0.5*c*p*(1+l))/(0.5-1.5*l)
-		return x
-	return (cr-ccr)*cdp.debt+x_value(cdp.debt, lf, cdp.collateral, price)	
+	val = (cr-ccr)*cdp.debt+x_value(cdp.debt, lf, cdp.collateral, price)	
+	return val
+	
 	
 def calc_val(cdp, cdp2, price, cr, lf):
 	l = calc_lf(cdp, price, cr, lf)
 	c = cdp2.collateral
 	d = cdp2.debt
 	acr = cdp2.acr
-	if cdp2.debt != 0:
-		val = min(calc_bad_debt(cdp, price, cr, l),((c * price - d * acr) * (1-l))/(acr*(1-l)-1))
-	else:
-		val = min(calc_bad_debt(cdp, price, cr, l), c * price * (1-l)/(acr*(1-l)-1))
-	return val
+	v = calc_bad_debt(cdp, price, cr, l)
+	v2 = (c*price-d*acr)*(1-l)/(acr*(1-l)-1)
+	return min(v,v2)
 	
 # Contract functions
 
-def liquidation(table, price, cr, lf):
-		len_table = len(table)
-		k = 0
-		while table[k].cd * price >= cr:
-			if table[k].cd * price <= table[k].acr:
+def liquidation(table, price, cr, lf):	
+		while table[0].cd * price >= cr:
+			debtor = table.pop(len(table)-1)
+			if debtor.cd * price >= cr:
+				table.append(debtor)
 				return table
 			else:
-				debtor = table[len(table)-1]
-				id = debtor.id
-				if debtor.cd * price >= cr:
-					return table
+				liquidator = table.pop(0)
+				l = calc_lf(debtor, price, cr, lf)
+				val = calc_val(debtor, liquidator, price, cr,l)
+				c = val / (price*(1-l))
+				debtor.add_debt(round(-val,3))
+				liquidator.add_debt(round(val,3))
+				liquidator.add_collateral(floor(c))
+				debtor.add_collateral(floor(-c))
+				if debtor.debt <=0.01:
+					debtor.new_cd(999999999)
 				else:
-					liquidator = table[0]
-					id2 = liquidator.id
-					l = calc_lf(debtor, price, cr, lf)
-					d = calc_val(debtor, liquidator, price, cr,l)
-				#print("\n")
-				#print("printing")
-				#print("\n")
-				#print(d)
-				#print("\n")
-				#print(debtor.debt)
-				#print("\n")
-				#print(debtor.collateral)
-					c = d / (price*(1-l))
-					debtor.add_debt(round(-d,3))
-					liquidator.add_debt(round(d,3))
-					liquidator.add_collateral(floor(c))
-					debtor.add_collateral(floor(-c))
-					if debtor.debt <=0.01:
-						debtor.new_cd(999999999)
-					else:
-						debtor.new_cd(round(debtor.collateral / debtor.debt,2))
-					liquidator.new_cd(round(liquidator.collateral / liquidator.debt,2))
-					table = cdp_insert(table, liquidator)
-					del table[cdp_index(table,id2)]
-					del table[cdp_index(table,id)]
-					table = cdp_insert(table, debtor)
-					print("\n")
-					print("printing")
-					print("\n")
-					print_table(table)
+					debtor.new_cd(round(debtor.collateral / debtor.debt,2))
+				liquidator.new_cd(round(liquidator.collateral / liquidator.debt,2))
+				table = cdp_insert(table, liquidator)
+				table = cdp_insert(table, debtor)
 		return table
+
+			
 
 def redemption(table, amount, price, cr, rf):
 	len_table = len(table)
@@ -269,13 +272,17 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 
 # tester functions
-table = [CDP(1000, 0, 9999999, 10.0, 0),CDP(1000, 50, 2, 0	, 1)]
+table = [CDP(10000, 0, 9999999, 2.0, 0), CDP(1250, 500, 2.0, 0, 1)]
+
+
 print_table(table)
+print("break")
+print("\n")
+
 table = liquidation(table, 0.5, 1.5, 0.1)
-print("\n")
-print("printing")
-print("\n")
+
 print_table(table)
+
 
 
 	
