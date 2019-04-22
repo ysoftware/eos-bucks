@@ -13,7 +13,7 @@ static const uint32_t YEAR                = 300; // 31'557'600;
 static const uint32_t ACCRUAL_PERIOD      = 30; // 2'629'800;
 
 static const symbol& EOS   = symbol("EOS", 4);
-static const symbol& BUCK  = symbol("BUCK", 4);
+static const symbol& BUCK  = symbol("BUCK", 3);
 static const symbol& REX   = symbol("REX", 4);
 
 static const asset& ZERO_EOS   = asset(0, EOS);
