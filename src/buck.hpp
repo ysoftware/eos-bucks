@@ -253,6 +253,7 @@ CONTRACT buck : public contract {
     void sub_funds(const name& from, const asset& quantity);
     
     void process_taxes();
+    void add_savings(const asset& value);
     void accrue_interest(const cdp_i::const_iterator& cdp_itr);
     void update_excess_collateral(const asset& value);
     void update_bucks_supply(const asset& value);

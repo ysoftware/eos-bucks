@@ -10,7 +10,7 @@ time_point_sec buck::get_maturity() const {
   return time_point_sec(now + 1);
   #endif
   
-  static const uint32_t r   = now % seconds_per_day;
+  static const uint32_t r = now % seconds_per_day;
   const uint32_t num_of_maturity_buckets = 5;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   return rms;
@@ -36,6 +36,8 @@ bool buck::is_mature(uint64_t cdp_id) const {
 }
 
 void buck::process(uint8_t kind) {
+  PRINT("processing", kind)
+  
   check(_process.begin() != _process.end(), "this action is not to be ran manually");
   
   const auto rexprocess_itr = _process.begin();
@@ -121,9 +123,7 @@ void buck::process(uint8_t kind) {
     });
     
     if (change_accrued_debt.amount < 0) {
-      _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-        r.collected_savings += -change_accrued_debt; // add bucks to savings pool
-      });
+      add_savings(-change_accrued_debt);
     }
     
     // to-do check if right
@@ -197,6 +197,7 @@ void buck::process(uint8_t kind) {
 }
 
 void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
+  PRINT_("buying rex")
   
   // store info current rex balance and this cdp
   _process.emplace(_self, [&](auto& r) {
@@ -221,6 +222,7 @@ void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
 
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t identifier, const asset& quantity, ProcessKind kind) {
+  PRINT_("selling rex")
   
   // store info current eos balance in rex pool for this cdp
   _process.emplace(_self, [&](auto& r) {

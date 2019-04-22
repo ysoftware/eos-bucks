@@ -122,9 +122,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           if (change_accrued_debt.amount < 0) {
-            _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-              r.collected_savings += -change_accrued_debt; // add bucks to savings pool
-            });
+            add_savings(-change_accrued_debt);
           }
         }
         
@@ -187,9 +185,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           if (change_accrued_debt.amount < 0) {
-            _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-              r.collected_savings += -change_accrued_debt; // add bucks to savings pool
-            });
+            add_savings(-change_accrued_debt);
           }
           
           // to-do if removing debt, send accrued to savings pool
@@ -219,15 +215,18 @@ void buck::run_requests(uint64_t max) {
         
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
-          const uint64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
-          const uint64_t using_collateral_amount = ceil((double) using_debt_amount / (price + RF));
-          const uint64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
+          const auto total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
+          const auto using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
+          const auto using_collateral_amount = (uint64_t) ceil((double) using_debt_amount / (price + RF));
+          const auto using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
           
-          const asset using_debt = asset(using_debt_amount, BUCK);
+          const auto using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
+          const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
+          const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
           const asset using_collateral = asset(using_collateral_amount, EOS);
           const asset using_rex = asset(using_rex_amount, REX);
           
-          redeem_quantity -= using_debt;
+          redeem_quantity -= using_debt + using_accrued_debt;
           rex_return += using_rex;
           collateral_return += using_collateral;
           
@@ -239,15 +238,20 @@ void buck::run_requests(uint64_t max) {
             r.rex = using_rex;
           });
           
-          if (debtor_itr->debt == using_debt) {
+          if (total_debt_amount == using_debt.amount) {
             debtor_index.erase(debtor_itr);
           }
           else {
             debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
               r.debt -= using_debt;
+              r.accrued_debt -= using_accrued_debt;
               r.collateral -= using_collateral;
               r.rex -= using_rex;
             });
+            
+            if (using_accrued_debt_amount > 0) {
+              add_savings(using_accrued_debt);
+            }
           }
   
           // next best debtor will be the first in table (after this one changed)
@@ -341,8 +345,9 @@ void buck::run_liquidation(uint64_t max) {
       const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
       if (cdp_itr->debt.amount == 0) {
         update_excess_collateral(-cdp_itr->collateral);
-        withdraw_insurance(cdp_itr);
       }
+      
+      withdraw_insurance(cdp_itr);
       
       const double bailable = liquidator_debt == 0 ? 
           liquidator_collateral / liquidator_acr * price :

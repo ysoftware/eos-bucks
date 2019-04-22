@@ -143,6 +143,13 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   // to-do check ccr for liquidation
 }
 
+void buck::add_savings(const asset& value) {
+  check(value.amount > 0, "added savings should be positive");
+  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+    r.collected_savings += value;
+  });
+}
+
 void buck::update_excess_collateral(const asset& value) {
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.changed_excess += value;
