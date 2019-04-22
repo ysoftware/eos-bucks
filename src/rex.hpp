@@ -10,7 +10,7 @@ time_point_sec buck::get_maturity() const {
   return time_point_sec(now + 1);
   #endif
   
-  static const uint32_t r   = now % seconds_per_day;
+  static const uint32_t r = now % seconds_per_day;
   const uint32_t num_of_maturity_buckets = 5;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   return rms;
@@ -36,6 +36,8 @@ bool buck::is_mature(uint64_t cdp_id) const {
 }
 
 void buck::process(uint8_t kind) {
+  PRINT("processing", kind)
+  
   check(_process.begin() != _process.end(), "this action is not to be ran manually");
   
   const auto rexprocess_itr = _process.begin();
@@ -88,13 +90,15 @@ void buck::process(uint8_t kind) {
     
     const asset new_collateral = cdp_itr->collateral + reparam_itr->change_collateral;
     asset change_debt = reparam_itr->change_debt;
+    asset change_accrued_debt = asset(0, BUCK);
     
     // adding debt
     if (reparam_itr->change_debt.amount > 0) {
       
       // to-do check this
       
-      const double ccr = get_ccr(new_collateral, change_debt);
+      const auto price = get_eos_price();
+      const double ccr = (double) new_collateral.amount * price / (double) change_debt.amount;
       const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
       const double di = (double) reparam_itr->change_debt.amount;
       const uint64_t change_amount = ceil(fmin(ccr_cr, di));
@@ -106,12 +110,21 @@ void buck::process(uint8_t kind) {
     // removing debt
     else if (reparam_itr->change_debt.amount < 0) {
       change_debt = reparam_itr->change_debt; // add negative value
+      
+      const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+      change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
+      change_debt += change_accrued_debt; // change is negative
     }
     
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
       r.collateral = new_collateral;
+      r.accrued_debt += change_accrued_debt;
       r.debt += change_debt;
     });
+    
+    if (change_accrued_debt.amount < 0) {
+      add_savings(-change_accrued_debt);
+    }
     
     // to-do check if right
     if (cdp_itr->debt.amount == 0) {
@@ -155,9 +168,7 @@ void buck::process(uint8_t kind) {
       const auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
       
       if (cdp_dividends.amount > 0) {
-        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-          r.rex_dividends += cdp_dividends;
-        });
+        add_funds(cdp_itr->account, cdp_dividends, same_payer);
       }
       
       process_itr = _redprocess.erase(process_itr);
@@ -186,6 +197,7 @@ void buck::process(uint8_t kind) {
 }
 
 void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
+  PRINT_("buying rex")
   
   // store info current rex balance and this cdp
   _process.emplace(_self, [&](auto& r) {
@@ -210,6 +222,7 @@ void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
 
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t identifier, const asset& quantity, ProcessKind kind) {
+  PRINT_("selling rex")
   
   // store info current eos balance in rex pool for this cdp
   _process.emplace(_self, [&](auto& r) {

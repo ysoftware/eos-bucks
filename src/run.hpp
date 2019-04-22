@@ -52,17 +52,16 @@ void buck::run_requests(uint64_t max) {
         
         asset change_debt = ZERO_BUCK;
         asset new_collateral = cdp_itr->collateral;
-        const double ccr = get_ccr(cdp_itr->collateral, cdp_itr->debt); // to-do use new ccr or old?
+        const double total_debt_amount = (double) cdp_itr->debt.amount + (double) cdp_itr->accrued_debt.amount;
+        const double ccr = (double) cdp_itr->collateral.amount * price / total_debt_amount;
   
         // adding debt
         if (reparam_itr->change_debt.amount > 0) {
           
-          const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
+          const double ccr_cr = ((ccr / CR) - 1) * total_debt_amount;
           const double issue_debt = (double) reparam_itr->change_debt.amount;
-          uint64_t change_amount = (uint64_t) ceil(fmin(ccr_cr, issue_debt));
+          uint64_t change_amount = (uint64_t) floor(fmin(ccr_cr, issue_debt));
           change_debt = asset(change_amount, BUCK);
-          
-          add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         
         // removing debt
@@ -74,7 +73,7 @@ void buck::run_requests(uint64_t max) {
         if (reparam_itr->change_collateral.amount > 0) {
           new_collateral += reparam_itr->change_collateral;
           
-          // open maturity request
+          // get maturity request
           const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "to-do: remove. could not find maturity (run)");
           _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
             r.maturity_timestamp = get_maturity();
@@ -105,10 +104,26 @@ void buck::run_requests(uint64_t max) {
   
         // not removing collateral here, update immediately
         if (reparam_itr->change_collateral.amount == 0) {
+          asset change_accrued_debt = asset(0, BUCK);
+          
+          if (change_debt.amount > 0) {
+            add_balance(cdp_itr->account, change_debt, same_payer, true);
+          }
+          else {
+            const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
+            change_debt += change_accrued_debt; // change is negative
+          }
+          
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral = new_collateral;
+            r.accrued_debt += change_accrued_debt;
             r.debt += change_debt;
           });
+          
+          if (change_accrued_debt.amount < 0) {
+            add_savings(-change_accrued_debt);
+          }
         }
         
         // check if request should be removed here or is handled in process method
@@ -128,14 +143,15 @@ void buck::run_requests(uint64_t max) {
         while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
-          // remove cdp if all collateral is 0 (and cdp was just created)
+          // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
           
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
           
-          // to-do take fees
+          // to-do take fees (?)
           
           // calculate new debt and collateral
           auto change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
+          asset change_accrued_debt = asset(0, BUCK);
           const auto add_collateral = maturity_itr->add_collateral;
           
           if (maturity_itr->ccr > 0) {
@@ -149,17 +165,30 @@ void buck::run_requests(uint64_t max) {
           update_excess_collateral(add_collateral);
           withdraw_insurance(cdp_itr);
           
-          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral += add_collateral;
-            r.debt += change_debt;
-            r.modified_round = _tax.begin()->current_round;
-          });
-          
           if (change_debt.amount > 0) {
             
             withdraw_savings(cdp_itr->account);
             add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
           }
+          else {
+            
+            const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
+            change_debt += change_accrued_debt; // change is negative
+          }
+          
+          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+            r.collateral += add_collateral;
+            r.debt += change_debt;
+            r.accrued_debt += change_accrued_debt;
+            r.modified_round = _tax.begin()->current_round;
+          });
+          
+          if (change_accrued_debt.amount < 0) {
+            add_savings(-change_accrued_debt);
+          }
+          
+          // to-do if removing debt, send accrued to savings pool
           
           maturity_itr = maturity_index.erase(maturity_itr); // remove request
           did_work = true;
@@ -186,15 +215,18 @@ void buck::run_requests(uint64_t max) {
         
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
-          const uint64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
-          const uint64_t using_collateral_amount = ceil((double) using_debt_amount / (price + RF));
-          const uint64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
+          const auto total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
+          const auto using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
+          const auto using_collateral_amount = (uint64_t) ceil((double) using_debt_amount / (price + RF));
+          const auto using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
           
-          const asset using_debt = asset(using_debt_amount, BUCK);
+          const auto using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
+          const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
+          const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
           const asset using_collateral = asset(using_collateral_amount, EOS);
           const asset using_rex = asset(using_rex_amount, REX);
           
-          redeem_quantity -= using_debt;
+          redeem_quantity -= using_debt + using_accrued_debt;
           rex_return += using_rex;
           collateral_return += using_collateral;
           
@@ -206,11 +238,21 @@ void buck::run_requests(uint64_t max) {
             r.rex = using_rex;
           });
           
-          debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
-            r.debt -= using_debt;
-            r.collateral -= using_collateral;
-            r.rex -= using_rex;
-          });
+          if (total_debt_amount == using_debt.amount) {
+            debtor_index.erase(debtor_itr);
+          }
+          else {
+            debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
+              r.debt -= using_debt;
+              r.accrued_debt -= using_accrued_debt;
+              r.collateral -= using_collateral;
+              r.rex -= using_rex;
+            });
+            
+            if (using_accrued_debt_amount > 0) {
+              add_savings(using_accrued_debt);
+            }
+          }
   
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
@@ -303,8 +345,9 @@ void buck::run_liquidation(uint64_t max) {
       const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
       if (cdp_itr->debt.amount == 0) {
         update_excess_collateral(-cdp_itr->collateral);
-        withdraw_insurance(cdp_itr);
       }
+      
+      withdraw_insurance(cdp_itr);
       
       const double bailable = liquidator_debt == 0 ? 
           liquidator_collateral / liquidator_acr * price :
