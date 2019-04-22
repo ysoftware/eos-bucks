@@ -155,9 +155,7 @@ void buck::process(uint8_t kind) {
       const auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
       
       if (cdp_dividends.amount > 0) {
-        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-          r.rex_dividends += cdp_dividends;
-        });
+        add_funds(cdp_itr->account, cdp_dividends, same_payer);
       }
       
       process_itr = _redprocess.erase(process_itr);

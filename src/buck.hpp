@@ -152,7 +152,6 @@ CONTRACT buck : public contract {
       name        account;
       asset       debt;
       asset       accrued_debt;
-      asset       rex_dividends;
       asset       collateral;
       asset       rex;
       time_point  timestamp;
