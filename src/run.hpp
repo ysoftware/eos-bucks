@@ -206,11 +206,16 @@ void buck::run_requests(uint64_t max) {
             r.rex = using_rex;
           });
           
-          debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
-            r.debt -= using_debt;
-            r.collateral -= using_collateral;
-            r.rex -= using_rex;
-          });
+          if (debtor_itr->debt == using_debt) {
+            debtor_index.erase(debtor_itr);
+          }
+          else {
+            debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
+              r.debt -= using_debt;
+              r.collateral -= using_collateral;
+              r.rex -= using_rex;
+            });
+          }
   
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
