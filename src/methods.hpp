@@ -3,6 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::sub_funds(const name& from, const asset& quantity) {
+  eosio::print("- "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");
   auto fund_itr = _fund.require_find(from.value, "no fund balance found");
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
   _fund.modify(fund_itr, from, [&](auto& r) {
@@ -11,6 +12,7 @@ void buck::sub_funds(const name& from, const asset& quantity) {
 }
 
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
+  eosio::print("+ "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
     _fund.modify(fund_itr, ram_payer, [&](auto& r) {
