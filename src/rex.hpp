@@ -127,10 +127,10 @@ void buck::process(uint8_t kind) {
     }
     
     // to-do check if right
-    if (cdp_itr->debt.amount == 0) {
-      update_excess_collateral(reparam_itr->change_collateral);
-      withdraw_insurance(cdp_itr);
-    }
+    // if (cdp_itr->debt.amount == 0) {
+    //   update_excess_collateral(reparam_itr->change_collateral);
+      // withdraw_insurance(cdp_itr);
+    // }
     
     if (gained_collateral.amount > 0) {
       add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt
@@ -165,7 +165,7 @@ void buck::process(uint8_t kind) {
       const uint64_t cdp_dividends_amount = process_itr->rex.amount * dividends.amount / total_rex.amount;
       const asset cdp_dividends = asset(cdp_dividends_amount, EOS);
       
-      const auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption");
+      const auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption)");
       
       if (cdp_dividends.amount > 0) {
         add_funds(cdp_itr->account, cdp_dividends, same_payer);
@@ -181,10 +181,10 @@ void buck::process(uint8_t kind) {
     _process.erase(rexprocess_itr);
     
     // to-do check if right
-    if (cdp_itr->debt.amount == 0) {
-      update_excess_collateral(-cdp_itr->collateral);
-      withdraw_insurance(cdp_itr);
-    }
+    // if (cdp_itr->debt.amount == 0) {
+    //   update_excess_collateral(-cdp_itr->collateral);
+    //   withdraw_insurance(cdp_itr);
+    // }
     
     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);

@@ -144,13 +144,20 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 }
 
 void buck::add_savings(const asset& value) {
+  PRINT("adding to savings", value)
   check(value.amount > 0, "added savings should be positive");
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
   });
+  
+  // these bucks are in supply
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+    r.supply += value;
+  });
 }
 
 void buck::update_excess_collateral(const asset& value) {
+  PRINT("updating excess collateral", value)
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.changed_excess += value;
   });

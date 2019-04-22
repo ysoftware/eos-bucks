@@ -51,8 +51,8 @@ def generate_debtors(k, n, price):
 		debtor.add_debt(round(debtor.collateral * price / debtor.cd,3))
 		debtors.insert(0, debtor)
 	return debtors
-		
-		
+
+
 def gen(k, n, price):
 	liquidators = generate_liquidators(k)
 	debtors = generate_debtors(k, n, price)

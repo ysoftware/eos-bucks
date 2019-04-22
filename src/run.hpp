@@ -162,8 +162,6 @@ void buck::run_requests(uint64_t max) {
             change_debt = asset(floor(debt_amount), BUCK);
           }
           
-          update_excess_collateral(add_collateral);
-          withdraw_insurance(cdp_itr);
           
           if (change_debt.amount > 0) {
             
@@ -187,6 +185,12 @@ void buck::run_requests(uint64_t max) {
           if (change_accrued_debt.amount < 0) {
             add_savings(-change_accrued_debt);
           }
+          
+          // if updated debt is 0, add collateral back to excess
+          // if (cdp_itr->debt.amount == 0) {
+          //   update_excess_collateral(cdp_itr->collateral);
+          // }
+          // withdraw_insurance(cdp_itr);
           
           // to-do if removing debt, send accrued to savings pool
           
@@ -238,21 +242,23 @@ void buck::run_requests(uint64_t max) {
             r.rex = using_rex;
           });
           
-          if (total_debt_amount == using_debt.amount) {
-            debtor_index.erase(debtor_itr);
+          debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
+            r.debt -= using_debt;
+            r.accrued_debt -= using_accrued_debt;
+            r.collateral -= using_collateral;
+            r.rex -= using_rex;
+          });
+          
+          if (using_accrued_debt_amount > 0) {
+            add_savings(using_accrued_debt);
           }
-          else {
-            debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
-              r.debt -= using_debt;
-              r.accrued_debt -= using_accrued_debt;
-              r.collateral -= using_collateral;
-              r.rex -= using_rex;
-            });
-            
-            if (using_accrued_debt_amount > 0) {
-              add_savings(using_accrued_debt);
-            }
-          }
+          
+          PRINT("debtor_itr->id", debtor_itr->id)
+          PRINT("using_debt", using_debt)
+          
+          PRINT("using_accrued_debt", using_accrued_debt)
+          PRINT("using_collateral", using_collateral)
+          PRINT_("-")
   
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
@@ -270,7 +276,6 @@ void buck::run_requests(uint64_t max) {
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         else {
-          update_excess_collateral(collateral_return);
           sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
           add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
           redeem_itr++; // this request will be removed in process method
@@ -342,12 +347,12 @@ void buck::run_liquidation(uint64_t max) {
       }
       
       // to-do check if right
-      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
-      if (cdp_itr->debt.amount == 0) {
-        update_excess_collateral(-cdp_itr->collateral);
-      }
       
-      withdraw_insurance(cdp_itr);
+      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
+      // if (cdp_itr->debt.amount == 0) {
+      //   update_excess_collateral(-cdp_itr->collateral);
+      // }
+      // withdraw_insurance(cdp_itr);
       
       const double bailable = liquidator_debt == 0 ? 
           liquidator_collateral / liquidator_acr * price :

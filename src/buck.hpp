@@ -161,7 +161,7 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
       uint64_t by_accrued_time() const {
-        if (debt.amount == 0) {
+        if (debt.amount + accrued_debt.amount == 0) {
           return UINT64_MAX;
         }
         return time_point_sec(accrued_timestamp).utc_seconds; 
@@ -177,11 +177,11 @@ CONTRACT buck : public contract {
         
         double c = (double) collateral.amount;
         
-        if (debt.amount == 0) {
+        if (debt.amount + accrued_debt.amount == 0) {
           return MAX - c / acr; // descending c/acr
         }
         
-        double cd = c / (double) debt.amount;
+        double cd = c / (double) (debt.amount + accrued_debt.amount);
         return MAX * 2 - (cd - acr); // descending cd-acr 
       }
       
@@ -189,11 +189,11 @@ CONTRACT buck : public contract {
       double debtor() const {
         const double MAX = 100;
         
-        if (debt.amount == 0 || rex.amount == 0) {
+        if (debt.amount + accrued_debt.amount == 0 || rex.amount == 0) {
           return MAX; // end of the table
         }
         
-        double cd = (double) collateral.amount / (double) debt.amount;
+        double cd = (double) collateral.amount / (double) (debt.amount + accrued_debt.amount);
         return cd; // ascending cd
       }
     };
