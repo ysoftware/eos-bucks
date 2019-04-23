@@ -169,33 +169,41 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	acr = cdp2.acr
 	v = calc_bad_debt(cdp, price, cr, l)
 	v2 = (c*price-d*acr)*(1-l)/(acr*(1-l)-1)
-	return min(v,v2)
+	return min(v,v2, cdp.debt)
 	
 # Contract functions
 
 def liquidation(table, price, cr, lf):	
-		while table[0].cd * price >= cr:
-			debtor = table.pop(len(table)-1)
-			if debtor.cd * price >= cr:
-				table.append(debtor)
+		i = 0
+		while table[i].cd * price >= cr :
+			if i == (len(table) - 1):
 				return table
+			elif table[i].cd * price <= table[i].acr:
+				i += 1
 			else:
-				liquidator = table.pop(0)
-				l = calc_lf(debtor, price, cr, lf)
-				val = calc_val(debtor, liquidator, price, cr,l)
-				c = val / (price*(1-l))
-				debtor.add_debt(round(-val,3))
-				liquidator.add_debt(round(val,3))
-				liquidator.add_collateral(floor(c))
-				debtor.add_collateral(floor(-c))
-				if debtor.debt <=0.01:
-					debtor.new_cd(999999999)
+				debtor = table.pop(len(table)-1)
+				if debtor.cd * price >= cr:
+					table.append(debtor)
+					return table
 				else:
-					debtor.new_cd(round(debtor.collateral / debtor.debt,2))
-				liquidator.new_cd(round(liquidator.collateral / liquidator.debt,2))
-				table = cdp_insert(table, liquidator)
-				table = cdp_insert(table, debtor)
-				if table[0].cd * price >= cr:
+					if table[i].acr == 0:
+						i += 1
+					else:
+						liquidator = table.pop(i)
+						l = calc_lf(debtor, price, cr, lf)
+						val = calc_val(debtor, liquidator, price, cr,l)
+						c = min(val / (price*(1-l)),debtor.collateral)
+						debtor.add_debt(round(-val,3))
+						liquidator.add_debt(round(val,3))
+						liquidator.add_collateral(floor(c))
+						debtor.add_collateral(floor(-c))
+						if debtor.debt <=0.01:
+							debtor.new_cd(999999999)
+						else:
+							debtor.new_cd(round(debtor.collateral / debtor.debt,2))
+						liquidator.new_cd(round(liquidator.collateral / liquidator.debt,2))
+						table = cdp_insert(table, liquidator)
+						table = cdp_insert(table, debtor)
 		return table
 
 			
@@ -273,7 +281,7 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 
 # tester functions
-table = gen(15,20,1)
+table = gen(25,50,1)
 
 
 print_table(table)
@@ -285,7 +293,7 @@ print("\n")
 
 
 
-table = liquidation(table, 0.8, 1.5, 0.1)
+table = liquidation(table, 0.5, 1.5, 0.1)
 
 print_table(table)
 
