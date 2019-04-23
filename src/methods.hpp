@@ -85,7 +85,7 @@ void buck::set_liquidation_status(LiquidationStatus status) {
 
 void buck::set_processing_status(ProcessingStatus status) {
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-    r.processing_status = (r.processing_status & 0b1100) | ((uint8_t) status << 2); // bits 0011
+    r.processing_status = (r.processing_status & 0b0011) | ((uint8_t) status << 2); // bits 0011
   });
 }
 

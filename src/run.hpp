@@ -289,6 +289,7 @@ void buck::run_requests(uint64_t max) {
         break;
       }
     }
+    else { break; }
   }
   
   auto accrual_index = _cdp.get_index<"accrued"_n>();
