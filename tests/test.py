@@ -175,8 +175,6 @@ def calc_val(cdp, cdp2, price, cr, lf):
 
 def liquidation(table, price, cr, lf):	
 		while table[0].cd * price >= cr:
-			print("dick")
-			print(price)
 			debtor = table.pop(len(table)-1)
 			if debtor.cd * price >= cr:
 				table.append(debtor)
@@ -197,13 +195,7 @@ def liquidation(table, price, cr, lf):
 				liquidator.new_cd(round(liquidator.collateral / liquidator.debt,2))
 				table = cdp_insert(table, liquidator)
 				table = cdp_insert(table, debtor)
-				print("\n")
-				print("hey")
-				print(table[0])
-				print("hey2")
-				print("\n")
 				if table[0].cd * price >= cr:
-					print("HEY WHATFFSFSFSF")
 		return table
 
 			
@@ -281,7 +273,7 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 
 # tester functions
-table = gen(10,15,1)
+table = gen(15,20,1)
 
 
 print_table(table)
