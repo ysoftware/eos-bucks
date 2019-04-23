@@ -44,3 +44,4 @@ src/build/buck.abi
 src/buck.abi
 src/buck.wasm
 src/b
+.DS_Store
