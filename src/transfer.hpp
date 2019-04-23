@@ -17,14 +17,11 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   check(quantity.symbol == BUCK, "symbol precision mismatch");
   check(memo.size() <= 256, "memo has more than 256 bytes");
 
-	withdraw_savings(from);
-	withdraw_savings(to);
-	
   const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity, false);
   add_balance(to, quantity, payer, false);
 	
-  run(3);
+  run(1);
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {

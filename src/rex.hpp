@@ -123,7 +123,7 @@ void buck::process(uint8_t kind) {
     });
     
     if (change_accrued_debt.amount < 0) {
-      add_savings(-change_accrued_debt);
+      add_savings_pool(-change_accrued_debt);
     }
     
     // to-do check if right

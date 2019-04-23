@@ -17,6 +17,8 @@ CONTRACT buck : public contract {
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
     ACTION run(uint64_t max);
+    ACTION save(const name& account, const asset& value);
+    ACTION take(const name& account, const asset& value);
     
     // admin
     ACTION update(double eos_price);
@@ -40,6 +42,8 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset     balance;
+      
+      asset     savings;
       uint32_t  withdrawn_round;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
@@ -253,12 +257,12 @@ CONTRACT buck : public contract {
     void sub_funds(const name& from, const asset& quantity);
     
     void process_taxes();
-    void add_savings(const asset& value);
+    void add_savings_pool(const asset& value);
     void accrue_interest(const cdp_i::const_iterator& cdp_itr);
     void update_excess_collateral(const asset& value);
     void update_bucks_supply(const asset& value);
-    void withdraw_insurance(const cdp_i::const_iterator& cdp_itr);
-    void withdraw_savings(const name& account);
+    void withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr);
+    asset withdraw_savings_dividends(const name& account);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);

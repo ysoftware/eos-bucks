@@ -124,7 +124,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           if (change_accrued_debt.amount < 0) {
-            add_savings(-change_accrued_debt);
+            add_savings_pool(-change_accrued_debt);
           }
         }
         
@@ -167,7 +167,6 @@ void buck::run_requests(uint64_t max) {
           
           if (change_debt.amount > 0) {
             
-            withdraw_savings(cdp_itr->account);
             add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
           }
           else {
@@ -185,7 +184,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           if (change_accrued_debt.amount < 0) {
-            add_savings(-change_accrued_debt);
+            add_savings_pool(-change_accrued_debt);
           }
           
           // if updated debt is 0, add collateral back to excess
@@ -252,7 +251,7 @@ void buck::run_requests(uint64_t max) {
           });
           
           if (using_accrued_debt_amount > 0) {
-            add_savings(using_accrued_debt);
+            add_savings_pool(using_accrued_debt);
           }
           
           PRINT("debtor_itr->id", debtor_itr->id)

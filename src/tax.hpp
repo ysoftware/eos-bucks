@@ -2,66 +2,6 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-/// issue cdp dividends from the insurance pool
-void buck::withdraw_insurance(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->debt.amount != 0) { return; }
-  const auto& tax = *_tax.begin();
-  
-  const uint64_t delta_round = tax.current_round - cdp_itr->modified_round;
-  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = round((double) cdp_itr->collateral.amount * round_weight);
-  const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
-  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
-  
-  // don't update modified_round if dividends calculated is 0
-  if (dividends_amount == 0) { return; }
-  
-  const auto user_aggregated = asset(user_aggregated_amount, EOS);
-  const auto dividends = asset(dividends_amount, EOS);
-  
-  add_funds(cdp_itr->account, dividends, same_payer);
-  
-  _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-    r.modified_round = tax.current_round;
-  });
-  
-  _tax.modify(tax, same_payer, [&](auto& r) {
-    r.insurance_pool -= dividends;
-    r.aggregated_excess -= user_aggregated;
-  });
-}
-
-void buck::withdraw_savings(const name& account) {
-  const auto& tax = *_tax.begin();
-  
-  accounts_i _accounts(_self, account.value);
-  auto account_itr = _accounts.find(BUCK.code().raw());
-  if (account_itr == _accounts.end()) { return; }
-  
-  const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
-  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = round((double) account_itr->balance.amount * round_weight);
-  const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
-  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
-  
-  // don't update modified_round if dividends calculated is 0
-  if (dividends_amount == 0) { return; }
-  
-  const auto user_aggregated = asset(user_aggregated_amount, BUCK);
-  const auto dividends = asset(dividends_amount, BUCK);
-  
-  add_balance(account, dividends, same_payer, true);
-  
-  _accounts.modify(account_itr, same_payer, [&](auto& r) {
-    r.withdrawn_round = tax.current_round;
-  });
-  
-  _tax.modify(tax, same_payer, [&](auto& r) {
-    r.savings_pool -= dividends;
-    r.aggregated_bucks -= user_aggregated;
-  });
-}
-
 void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
@@ -137,22 +77,116 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.collected_insurance += accrued_collateral;
-    // r.collected_savings += accrued_debt; // goes to pool only after redemption/reparametrization
   });
   
   // to-do check ccr for liquidation
 }
 
-void buck::add_savings(const asset& value) {
+/// issue cdp dividends from the insurance pool
+void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
+  if (cdp_itr->debt.amount != 0) { return; }
+  const auto& tax = *_tax.begin();
+  
+  const uint64_t delta_round = tax.current_round - cdp_itr->modified_round;
+  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
+  const uint64_t user_aggregated_amount = round((double) cdp_itr->collateral.amount * round_weight);
+  const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
+  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
+  
+  // don't update modified_round if dividends calculated is 0
+  if (dividends_amount == 0) { return; }
+  
+  const auto user_aggregated = asset(user_aggregated_amount, EOS);
+  const auto dividends = asset(dividends_amount, EOS);
+  
+  add_funds(cdp_itr->account, dividends, same_payer);
+  
+  _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+    r.modified_round = tax.current_round;
+  });
+  
+  _tax.modify(tax, same_payer, [&](auto& r) {
+    r.insurance_pool -= dividends;
+    r.aggregated_excess -= user_aggregated;
+  });
+}
+
+asset buck::withdraw_savings_dividends(const name& account) {
+  const auto& tax = *_tax.begin();
+  
+  accounts_i _accounts(_self, account.value);
+  auto account_itr = _accounts.find(BUCK.code().raw());
+  check (account_itr != _accounts.end(), "no balance object found");
+  
+  const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
+  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
+  const uint64_t user_aggregated_amount = round((double) account_itr->savings.amount * round_weight);
+  const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
+  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
+  
+  const auto user_aggregated = asset(user_aggregated_amount, BUCK);
+  const auto dividends = asset(dividends_amount, BUCK);
+  
+  // don't update modified_round if dividends calculated is 0
+  if (dividends_amount == 0) { return dividends; }
+  
+  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+    r.withdrawn_round = tax.current_round;
+  });
+  
+  _tax.modify(tax, same_payer, [&](auto& r) {
+    r.savings_pool -= dividends;
+    r.aggregated_bucks -= user_aggregated;
+  });
+  
+  return dividends;
+}
+
+void buck::save(const name& account, const asset& value) {
+  require_auth(account);
+  
+  accounts_i _accounts(_self, account.value);
+  auto account_itr = _accounts.find(BUCK.code().raw());
+  check (account_itr != _accounts.end(), "no balance object found");
+  
+  const auto dividends = withdraw_savings_dividends(account);
+  PRINT("adding dividends to savings", dividends)
+  
+  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+    r.savings += value;
+  });
+
+  update_bucks_supply(value);
+  sub_balance(account, value - dividends, false);
+  run(3);
+}
+
+void buck::take(const name& account, const asset& value) {
+  require_auth(account);
+  
+  accounts_i _accounts(_self, account.value);
+  auto account_itr = _accounts.find(BUCK.code().raw());
+  
+  check(account_itr != _accounts.end(), "no balance object found");
+  check(account_itr->savings >= value, "overdrawn savings balance");
+  
+  const auto dividends = withdraw_savings_dividends(account);
+  PRINT("adding dividends to balance", dividends)
+  
+  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+    r.savings -= value;
+  });
+  
+  update_bucks_supply(-value);
+  add_balance(account, value + dividends, same_payer, false);
+  run(3);
+}
+
+void buck::add_savings_pool(const asset& value) {
   PRINT("adding to savings", value)
   check(value.amount > 0, "added savings should be positive");
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
-  });
-  
-  // these bucks are in supply
-  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-    r.supply += value;
   });
 }
 
