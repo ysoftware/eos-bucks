@@ -51,6 +51,9 @@ void buck::process_taxes() {
     r.changed_excess = ZERO_EOS;
     r.changed_bucks = ZERO_BUCK;
   });
+  
+  PRINT("now", now)
+  PRINT("total", tax.aggregated_bucks)
 }
 
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
@@ -114,9 +117,15 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
 asset buck::withdraw_savings_dividends(const name& account) {
   const auto& tax = *_tax.begin();
   
+  // to-do what if tax.aggregated_bucks.amount == 0 ?
+  
   accounts_i _accounts(_self, account.value);
   auto account_itr = _accounts.find(BUCK.code().raw());
   check (account_itr != _accounts.end(), "no balance object found");
+  
+  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+    r.withdrawn_round = tax.current_round;
+  });
   
   const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
   const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
@@ -127,8 +136,10 @@ asset buck::withdraw_savings_dividends(const name& account) {
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
   
-  // don't update modified_round if dividends calculated is 0
-  if (dividends_amount == 0) { return dividends; }
+  PRINT("changing at", tax.current_round)
+  PRINT("taking", user_aggregated)
+  
+  PRINT("withdrawn_round", account_itr->withdrawn_round)
   
   _accounts.modify(account_itr, same_payer, [&](auto& r) {
     r.withdrawn_round = tax.current_round;
@@ -150,12 +161,11 @@ void buck::save(const name& account, const asset& value) {
   check (account_itr != _accounts.end(), "no balance object found");
   
   const auto dividends = withdraw_savings_dividends(account);
-  PRINT("adding dividends to savings", dividends)
   
   _accounts.modify(account_itr, same_payer, [&](auto& r) {
     r.savings += value;
   });
-
+  
   update_bucks_supply(value);
   sub_balance(account, value - dividends, false);
   run(3);
@@ -169,9 +179,8 @@ void buck::take(const name& account, const asset& value) {
   
   check(account_itr != _accounts.end(), "no balance object found");
   check(account_itr->savings >= value, "overdrawn savings balance");
-  
+
   const auto dividends = withdraw_savings_dividends(account);
-  PRINT("adding dividends to balance", dividends)
   
   _accounts.modify(account_itr, same_payer, [&](auto& r) {
     r.savings -= value;

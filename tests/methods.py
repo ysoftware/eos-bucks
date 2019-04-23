@@ -130,6 +130,22 @@ def withdraw(contract, user, quantity):
 		},
 		permission=[(user, Permission.ACTIVE)])
 
+def save(contract, user, quantity):
+	contract.push_action("save",
+		{
+			"account": user,
+			"value": quantity
+		},
+		permission=[(user, Permission.ACTIVE)])
+
+def take(contract, user, quantity):
+	contract.push_action("take",
+		{
+			"account": user,
+			"value": quantity
+		},
+		permission=[(user, Permission.ACTIVE)])
+
 def fundbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="balance"))
 

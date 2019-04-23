@@ -14,8 +14,6 @@ void buck::run(uint64_t max) {
 }
 
 void buck::run_requests(uint64_t max) {
-  PRINT("running requests", max)
-  
   const time_point now = current_time_point();
   const auto price = get_eos_price();
   const auto oracle_timestamp = _stat.begin()->oracle_timestamp;
@@ -254,13 +252,6 @@ void buck::run_requests(uint64_t max) {
             add_savings_pool(using_accrued_debt);
           }
           
-          PRINT("debtor_itr->id", debtor_itr->id)
-          PRINT("using_debt", using_debt)
-          
-          PRINT("using_accrued_debt", using_accrued_debt)
-          PRINT("using_collateral", using_collateral)
-          PRINT_("-")
-  
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
         }
@@ -306,8 +297,6 @@ void buck::run_requests(uint64_t max) {
 }
 
 void buck::run_liquidation(uint64_t max) {
-  PRINT_("liquidation")
-  
   uint64_t processed = 0;
   const auto price = get_eos_price();
   
@@ -320,19 +309,13 @@ void buck::run_liquidation(uint64_t max) {
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
-    PRINT("debtor. id", debtor_itr->id)
-    
     double debt_amount = (double) debtor_itr->debt.amount;
     double collateral_amount = (double) debtor_itr->collateral.amount;
     double debtor_ccr = roundz(collateral_amount * price / debt_amount, 2);
     
-    PRINT("ccr", debtor_ccr)
-    PRINT_("->")
-    
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
       
-      PRINT_("complete")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
@@ -348,11 +331,6 @@ void buck::run_liquidation(uint64_t max) {
                         / (0.5 - 1.5 * liquidation_fee);
       const double bad_debt = (CR - debtor_ccr) * debt_amount + x;
       
-      PRINT("lf", liquidation_fee)
-      PRINT("x", x)
-      PRINT("bad_debt", asset(bad_debt, BUCK))
-      PRINT_(".")
-    
       const double liquidator_collateral = (double) liquidator_itr->collateral.amount;
       const double liquidator_debt = (double) liquidator_itr->debt.amount;
       const double liquidator_acr = liquidator_itr->acr;
@@ -362,7 +340,6 @@ void buck::run_liquidation(uint64_t max) {
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
         
         // to-do bailout pool?
-        PRINT_("failed")
         set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
@@ -401,19 +378,10 @@ void buck::run_liquidation(uint64_t max) {
         liquidator_itr++;
       }
       
-      PRINT("liquidator. id", liquidator_itr->id)
-      PRINT("bailable", asset(bailable, BUCK))
-      PRINT("used_debt", used_debt)
-      PRINT("used_collateral", used_collateral)
-      
-      
       // update values
       debt_amount = (double) debtor_itr->debt.amount;
       collateral_amount = (double) debtor_itr->collateral.amount;
       debtor_ccr = roundz(collateral_amount * price / debt_amount, 2);
-      
-      PRINT("new ccr", debtor_ccr)
-      PRINT_("...")
     }
     
     // continue to the next debtor

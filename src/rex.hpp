@@ -36,7 +36,6 @@ bool buck::is_mature(uint64_t cdp_id) const {
 }
 
 void buck::process(uint8_t kind) {
-  PRINT("processing", kind)
   
   check(_process.begin() != _process.end(), "this action is not to be ran manually");
   
@@ -197,7 +196,6 @@ void buck::process(uint8_t kind) {
 }
 
 void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
-  PRINT_("buying rex")
   
   // store info current rex balance and this cdp
   _process.emplace(_self, [&](auto& r) {
@@ -222,7 +220,6 @@ void buck::buy_rex(uint64_t cdp_id, const asset& quantity) {
 
 // quantity in EOS for how much of collateral we're about to sell
 void buck::sell_rex(uint64_t identifier, const asset& quantity, ProcessKind kind) {
-  PRINT_("selling rex")
   
   // store info current eos balance in rex pool for this cdp
   _process.emplace(_self, [&](auto& r) {
