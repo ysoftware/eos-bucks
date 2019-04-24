@@ -2,7 +2,8 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-#define roundz(x,d) ((floor(((x)*pow(10,d))+.5))/pow(10,d))
+#define round2(x) ((floor(((x)*pow(10,2))+.5))/pow(10,2))
+#define roundz(x, y) ((floor(((x)*pow(10,y))+.5))/pow(10,y))
 
 void buck::sub_funds(const name& from, const asset& quantity) {
   eosio::print("- "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");

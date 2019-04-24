@@ -92,7 +92,7 @@ void buck::open(const name& account, const asset& quantity, double ccr, double a
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
-    r.acr = acr;
+    r.acr = round2(acr);
     r.collateral = ZERO_EOS;
     r.timestamp = current_time_point();
     r.rex = ZERO_REX;
