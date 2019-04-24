@@ -113,14 +113,10 @@ void buck::run_requests(uint64_t max) {
           else {
             const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
             change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-            change_debt -= change_accrued_debt;
+            change_debt += change_accrued_debt; // add to negative
             
-            if (change_accrued_debt.amount < 0) {
-              add_savings_pool(change_accrued_debt);
-            }
-            
-            // remove burned bucks from supply
-            update_supply(-change_debt);
+            add_savings_pool(change_accrued_debt);
+            update_supply(change_debt);
           }
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -147,8 +143,6 @@ void buck::run_requests(uint64_t max) {
         while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
-          PRINT_("running maturity")
-          
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
           
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
@@ -173,18 +167,12 @@ void buck::run_requests(uint64_t max) {
           else {
             
             const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // positive
-            change_debt -= change_accrued_debt;
+            change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
+            change_debt += change_accrued_debt;
             
-            if (change_accrued_debt.amount < 0) {
-              add_savings_pool(change_accrued_debt);
-            }
-            
-            // remove burned bucks from supply
+            add_savings_pool(change_accrued_debt);
             update_supply(-change_debt);
           }
-          
-          PRINT("add_collateral", add_collateral)
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
@@ -273,14 +261,8 @@ void buck::run_requests(uint64_t max) {
           add_balance(redeem_itr->account, redeem_quantity, _self, false);
         }
       
-        if (saved_debt.amount > 0) {
-          add_savings_pool(saved_debt);
-        }
-        
-        // remove burned bucks from supply (initial amount - left over)
-        if (burned_debt.amount > 0) {
-          update_supply(-burned_debt);
-        }
+        add_savings_pool(saved_debt);
+        update_supply(burned_debt);
         
         if (collateral_return.amount == 0) {
     

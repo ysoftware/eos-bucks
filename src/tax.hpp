@@ -84,6 +84,10 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.collected_insurance += accrued_collateral;
   });
   
+  PRINT_("collecting interest")
+  PRINT("accrued_collateral", accrued_collateral)
+  PRINT("accrued_debt", accrued_debt)
+  
   // to-do check ccr for liquidation
 }
 
@@ -199,7 +203,10 @@ void buck::take(const name& account, const asset& value) {
 }
 
 void buck::add_savings_pool(const asset& value) {
-  check(value.amount > 0, "added savings should be positive");
+  if (value.amount <= 0) {
+    PRINT("SHOULD BE POSITIVE", value);
+    return;
+  }
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
   });

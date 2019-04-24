@@ -112,7 +112,7 @@ void buck::process(uint8_t kind) {
       
       const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
       change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-      change_debt -= change_accrued_debt;
+      change_debt += change_accrued_debt; // add to negative
       
       if (change_accrued_debt.amount < 0) {
         add_savings_pool(change_accrued_debt);
