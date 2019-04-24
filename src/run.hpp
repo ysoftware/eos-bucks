@@ -104,15 +104,19 @@ void buck::run_requests(uint64_t max) {
   
         // not removing collateral here, update immediately
         if (reparam_itr->change_collateral.amount == 0) {
-          asset change_accrued_debt = asset(0, BUCK);
+          asset change_accrued_debt = ZERO_BUCK;
           
           if (change_debt.amount > 0) {
             add_balance(cdp_itr->account, change_debt, same_payer, true);
           }
           else {
             const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
-            change_debt += change_accrued_debt; // change is negative
+            change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
+            change_debt -= change_accrued_debt;
+            
+            if (change_accrued_debt.amount < 0) {
+              add_savings_pool(change_accrued_debt);
+            }
           }
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -120,10 +124,6 @@ void buck::run_requests(uint64_t max) {
             r.accrued_debt += change_accrued_debt;
             r.debt += change_debt;
           });
-          
-          if (change_accrued_debt.amount < 0) {
-            add_savings_pool(-change_accrued_debt);
-          }
         }
         
         // check if request should be removed here or is handled in process method
@@ -151,7 +151,6 @@ void buck::run_requests(uint64_t max) {
           
           // calculate new debt and collateral
           auto change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
-          asset change_accrued_debt = asset(0, BUCK);
           const auto add_collateral = maturity_itr->add_collateral;
           
           if (maturity_itr->ccr > 0) {
@@ -162,7 +161,7 @@ void buck::run_requests(uint64_t max) {
             change_debt = asset(floor(debt_amount), BUCK);
           }
           
-          
+          asset change_accrued_debt = ZERO_BUCK;
           if (change_debt.amount > 0) {
             
             add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
@@ -170,8 +169,12 @@ void buck::run_requests(uint64_t max) {
           else {
             
             const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
-            change_debt += change_accrued_debt; // change is negative
+            change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // positive
+            change_debt -= change_accrued_debt;
+            
+            if (change_accrued_debt.amount < 0) {
+              add_savings_pool(change_accrued_debt);
+            }
           }
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -181,9 +184,7 @@ void buck::run_requests(uint64_t max) {
             r.modified_round = _tax.begin()->current_round;
           });
           
-          if (change_accrued_debt.amount < 0) {
-            add_savings_pool(-change_accrued_debt);
-          }
+          
           
           // if updated debt is 0, add collateral back to excess
           // if (cdp_itr->debt.amount == 0) {
@@ -259,7 +260,7 @@ void buck::run_requests(uint64_t max) {
         if (redeem_quantity.amount > 0) {
           
           // return unredeemed amount
-          add_balance(redeem_itr->account, redeem_quantity, _self, true);
+          add_balance(redeem_itr->account, redeem_quantity, _self, false);
         }
         
         if (collateral_return.amount == 0) {

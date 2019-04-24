@@ -89,7 +89,7 @@ void buck::process(uint8_t kind) {
     
     const asset new_collateral = cdp_itr->collateral + reparam_itr->change_collateral;
     asset change_debt = reparam_itr->change_debt;
-    asset change_accrued_debt = asset(0, BUCK);
+    asset change_accrued_debt = ZERO_BUCK;
     
     // adding debt
     if (reparam_itr->change_debt.amount > 0) {
@@ -111,8 +111,20 @@ void buck::process(uint8_t kind) {
       change_debt = reparam_itr->change_debt; // add negative value
       
       const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-      change_accrued_debt = asset(change_accrued_debt_amount, BUCK); // negative
-      change_debt += change_accrued_debt; // change is negative
+      change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
+      change_debt -= change_accrued_debt;
+      
+      if (change_accrued_debt.amount < 0) {
+        add_savings_pool(change_accrued_debt);
+      }
+    }
+
+    // to-do check if right
+    
+    // update insurance pool
+    if (cdp_itr->debt.amount == 0) {
+      update_excess_collateral(reparam_itr->change_collateral);
+      withdraw_insurance_dividends(cdp_itr);
     }
     
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -120,16 +132,6 @@ void buck::process(uint8_t kind) {
       r.accrued_debt += change_accrued_debt;
       r.debt += change_debt;
     });
-    
-    if (change_accrued_debt.amount < 0) {
-      add_savings_pool(-change_accrued_debt);
-    }
-    
-    // to-do check if right
-    // if (cdp_itr->debt.amount == 0) {
-    //   update_excess_collateral(reparam_itr->change_collateral);
-      // withdraw_insurance(cdp_itr);
-    // }
     
     if (gained_collateral.amount > 0) {
       add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt

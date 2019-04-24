@@ -87,11 +87,13 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   if (cdp_itr->debt.amount != 0) { return; }
   const auto& tax = *_tax.begin();
   
-  const uint64_t delta_round = tax.current_round - cdp_itr->modified_round;
-  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = round((double) cdp_itr->collateral.amount * round_weight);
-  const double user_part = user_aggregated_amount / (double) tax.aggregated_excess.amount;
-  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
+  const int64_t ca = cdp_itr->collateral.amount;
+  const int64_t ipa = tax.insurance_pool.amount;
+  const int64_t aea = tax.aggregated_excess.amount;
+  
+  const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
+  const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
+  const int64_t dividends_amount =  (uint128_t) ipa * user_aggregated_amount / aea;
   
   // don't update modified_round if dividends calculated is 0
   if (dividends_amount == 0) { return; }
@@ -176,7 +178,6 @@ void buck::take(const name& account, const asset& value) {
 }
 
 void buck::add_savings_pool(const asset& value) {
-  PRINT("adding to savings", value)
   check(value.amount > 0, "added savings should be positive");
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
@@ -184,7 +185,6 @@ void buck::add_savings_pool(const asset& value) {
 }
 
 void buck::update_excess_collateral(const asset& value) {
-  PRINT("updating excess collateral", value)
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.changed_excess += value;
   });
