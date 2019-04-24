@@ -263,6 +263,7 @@ CONTRACT buck : public contract {
     void update_bucks_supply(const asset& value);
     void withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr);
     asset withdraw_savings_dividends(const name& account);
+    void update_supply(const asset& quantity);
     
     void run_requests(uint64_t max);
     void run_liquidation(uint64_t max);

@@ -103,6 +103,8 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
     return;
   }
   
+  accrue_interest(cdp_itr);
+  
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
   const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;

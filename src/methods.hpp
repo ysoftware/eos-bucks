@@ -51,9 +51,7 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
   
   if (change_supply) {
     
-    _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-      r.supply += value;
-    });
+    update_supply(value);
   }
 }
 
@@ -71,10 +69,14 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   
   if (change_supply) {
     
-    _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
-      r.supply -= value;
-    });
+    update_supply(-value);
   }
+}
+
+void buck::update_supply(const asset& quantity) {
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+    r.supply += quantity;
+  });
 }
 
 void buck::set_liquidation_status(LiquidationStatus status) {

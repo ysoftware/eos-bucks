@@ -118,6 +118,9 @@ void buck::run_requests(uint64_t max) {
             if (change_accrued_debt.amount < 0) {
               add_savings_pool(change_accrued_debt);
             }
+            
+            // remove burned bucks from supply
+            update_supply(-change_debt);
           }
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -144,11 +147,11 @@ void buck::run_requests(uint64_t max) {
         while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
+          PRINT_("running maturity")
+          
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
           
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
-          
-          // to-do take fees (?)
           
           // calculate new debt and collateral
           asset change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
@@ -176,7 +179,12 @@ void buck::run_requests(uint64_t max) {
             if (change_accrued_debt.amount < 0) {
               add_savings_pool(change_accrued_debt);
             }
+            
+            // remove burned bucks from supply
+            update_supply(-change_debt);
           }
+          
+          PRINT("add_collateral", add_collateral)
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
@@ -184,7 +192,6 @@ void buck::run_requests(uint64_t max) {
             r.accrued_debt += change_accrued_debt;
             r.modified_round = _tax.begin()->current_round;
           });
-          
           
           
           // if updated debt is 0, add collateral back to excess
@@ -218,6 +225,9 @@ void buck::run_requests(uint64_t max) {
         asset rex_return = ZERO_REX;
         asset collateral_return = ZERO_EOS;
         
+        asset burned_debt = ZERO_BUCK; // used up
+        asset saved_debt = ZERO_BUCK; // to savings pool
+        
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
           const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
@@ -250,9 +260,8 @@ void buck::run_requests(uint64_t max) {
             r.rex -= using_rex;
           });
           
-          if (using_accrued_debt_amount > 0) {
-            add_savings_pool(using_accrued_debt);
-          }
+          saved_debt += using_accrued_debt;
+          burned_debt += using_debt;
           
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
@@ -262,6 +271,15 @@ void buck::run_requests(uint64_t max) {
           
           // return unredeemed amount
           add_balance(redeem_itr->account, redeem_quantity, _self, false);
+        }
+      
+        if (saved_debt.amount > 0) {
+          add_savings_pool(saved_debt);
+        }
+        
+        // remove burned bucks from supply (initial amount - left over)
+        if (burned_debt.amount > 0) {
+          update_supply(-burned_debt);
         }
         
         if (collateral_return.amount == 0) {

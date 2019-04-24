@@ -49,7 +49,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
-    sub_balance(account, -change_debt, true);
+    sub_balance(account, -change_debt, false);
   }
   
   if (change_collateral.amount > 0) {
@@ -118,7 +118,7 @@ void buck::closecdp(uint64_t cdp_id) {
 
   require_auth(cdp_itr->account);
   
-  sub_balance(cdp_itr->account, cdp_itr->debt, true);
+  sub_balance(cdp_itr->account, cdp_itr->debt + cdp_itr->accrued_debt, true);
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
     r.cdp_id = cdp_id;
@@ -152,7 +152,7 @@ void buck::redeem(const name& account, const asset& quantity) {
     });
   }
   
-  sub_balance(account, quantity, true);
+  sub_balance(account, quantity, false);
   
   run(3);
 }

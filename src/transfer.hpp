@@ -80,7 +80,7 @@ void buck::open(const name& account, const asset& quantity, double ccr, double a
   
   if (ccr > 0) {
     
-    // check if debt amount is above the limit
+    // check if debt amount is above the limit (actual amount is calculated at maturity)
     const auto price = get_eos_price();
     const auto debt_amount = price * (double) quantity.amount / ccr;
     debt = asset(floor(debt_amount), BUCK);
