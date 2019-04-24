@@ -58,6 +58,10 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   const auto price = get_eos_price();
   
+  if (price == 0) {
+    return;
+  }
+  
   const auto time_now = current_time_point();
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
@@ -92,6 +96,13 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   const int64_t ipa = tax.insurance_pool.amount;
   const int64_t aea = tax.aggregated_excess.amount;
   
+  if (aea == 0) {
+    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+      r.modified_round = tax.current_round;
+    });
+    return;
+  }
+  
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
   const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;
@@ -117,8 +128,6 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
 asset buck::withdraw_savings_dividends(const name& account) {
   const auto& tax = *_tax.begin();
   
-  // to-do what if tax.aggregated_bucks.amount == 0 ?
-  
   accounts_i _accounts(_self, account.value);
   auto account_itr = _accounts.find(BUCK.code().raw());
   check (account_itr != _accounts.end(), "no balance object found");
@@ -126,6 +135,13 @@ asset buck::withdraw_savings_dividends(const name& account) {
   const int64_t sa =  account_itr->savings.amount;
   const int64_t spa = tax.savings_pool.amount;
   const int64_t aba = tax.aggregated_bucks.amount;
+  
+  if (aba == 0) {
+    _accounts.modify(account_itr, same_payer, [&](auto& r) {
+      r.withdrawn_round = tax.current_round;
+    });
+    return ZERO_BUCK;
+  }
   
   const int64_t delta_round = tax.current_round - account_itr->withdrawn_round;
   const int64_t user_aggregated_amount = (uint128_t) sa * delta_round / BASE_ROUND_DURATION;
