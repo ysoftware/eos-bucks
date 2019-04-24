@@ -66,18 +66,20 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		# check aggregated
-		save(buck, user1, "300000.000 BUCK")
-		# redeem(buck, user1, "300000.000 BUCK")
+		sleep(5)
+		save(buck, user1, "300000.0000 BUCK")
+		# redeem(buck, user1, "300000.0000 BUCK")
 
 		# oracle
-		sleep(10)
+		sleep(5)
 		update(buck)
-
+		
+		sleep(5)
 		table(buck, "taxation")
 
 		# take savings
 		balance(buck, user1)
-		take(buck, user1, "300000.000 BUCK")
+		take(buck, user1, "300000.0000 BUCK")
 
 		table(buck, "taxation")
 

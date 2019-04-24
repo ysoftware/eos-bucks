@@ -99,7 +99,7 @@ class Test(unittest.TestCase):
 
 		## + collateral
 
-		reparam(buck, user1, 0, "0.000 BUCK", "50.0000 EOS")
+		reparam(buck, user1, 0, "0.0000 BUCK", "50.0000 EOS")
 
 		self.assertEqual(0, table(buck, "reparamreq", element="isPaid"))
 
@@ -142,7 +142,7 @@ class Test(unittest.TestCase):
 		balance(eosio_token, user1)
 		balance(buck, user1)
 
-		reparam(buck, user1, 0, "0.000 BUCK", "-50.0000 EOS")
+		reparam(buck, user1, 0, "0.0000 BUCK", "-50.0000 EOS")
 
 		sleep(2)
 		update(buck) # rex.eos = 997
@@ -166,7 +166,7 @@ class Test(unittest.TestCase):
 
 		## + debt
 
-		reparam(buck, user1, 0, "10.000 BUCK", "0.0000 EOS")
+		reparam(buck, user1, 0, "10.0000 BUCK", "0.0000 EOS")
 
 		sleep(2)
 		update(buck)
@@ -187,7 +187,7 @@ class Test(unittest.TestCase):
 
 		## - debt
 
-		reparam(buck, user1, 0, "-10.000 BUCK", "0.0000 EOS")
+		reparam(buck, user1, 0, "-10.0000 BUCK", "0.0000 EOS")
 
 		# check instantly updated balance
 		self.assertEqual(97.8, balance(buck, user1))
@@ -219,10 +219,10 @@ class Test(unittest.TestCase):
 		## also having an unpaid request
 
 		# first create unpaid request
-		reparam(buck, user2, 1, "0.000 BUCK", "99.0000 EOS")
+		reparam(buck, user2, 1, "0.0000 BUCK", "99.0000 EOS")
 
 		# create actual request
-		reparam(buck, user1, 0, "-10.000 BUCK", "-10.0000 EOS")
+		reparam(buck, user1, 0, "-10.0000 BUCK", "-10.0000 EOS")
 
 		sleep(2)
 		update(buck)
@@ -250,7 +250,7 @@ class Test(unittest.TestCase):
 		## reparam adding collateral and changing debt
 
 		# create request
-		reparam(buck, user1, 0, "-10.000 BUCK", "10.0000 EOS")
+		reparam(buck, user1, 0, "-10.0000 BUCK", "10.0000 EOS")
 
 		# transfer collateral
 		transfer(eosio_token, user1, buck, "10.0000 EOS", "r")	

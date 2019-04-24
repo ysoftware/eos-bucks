@@ -71,13 +71,13 @@ class Test(unittest.TestCase):
 		balance(eosio_token, buck)
 
 		# give some bucks to user 2
-		transfer(buck, user1, user2, "150.000 BUCK")
+		transfer(buck, user1, user2, "150.0000 BUCK")
 
 		table(buck, "cdp")
 
 		## redeem from 1 cdp
 
-		redeem(buck, user2, "10.000 BUCK")
+		redeem(buck, user2, "10.0000 BUCK")
 
 		sleep(2)
 		update(buck) # rex.eos = 998
@@ -109,7 +109,7 @@ class Test(unittest.TestCase):
 
 		## redeem from 2 cdp
 
-		redeem(buck, user2, "100.000 BUCK")
+		redeem(buck, user2, "100.0000 BUCK")
 
 		sleep(2)
 		update(buck) # rex.eos = 997
