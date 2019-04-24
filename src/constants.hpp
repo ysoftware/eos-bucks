@@ -37,6 +37,8 @@ static const name& REX_ACCOUNT  = "rexrexrexrex"_n;
 static const name& REX_ACCOUNT  = EOSIO;
 #endif
 
+static const uint128_t DM = 1000000000000; /// precision multiplier for calculations for use with small numbers
+
 const double CR = 1.5;      /// minimal collateral ratio
 const double IF = 0.02;     /// issuance tax
 const double LF = 0.1;      /// liquidation fee

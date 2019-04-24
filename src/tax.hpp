@@ -6,14 +6,15 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
-  const uint64_t scruge_insurance_amount = round(tax.collected_insurance.amount * SP);
+  const uint128_t sp = (uint128_t) SP * DM;
+  const uint64_t scruge_insurance_amount = tax.collected_insurance.amount * sp / DM;
   const auto scruge_insurance = asset(scruge_insurance_amount, EOS);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
   }
   
    // send part of collected savings to Scruge
-  const uint64_t scruge_savings_amount = round(tax.collected_savings.amount * SP);
+  const uint64_t scruge_savings_amount = tax.collected_savings.amount * sp / DM;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
     add_balance(SCRUGE, scruge_savings, _self, true);
@@ -61,10 +62,10 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
-  const double years_held = (double) (now - last) / (double) YEAR;
-  const double accrued_amount = (double) cdp_itr->debt.amount * (exp(AR * years_held) - 1);
-  const uint64_t accrued_collateral_amount = round(accrued_amount * IR / price);
-  const uint64_t accrued_debt_amount = round(accrued_amount * SR);
+  const uint128_t v = exp(AR * (now - last) / YEAR) * DM;
+  const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
+  const int64_t accrued_collateral_amount = accrued_amount * (DM * IR) / price / DM;
+  const int64_t accrued_debt_amount = accrued_amount * (DM * SR) / DM;
   
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
@@ -93,7 +94,7 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
-  const int64_t dividends_amount =  (uint128_t) ipa * user_aggregated_amount / aea;
+  const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;
   
   // don't update modified_round if dividends calculated is 0
   if (dividends_amount == 0) { return; }
@@ -122,11 +123,13 @@ asset buck::withdraw_savings_dividends(const name& account) {
   auto account_itr = _accounts.find(BUCK.code().raw());
   check (account_itr != _accounts.end(), "no balance object found");
   
-  const uint64_t delta_round = tax.current_round - account_itr->withdrawn_round;
-  const double round_weight = (double) delta_round / (double) BASE_ROUND_DURATION;
-  const uint64_t user_aggregated_amount = round((double) account_itr->savings.amount * round_weight);
-  const double user_part = user_aggregated_amount / (double) tax.aggregated_bucks.amount;
-  const uint64_t dividends_amount = round((double) tax.insurance_pool.amount * user_part);
+  const int64_t sa =  account_itr->savings.amount;
+  const int64_t spa = tax.savings_pool.amount;
+  const int64_t aba = tax.aggregated_bucks.amount;
+  
+  const int64_t delta_round = tax.current_round - account_itr->withdrawn_round;
+  const int64_t user_aggregated_amount = (uint128_t) sa * delta_round / BASE_ROUND_DURATION;
+  const int64_t dividends_amount = (uint128_t) spa * user_aggregated_amount / aba;
   
   const auto user_aggregated = asset(user_aggregated_amount, BUCK);
   const auto dividends = asset(dividends_amount, BUCK);
