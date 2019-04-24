@@ -76,12 +76,10 @@ class Test(unittest.TestCase):
 		price = 2
 		col = 100
 		ccr = 1.6
-		fee = 0.02
 		debt = price * (col / ccr)
-		debt_after_fee = debt - debt * fee
 
 		# check buck balance
-		self.assertEqual(debt_after_fee, balance(buck, user1))
+		self.assertEqual(debt, balance(buck, user1))
 
 		# check all cdp values
 		cdp = table(buck, "cdp")
