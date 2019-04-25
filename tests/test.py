@@ -1,18 +1,17 @@
 import random
 
 class CDP:
-	def __init__(self, collateral, debt, cd, acr, id):
+	def __init__(self, collateral, debt, cd, acr, id, time):
 		self.collateral = collateral
 		self.debt = debt
 		self.cd = cd
 		self.acr = acr 
 		self.id = id
+		self.time = time
 	def __repr__(self):
 		string = "collateral: " + str(self.collateral // 10000) + ","  + str(self.collateral % 10000)
 		string2 = " debt : " + str(self.debt // 10000) + ","  + str(self.debt % 10000)
-		return "<CDP # ID: " + str(self.id)  + "; " + string + "; " + string2  + "; " + "cd: " + str(self.cd) + "% " + "; " + "acr: " +str(self.acr) + "%"
-		#"<CDP # ID%s, " + string + " debt: %s, cd: %s, acr: %s>" % (self.id, self.collateral, self.debt, self.cd, self.acr)
-		#return "<CDP # ID%s, collateral: %s, debt: %s, cd: %s, acr: %s>" % (self.id, self.collateral, self.debt, self.cd, self.acr)
+		return "<CDP # ID: " + str(self.id)  + "; " + string + "; " + string2  + "; " + "cd: " + str(self.cd) + "% " + "; " + "acr: " +str(self.acr) + "%;" + " time: " + str(self.time)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -25,6 +24,8 @@ class CDP:
 		self.debt = debt_new
 	def new_collateral(self, collateral_new):
 		self.collateral = collateral_new
+	def new_time(self, time_new):
+		self.new_time = time_new
 		
 	
 # Functions for generation of sorted CDPs with random values
@@ -33,26 +34,26 @@ def generate_liquidators(k):
 	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
-	liquidator = CDP(rand, 0, 9999999, rand2, 0)
+	liquidator = CDP(rand, 0, 9999999, rand2, 0, 0)
 	liquidators.append(liquidator)
 	for i in range (0,k):
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper,helper+50)
-		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1))
+		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, 0))
 	return liquidators
 
 def generate_debtors(k, n, price):
 	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
-	debtor = CDP(rand, 0, rand2,0, k+1)
+	debtor = CDP(rand, 0, rand2,0, k+1, 0)
 	debtor.add_debt(debtor.collateral * price / debtor.cd)
 	debtors.append(debtor)
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
 		helper = debtors[0].cd
 		rand2 = random.randint(helper, helper +50)
-		debtor = CDP(rand, 0, rand2, 0, i+1)
+		debtor = CDP(rand, 0, rand2, 0, i+1, 0)
 		debtor.add_debt(debtor.collateral * price / debtor.cd)
 		debtors.insert(0, debtor)
 	return debtors
@@ -218,7 +219,7 @@ def redemption(table, amount, price, cr, rf):
 				if cdp.debt == 0:
 					table = cdp_insert(table,cdp)
 					i -= 1
-				elif amount <= cdp.debt:
+				elif amount < cdp.debt:
 					cdp.add_debt(-amount)
 					cdp.add_collateral(-(amount*100)/(price+rf))
 					amount = 0
@@ -230,7 +231,10 @@ def redemption(table, amount, price, cr, rf):
 					cdp.add_debt(-d)
 					cdp.add_collateral((-d*100)/(price+rf))
 					amount -= d
-					cdp.new_cd(cdp.collateral * 100 / cdp.debt)
+					if cdp.debt == 0:
+						cdp.new_cd(9999999)
+					else:
+						cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 					table = cdp_insert(table,cdp)
 					i -= 1
 			else:
@@ -307,9 +311,9 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 
 
-# tester functions
-#table = gen(5,10,100)
-table = [CDP(10000000,0,9999999,200,0), CDP(1000000,0,200,0,1)]
+# tester functions 
+# price = 100, generates 25 liquidators and 25 debtors
+table = gen(25,50,100)
 
 
 print_table(table)
@@ -317,8 +321,11 @@ print_table(table)
 print("\n")
 print("\n")
 
-#table = liquidation(table, 50, 150, 10)
-#table = redemption(table, 200000, 100, 150, 1)
+# price goes down twice
+table = liquidation(table, 50, 150, 10)
+
+table = redemption(table, 200000, 100, 150, 1)
+
 table = reparametrize(table, 1, 0, 500000, 0, 150, 100)
 
 print_table(table)
