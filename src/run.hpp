@@ -224,9 +224,15 @@ void buck::run_requests(uint64_t max) {
         
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
+          
+          const int32_t ccr = debtor_itr->collateral.amount * price / debtor_itr->debt.amount;
+          
+          // skip to the next debtor
+          if (ccr < 100 - RF) { continue; }
+          
           const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
-          const int64_t using_collateral_amount = (uint64_t) using_debt_amount / (price + RF);
+          const int64_t using_collateral_amount = using_debt_amount / (price + RF);
           const int64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
           
           const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
