@@ -53,7 +53,11 @@ void buck::run_requests(uint64_t max) {
         asset change_debt = ZERO_BUCK;
         asset new_collateral = cdp_itr->collateral;
         const int64_t total_debt_amount = cdp_itr->debt.amount + cdp_itr->accrued_debt.amount;
-        const uint32_t ccr = cdp_itr->collateral.amount * price / total_debt_amount;
+        
+        const uint64_t ccr = CR; // used in to calculate relation with CR
+        if (total_debt_amount > 0) {
+          cdp_itr->collateral.amount * price / total_debt_amount;
+        }
   
         // adding debt
         if (reparam_itr->change_debt.amount > 0) {
@@ -90,7 +94,7 @@ void buck::run_requests(uint64_t max) {
         // removing collateral
         else if (reparam_itr->change_collateral.amount < 0) {
         
-          const int64_t can_withdraw = CR * cdp_itr->collateral.amount / ccr;
+          const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
           const int64_t change_amount = std::min(can_withdraw, -reparam_itr->change_collateral.amount);
       
           const asset change = asset(change_amount, EOS);
@@ -315,7 +319,11 @@ void buck::run_liquidation(uint64_t max) {
     
     int64_t debt_amount = debtor_itr->debt.amount;
     int64_t collateral_amount = debtor_itr->collateral.amount;
-    int64_t debtor_ccr = collateral_amount * price / debt_amount;
+    
+    int64_t debtor_ccr = CR;
+    if (debt_amount > 0) {
+      debtor_ccr = collateral_amount * price / debt_amount;
+    }
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
@@ -340,9 +348,13 @@ void buck::run_liquidation(uint64_t max) {
       const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
       const int64_t liquidator_debt = liquidator_itr->debt.amount;
       const int64_t liquidator_acr = liquidator_itr->acr;
-      const int64_t liquidator_ccr = liquidator_collateral * price / liquidator_debt;
       
-      // this and all further liquidators can not bail out anymore bad debt 
+      int64_t liquidator_ccr = CR;
+      if (liquidator_debt > 0) {
+        liquidator_ccr = liquidator_collateral * price / liquidator_debt;
+      }
+      
+      // this and all further liquidators can not bail out anymore bad debt
       if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
         
         // to-do bailout pool?
@@ -388,7 +400,11 @@ void buck::run_liquidation(uint64_t max) {
       // update values
       debt_amount = debtor_itr->debt.amount;
       collateral_amount = debtor_itr->collateral.amount;
-      debtor_ccr = collateral_amount * price / debt_amount;
+      
+      debtor_ccr = CR;
+      if (debt_amount > 0) {
+        debtor_ccr = collateral_amount * price / debt_amount;
+      }
     }
     
     // continue to the next debtor
