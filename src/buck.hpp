@@ -203,7 +203,7 @@ CONTRACT buck : public contract {
     };
     
     typedef multi_index<"accounts"_n, account> accounts_i;
-    typedef multi_index<"stat1"_n, currency_stats> stats_i;
+    typedef multi_index<"stat"_n, currency_stats> stats_i;
     typedef multi_index<"fund"_n, fund> fund_i;
     typedef multi_index<"taxation"_n, taxation_stats> taxation_i;
     
