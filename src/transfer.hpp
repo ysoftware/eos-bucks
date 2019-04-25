@@ -82,8 +82,8 @@ void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32
     
     // check if debt amount is above the limit (actual amount is calculated at maturity)
     const auto price = get_eos_price();
-    const auto debt_amount = price * (double) quantity.amount / ccr;
-    debt = asset(floor(debt_amount), BUCK);
+    const auto debt_amount = price * quantity.amount / ccr;
+    debt = asset(debt_amount, BUCK);
     check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
