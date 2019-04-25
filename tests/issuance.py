@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "100.0000 EOS", "")
+		transfer(eosio_token, master, user1, "10000.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -59,8 +59,10 @@ class Test(unittest.TestCase):
 		# initialize
 		update(buck)
 
+		transfer(eosio_token, user1, buck, "10000.0000 EOS", "deposit")
+
 		# create cdp, transfer collateral
-		open(buck, user1, 1.6, 0, "100.0000 EOS", eosio_token)
+		open(buck, user1, 160, 0, "100.0000 EOS", eosio_token)
 
 		# maturity
 		sleep(2)
@@ -90,6 +92,12 @@ class Test(unittest.TestCase):
 		self.assertEqual("user1", cdp["account"])
 
 		# check open multiple cdps
+
+		open(buck, user1, 170, 0, "100.0000 EOS", eosio_token)
+		open(buck, user1, 180, 0, "100.0000 EOS", eosio_token)
+		open(buck, user1, 190, 0, "100.0000 EOS", eosio_token)
+
+		# ...
 
 # main
 

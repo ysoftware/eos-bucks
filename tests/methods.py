@@ -59,8 +59,7 @@ def transfer(contract, fromAccount, to, quantity, memo=""):
 			"to": to,
 			"quantity": quantity,
 			"memo": memo
-		},
-		permission=[(fromAccount, Permission.ACTIVE)])
+		}, permission=[(fromAccount, Permission.ACTIVE)])
 
 def buyram(contract):
 	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])
@@ -68,34 +67,24 @@ def buyram(contract):
 # contract actions
 
 def open(contract, user, ccr, acr, quantity, token_contract):
-	transfer(token_contract, user, contract, quantity, "deposit")
 	contract.push_action("open",
 		{
 			"account": user,
 			"ccr": ccr,
 			"acr": acr,
 			"quantity": quantity
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
-def update(contract, eos=2):
-	contract.push_action("update",
-		{ "eos_price": eos },
-		permission=[(contract, Permission.ACTIVE)])
+def update(contract, eos=200):
+	contract.push_action("update", { "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
 
 def close(contract, user, cdp_id):
 	contract.push_action("closecdp",
-		{
-			"cdp_id": cdp_id
-		},
-		permission=[(user, Permission.ACTIVE)])
+		{ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
 def run(contract, max=15):
 	contract.push_action("run",
-		{
-			"max": max
-		},
-		permission=[(contract, Permission.ACTIVE)])
+		{ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):
 	contract.push_action("change",
@@ -103,51 +92,49 @@ def reparam(contract, user, cdp_id, change_debt, change_collat):
 			"cdp_id": cdp_id,
 			"change_debt": change_debt,
 			"change_collateral": change_collat
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def changeacr(contract, user, cdp_id, acr):
 	contract.push_action("changeacr",
 		{
 			"cdp_id": cdp_id,
 			"acr": acr
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def redeem(contract, user, quantity):
 	contract.push_action("redeem",
 		{
 			"account": user,
 			"quantity": quantity
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def withdraw(contract, user, quantity):
 	contract.push_action("redeem",
 		{
 			"from": user,
 			"quantity": quantity
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def save(contract, user, quantity):
 	contract.push_action("save",
 		{
 			"account": user,
 			"value": quantity
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def take(contract, user, quantity):
 	contract.push_action("take",
 		{
 			"account": user,
 			"value": quantity
-		},
-		permission=[(user, Permission.ACTIVE)])
+		}, permission=[(user, Permission.ACTIVE)])
 
 def fundbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="balance"))
+
+def get_cdp(buck, id):
+	data = table(buck, "cdp", buck, lower=id, upper=id, limit=100)
+	return data
 
 # requests
 
@@ -174,9 +161,10 @@ def amount(quantity, force=True, default=0):
 		else: return default
 	assert("value is not an asset")
 
-def table(contract, table, scope=None, row=0, element=None, field=None, value=None):
+# field and value - to query from given results
+def table(contract, table, scope=None, row=0, element=None, field=None, value=None, lower="", upper="", limit=10):
 	if scope == None: scope = contract
-	data = contract.table(table, scope).json["rows"]
+	data = contract.table(table, scope, lower=lower, upper=upper, limit=limit).json["rows"]
 
 	# query
 	if field is not None and value is not None:
