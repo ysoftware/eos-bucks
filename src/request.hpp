@@ -89,7 +89,7 @@ void buck::changeacr(uint64_t cdp_id, uint32_t acr) {
   check(maturity_itr == _maturityreq.end(), "cdp is being updated right now");
   
   check(acr >= CR || acr == 0, "acr value is too small");
-  check(acr < 1000, "acr value is too high");
+  check(acr < 1000'00, "acr value is too high");
   
   const auto cdp_itr = _cdp.find(cdp_id);
   check(cdp_itr != _cdp.end(), "debt position does not exist");

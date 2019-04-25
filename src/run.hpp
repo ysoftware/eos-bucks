@@ -2,18 +2,19 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::run(uint64_t max) {
+void buck::run(uint8_t max) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
+  const uint8_t value = std::min(max, (uint8_t) 50);
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
-    run_liquidation(max);
+    run_liquidation(value);
   }
   else {
-    run_requests(max);
+    run_requests(value);
   }
 }
 
-void buck::run_requests(uint64_t max) {
+void buck::run_requests(uint8_t max) {
   const time_point now = current_time_point();
   const uint32_t price = get_eos_price();
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
@@ -310,7 +311,7 @@ void buck::run_requests(uint64_t max) {
   }
 }
 
-void buck::run_liquidation(uint64_t max) {
+void buck::run_liquidation(uint8_t max) {
   uint64_t processed = 0;
   const uint32_t price = get_eos_price();
   
@@ -343,7 +344,7 @@ void buck::run_liquidation(uint64_t max) {
     while (debtor_ccr < CR) {
       
       int64_t liquidation_fee = LF;
-      if (debtor_ccr < 1 + LF) { liquidation_fee = debtor_ccr - 100; }
+      if (debtor_ccr < 100 + LF) { liquidation_fee = debtor_ccr - 100; }
       
       const int64_t x = ((75 * debt_amount * (100 + liquidation_fee)) 
                             - (50 * collateral_amount * price * (100 + liquidation_fee)))
@@ -377,12 +378,12 @@ void buck::run_liquidation(uint64_t max) {
         update_excess_collateral(-cdp_itr->collateral);
       }
       
-      const int64_t bailable = ((liquidator_collateral * price - liquidator_debt * liquidator_acr) 
-                                    * (1 - liquidation_fee))
-                                  / (liquidator_acr * (1 - liquidation_fee) - 1);
+      const int64_t bailable = ((liquidator_collateral * price - liquidator_debt * liquidator_acr)
+                                    * (100 - liquidation_fee))
+                                  / (liquidator_acr * (100 - liquidation_fee) - 100);
       
-      const int64_t used_debt_amount = std::min(bad_debt, bailable);
-      const int64_t used_collateral_amount = used_debt_amount / (price * (1 - liquidation_fee));
+      const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
+      const int64_t used_collateral_amount = used_debt_amount / (price * (100 - liquidation_fee));
       
       // to-do check rounding
       const asset used_debt = asset(used_debt_amount, BUCK);

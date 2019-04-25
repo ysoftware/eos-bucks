@@ -16,7 +16,7 @@ CONTRACT buck : public contract {
     ACTION changeacr(uint64_t cdp_id, uint32_t acr);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
-    ACTION run(uint64_t max);
+    ACTION run(uint8_t max);
     ACTION save(const name& account, const asset& value);
     ACTION take(const name& account, const asset& value);
     
@@ -264,8 +264,8 @@ CONTRACT buck : public contract {
     asset withdraw_savings_dividends(const name& account);
     void update_supply(const asset& quantity);
     
-    void run_requests(uint64_t max);
-    void run_liquidation(uint64_t max);
+    void run_requests(uint8_t max);
+    void run_liquidation(uint8_t max);
     void set_liquidation_status(LiquidationStatus status);
     void set_processing_status(ProcessingStatus status);
     

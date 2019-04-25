@@ -22,10 +22,10 @@ void buck::update(uint32_t eos_price) {
   
   if (eos_price < previous_price) {
     set_liquidation_status(LiquidationStatus::processing_liquidation);
-    run_liquidation(50);
+    run_liquidation(25);
   }
   else {
-    run_requests(10);
+    run_requests(25);
   }
 }
 
