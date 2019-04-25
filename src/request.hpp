@@ -44,6 +44,8 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
   
+  // to-do what if wants to become insurer (0 debt)?
+  
   check(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
   check(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
   

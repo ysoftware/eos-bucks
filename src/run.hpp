@@ -174,19 +174,21 @@ void buck::run_requests(uint64_t max) {
             update_supply(-change_debt);
           }
           
+          // stop being an insurer
+          if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
+            withdraw_insurance_dividends(cdp_itr);
+            update_excess_collateral(-cdp_itr->collateral);
+          }
+          else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+            update_excess_collateral(cdp_itr->collateral + add_collateral);
+          }
+          
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
             r.debt += change_debt;
             r.accrued_debt += change_accrued_debt;
             r.modified_round = _tax.begin()->current_round;
           });
-          
-          
-          // if updated debt is 0, add collateral back to excess
-          // if (cdp_itr->debt.amount == 0) {
-          //   update_excess_collateral(cdp_itr->collateral);
-          // }
-          // withdraw_insurance(cdp_itr);
           
           // to-do if removing debt, send accrued to savings pool
           
@@ -350,11 +352,11 @@ void buck::run_liquidation(uint64_t max) {
       
       // to-do check if right
       
-      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
-      // if (cdp_itr->debt.amount == 0) {
-      //   update_excess_collateral(-cdp_itr->collateral);
-      // }
-      // withdraw_insurance(cdp_itr);
+      if (liquidator_itr->debt.amount == 0) {
+        const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
+        withdraw_insurance_dividends(cdp_itr);
+        update_excess_collateral(-cdp_itr->collateral);
+      }
       
       const int64_t bailable = ((liquidator_collateral * price - liquidator_debt * liquidator_acr) 
                                     * (1 - liquidation_fee))

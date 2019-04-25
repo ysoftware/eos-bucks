@@ -121,10 +121,14 @@ void buck::process(uint8_t kind) {
 
     // to-do check if right
     
-    // update insurance pool
-    if (cdp_itr->debt.amount == 0) {
-      update_excess_collateral(reparam_itr->change_collateral);
+    // stop being an insurer
+    if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
       withdraw_insurance_dividends(cdp_itr);
+      update_excess_collateral(-cdp_itr->collateral);
+    }
+    // become an insurer
+    else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+      update_excess_collateral(cdp_itr->collateral + gained_collateral);
     }
     
     _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -182,10 +186,10 @@ void buck::process(uint8_t kind) {
     _process.erase(rexprocess_itr);
     
     // to-do check if right
-    // if (cdp_itr->debt.amount == 0) {
-    //   update_excess_collateral(-cdp_itr->collateral);
-    //   withdraw_insurance(cdp_itr);
-    // }
+    if (cdp_itr->debt.amount == 0) {
+      withdraw_insurance_dividends(cdp_itr);
+      update_excess_collateral(-cdp_itr->collateral);
+    }
     
     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
     _closereq.erase(close_itr);

@@ -54,6 +54,15 @@ void buck::process_taxes() {
   });
 }
 
+// add interest to savings pool
+void buck::add_savings_pool(const asset& value) {
+  if (value.amount <= 0) { return; }
+  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+    r.collected_savings += value;
+  });
+}
+
+// collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   const auto price = get_eos_price();
@@ -83,10 +92,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.collected_insurance += accrued_collateral;
   });
-  
-  PRINT_("collecting interest")
-  PRINT("accrued_collateral", accrued_collateral)
-  PRINT("accrued_debt", accrued_debt)
   
   // to-do check ccr for liquidation
 }
@@ -179,7 +184,10 @@ void buck::save(const name& account, const asset& value) {
     r.savings += value;
   });
   
-  update_bucks_supply(value);
+  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+    r.changed_bucks += value;
+  });
+  
   sub_balance(account, value - dividends, false);
   run(3);
 }
@@ -197,29 +205,17 @@ void buck::take(const name& account, const asset& value) {
     r.savings -= value;
   });
   
-  update_bucks_supply(-value);
+  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
+    r.changed_bucks -= value;
+  });
+  
   add_balance(account, value + dividends, same_payer, false);
   run(3);
 }
 
-void buck::add_savings_pool(const asset& value) {
-  if (value.amount <= 0) {
-    PRINT("SHOULD BE POSITIVE", value);
-    return;
-  }
-  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-    r.collected_savings += value;
-  });
-}
-
 void buck::update_excess_collateral(const asset& value) {
+  PRINT("update_excess_collateral", value)
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.changed_excess += value;
-  });
-}
-
-void buck::update_bucks_supply(const asset& value) {
-  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-    r.changed_bucks += value;
   });
 }
