@@ -128,8 +128,7 @@ def print_table(table):
 		print("table is empty")
 	else:
 		for i in range(0,len(table)):
-			print table[i]
-			print "\n"			
+			print(table[i])
 			
 			
 
