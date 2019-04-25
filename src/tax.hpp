@@ -99,6 +99,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 /// issue cdp dividends from the insurance pool
 void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   if (cdp_itr->debt.amount != 0) { return; }
+  
   const auto& tax = *_tax.begin();
   
   const int64_t ca = cdp_itr->collateral.amount;
@@ -214,7 +215,6 @@ void buck::take(const name& account, const asset& value) {
 }
 
 void buck::update_excess_collateral(const asset& value) {
-  PRINT("update_excess_collateral", value)
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.changed_excess += value;
   });
