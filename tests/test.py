@@ -178,41 +178,45 @@ def calc_val(cdp, cdp2, price, cr, lf):
 def liquidation(table, price, cr, lf):	
 		i = 0
 		while table[i].cd * price >= cr * 100 :
-			if i == (len(table) - 1):
+			debtor = table.pop(len(table)-1)
+			if debtor.cd * price >= cr * 100 - 95:
+				table.append(debtor)
 				return table
-			elif table[i].cd * price <= table[i].acr * 100:
-				if i == len(table):
-					return table
-				else:
-					i += 1
 			else:
-				debtor = table.pop(len(table)-1)
-				if debtor.cd * price >= cr * 100:
-					table.append(debtor)
-					return table
+				if table[i].acr == 0:
+					if i == len(table)-1:
+						table.append(debtor)
+						return table
+				elif table[i].cd * price <= table[i].acr * 100 + 15000: 
+					i += 1
 				else:
-					if table[i].acr == 0:
-						if i == len(table):
-							return table
-						else:
-							i += 1
+					liquidator = table.pop(i)
+					l = calc_lf(debtor, price, cr, lf)
+					val = calc_val(debtor, liquidator, price, cr,l)
+					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
+					debtor.add_debt(-val)
+					liquidator.add_debt(val)
+					liquidator.add_collateral(c)
+					debtor.add_collateral(-c)
+					if debtor.debt == 0:
+						debtor.new_cd(9999999)
 					else:
-						liquidator = table.pop(i)
-						l = calc_lf(debtor, price, cr, lf)
-						val = calc_val(debtor, liquidator, price, cr,l)
-						c = min(val * 10000 // (price*(100-l)),debtor.collateral)
-						debtor.add_debt(-val)
-						liquidator.add_debt(val)
-						liquidator.add_collateral(c)
-						debtor.add_collateral(-c)
-						if debtor.debt == 0:
-							debtor.new_cd(9999999)
-						else:
-							debtor.new_cd(debtor.collateral * 100 // debtor.debt)
-						# print(liquidator.debt)
-						liquidator.new_cd(liquidator.collateral * 100 // liquidator.debt)
-						table = cdp_insert(table, liquidator)
-						table = cdp_insert(table, debtor)
+						debtor.new_cd(debtor.collateral * 100 // debtor.debt)
+					liquidator.new_cd(liquidator.collateral * 100 // liquidator.debt)
+					table = cdp_insert(table, liquidator)
+					table = cdp_insert(table, debtor)
+					print("i")
+					print(i)
+					print("\n")
+					print("debtor")
+					print(debtor)
+					print("\n")
+					print("liqudator")
+					print(liquidator)
+					if table[i].cd * price <= table[i].acr * 100:
+						i += 1
+					if i == len(table)-1:
+						return table
 		return table
 
 			
@@ -319,7 +323,7 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 # tester functions 
 # price = 100, generates 25 liquidators and 25 debtors
-table = gen(500,1000,100)
+table = gen(5,20,100)
 
 
 print_table(table)
@@ -328,7 +332,7 @@ print("\n")
 print("\n")
 
 # price goes down twice
-table = liquidation(table, 80, 150, 10)
+table = liquidation(table, 20, 150, 10)
 
 #table = redemption(table, 200000, 100, 150, 1)
 
