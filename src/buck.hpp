@@ -156,7 +156,6 @@ CONTRACT buck : public contract {
       asset       debt;
       asset       accrued_debt;
       asset       collateral;
-      asset       rex;
       time_point  timestamp;
       time_point  accrued_timestamp;
       uint32_t    modified_round;
@@ -174,7 +173,7 @@ CONTRACT buck : public contract {
       uint64_t liquidator() const {
         static const int64_t MAX = 100;
         
-        if (acr == 0 || collateral.amount == 0 || rex.amount == 0) {
+        if (acr == 0 || collateral.amount == 0) {
           return MAX * 3; // end of the table
         }
         
@@ -271,9 +270,10 @@ CONTRACT buck : public contract {
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     inline void inline_process(ProcessKind kind);
     
-    void buy_rex(uint64_t cdp_id, const asset& quantity);
-    void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);
-    void sell_rex_redeem(const asset& quantity);
+    void processrex(const name& account, bool bought);
+    bool check_maturity(const asset& value, const name& account);
+    void buy_rex(const asset& quantity);
+    void sell_rex(const asset& quantity);
     
     // getters
     uint32_t get_eos_price() const;

@@ -2,6 +2,14 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+/// returns if this amount of rex is matured for this user
+bool buck::check_maturity(const asset& value, const name& account) {
+  
+  // to-do
+  
+  return true;
+}
+
 void buck::sub_funds(const name& from, const asset& quantity) {
   eosio::print("- "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");
   auto fund_itr = _fund.require_find(from.value, "no fund balance found");

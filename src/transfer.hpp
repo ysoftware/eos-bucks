@@ -94,9 +94,8 @@ void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32
     r.id = id;
     r.account = account;
     r.acr = acr;
-    r.collateral = ZERO_EOS;
+    r.collateral = ZERO_REX;
     r.timestamp = current_time_point();
-    r.rex = ZERO_REX;
     r.debt = ZERO_BUCK;
     r.accrued_debt = ZERO_BUCK;
     r.modified_round = 0;
@@ -105,7 +104,7 @@ void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32
   
   // open account if doesn't exist
   add_balance(account, ZERO_BUCK, account, false);
-  add_funds(account, ZERO_EOS, account);
+  add_funds(account, ZERO_REX, account);
   
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
