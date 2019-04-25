@@ -9,11 +9,11 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(const name& account, const asset& quantity, double ccr, double acr);
+    ACTION open(const name& account, const asset& quantity, uint32_t ccr, uint32_t acr);
     ACTION withdraw(const name& from, const asset& quantity);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
-    ACTION changeacr(uint64_t cdp_id, double acr);
+    ACTION changeacr(uint64_t cdp_id, uint32_t acr);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
     ACTION run(uint64_t max);
@@ -21,7 +21,7 @@ CONTRACT buck : public contract {
     ACTION take(const name& account, const asset& value);
     
     // admin
-    ACTION update(double eos_price);
+    ACTION update(uint32_t eos_price);
     ACTION process(uint8_t kind);
     
     #if DEBUG
@@ -56,7 +56,7 @@ CONTRACT buck : public contract {
       
       // oracle updates
       time_point  oracle_timestamp;
-      double      oracle_eos_price;
+      uint32_t    oracle_eos_price;
       
       // 2 bits for liquidation status
       // 2 bits for requests status
@@ -143,7 +143,7 @@ CONTRACT buck : public contract {
       uint64_t        cdp_id;
       asset           change_debt;
       asset           add_collateral;
-      double          ccr;
+      uint32_t        ccr;
       time_point      maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -152,7 +152,7 @@ CONTRACT buck : public contract {
     
     TABLE cdp {
       uint64_t    id;
-      double      acr;
+      uint32_t    acr;
       name        account;
       asset       debt;
       asset       accrued_debt;
@@ -172,32 +172,32 @@ CONTRACT buck : public contract {
       }
       
       // index to search for liquidators with the highest ability to bail out bad debt
-      double liquidator() const {
-        const double MAX = 100;
+      uint64_t liquidator() const {
+        static const int64_t MAX = 100;
         
         if (acr == 0 || collateral.amount == 0 || rex.amount == 0) {
           return MAX * 3; // end of the table
         }
         
-        double c = (double) collateral.amount;
+        const int64_t c = collateral.amount;
         
         if (debt.amount + accrued_debt.amount == 0) {
           return MAX - c / acr; // descending c/acr
         }
         
-        double cd = c / (double) (debt.amount + accrued_debt.amount);
-        return MAX * 2 - (cd - acr); // descending cd-acr 
+        const int64_t cd = c / debt.amount + accrued_debt.amount;
+        return MAX * 2 - cd; // descending cd
       }
       
       // index to search for debtors with highest ccr
-      double debtor() const {
-        const double MAX = 100;
+      uint64_t debtor() const {
+        static const int64_t MAX = 100;
         
         if (debt.amount + accrued_debt.amount == 0 || rex.amount == 0) {
           return MAX; // end of the table
         }
         
-        double cd = (double) collateral.amount / (double) (debt.amount + accrued_debt.amount);
+        const int64_t cd = collateral.amount / (debt.amount + accrued_debt.amount);
         return cd; // ascending cd
       }
     };
@@ -219,8 +219,8 @@ CONTRACT buck : public contract {
     typedef multi_index<"redprocess"_n, redeem_processing> red_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
-      indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
-      indexed_by<"liquidator"_n, const_mem_fun<cdp, double, &cdp::liquidator>>,
+      indexed_by<"debtor"_n, const_mem_fun<cdp, uint64_t, &cdp::debtor>>,
+      indexed_by<"liquidator"_n, const_mem_fun<cdp, uint64_t, &cdp::liquidator>>,
       indexed_by<"accrued"_n, const_mem_fun<cdp, uint64_t, &cdp::by_accrued_time>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
@@ -277,7 +277,7 @@ CONTRACT buck : public contract {
     void sell_rex_redeem(const asset& quantity);
     
     // getters
-    double get_eos_price() const;
+    uint32_t get_eos_price() const;
     bool is_mature(uint64_t cdp_id) const;
     time_point_sec get_maturity() const;
     asset get_rex_balance() const;

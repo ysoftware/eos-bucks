@@ -2,7 +2,7 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::update(double eos_price) {
+void buck::update(uint32_t eos_price) {
   #if !DEBUG
   require_auth(_self);
   #endif
@@ -11,7 +11,8 @@ void buck::update(double eos_price) {
   process_taxes();
   
   const auto& stats = *_stat.begin();
-  const auto previous_price = stats.oracle_eos_price;
+  const uint32_t previous_price = stats.oracle_eos_price;
+  
   _stat.modify(stats, same_payer, [&](auto& r) {
     r.oracle_timestamp = current_time_point();
     r.oracle_eos_price = eos_price;
@@ -28,7 +29,7 @@ void buck::update(double eos_price) {
   }
 }
 
-inline double buck::get_eos_price() const {
+inline uint32_t buck::get_eos_price() const {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   return _stat.begin()->oracle_eos_price;
 }

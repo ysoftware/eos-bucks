@@ -62,7 +62,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   run(3);
 }
 
-void buck::open(const name& account, const asset& quantity, double ccr, double acr) {
+void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32_t acr) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
   
@@ -92,7 +92,7 @@ void buck::open(const name& account, const asset& quantity, double ccr, double a
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
-    r.acr = round2(acr);
+    r.acr = acr;
     r.collateral = ZERO_EOS;
     r.timestamp = current_time_point();
     r.rex = ZERO_REX;

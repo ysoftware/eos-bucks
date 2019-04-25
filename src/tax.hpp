@@ -6,15 +6,14 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
-  const uint128_t sp = (uint128_t) SP * DM;
-  const uint64_t scruge_insurance_amount = tax.collected_insurance.amount * sp / DM;
+  const uint64_t scruge_insurance_amount = tax.collected_insurance.amount * SP / 100;
   const auto scruge_insurance = asset(scruge_insurance_amount, EOS);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
   }
   
    // send part of collected savings to Scruge
-  const uint64_t scruge_savings_amount = tax.collected_savings.amount * sp / DM;
+  const uint64_t scruge_savings_amount = tax.collected_savings.amount * SP / 100;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
     add_balance(SCRUGE, scruge_savings, _self, true);
@@ -75,10 +74,12 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
-  const uint128_t v = exp(AR * (now - last) / YEAR) * DM;
+  static const uint128_t DM = 1000000000000;
+  const uint128_t v = exp(double(AR * (now - last)) / (double) YEAR) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
-  const int64_t accrued_collateral_amount = accrued_amount * (DM * IR) / price / DM;
-  const int64_t accrued_debt_amount = accrued_amount * (DM * SR) / DM;
+  
+  const int64_t accrued_collateral_amount = accrued_amount * IR / price;
+  const int64_t accrued_debt_amount = accrued_amount * SR / 100;
   
   const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);

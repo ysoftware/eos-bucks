@@ -37,16 +37,12 @@ static const name& REX_ACCOUNT  = "rexrexrexrex"_n;
 static const name& REX_ACCOUNT  = EOSIO;
 #endif
 
-static const uint128_t DM = 1000000000000; /// precision multiplier for calculations for use with small numbers
+// constants in %
 
-const double CR = 1.5;      /// minimal collateral ratio
-const double IF = 0.02;     /// issuance tax
-const double LF = 0.1;      /// liquidation fee
-const double LT = 0.025;    /// liquidation tax
-const double RF = 0.01;     /// redemption fee
-const double CF = 0.0125;   /// creator fee
-const double TT = 0.00085;  /// transaction tax
-const double SP = 0.06;     /// part of taxes for scruge (x2)
-const double AR = 0.01;     /// annual interest rate
-const double SR = 0.005;    /// savings ratio
-const double IR = 0.005;    /// insurance ratio
+const uint8_t CR = 150; /// minimal collateral ratio
+const uint8_t LF = 10;  /// liquidation fee
+const uint8_t RF = 1;   /// redemption fee
+const uint8_t SP = 6;   /// part of taxes for scruge (x2)
+const uint8_t AR = 2;   /// annual interest rate
+const uint8_t SR = 5;   /// savings ratio
+const uint8_t IR = 5;   /// insurance ratio

@@ -97,12 +97,12 @@ void buck::process(uint8_t kind) {
       // to-do check this
       
       const auto price = get_eos_price();
-      const double ccr = (double) new_collateral.amount * price / (double) change_debt.amount;
-      const double ccr_cr = ((ccr / CR) - 1) * (double) cdp_itr->debt.amount;
-      const double di = (double) reparam_itr->change_debt.amount;
-      const uint64_t change_amount = ceil(fmin(ccr_cr, di));
-      change_debt = asset(change_amount, BUCK);
+      const uint32_t ccr = new_collateral.amount * price / change_debt.amount;
       
+      const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
+      const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
+      
+      change_debt = asset(change_amount, BUCK);
       add_balance(cdp_itr->account, change_debt, same_payer, true);
     }
     
@@ -110,7 +110,7 @@ void buck::process(uint8_t kind) {
     else if (reparam_itr->change_debt.amount < 0) {
       change_debt = reparam_itr->change_debt; // add negative value
       
-      const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+      const int64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
       change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
       change_debt += change_accrued_debt; // add to negative
       
