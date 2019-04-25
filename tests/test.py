@@ -52,7 +52,7 @@ def generate_debtors(k, n, price):
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
 		helper = debtors[0].cd
-		rand2 = random.randint(helper, helper +50)
+		rand2 = random.randint(helper, helper + 5)
 		debtor = CDP(rand, 0, rand2, 0, i+1, 0)
 		debtor.add_debt(debtor.collateral * price / debtor.cd)
 		debtors.insert(0, debtor)
@@ -182,7 +182,10 @@ def liquidation(table, price, cr, lf):
 			if i == (len(table) - 1):
 				return table
 			elif table[i].cd * price <= table[i].acr * 100:
-				i += 1
+				if i == len(table):
+					return table
+				else:
+					i += 1
 			else:
 				debtor = table.pop(len(table)-1)
 				if debtor.cd * price >= cr * 100:
@@ -190,7 +193,10 @@ def liquidation(table, price, cr, lf):
 					return table
 				else:
 					if table[i].acr == 0:
-						i += 1
+						if i == len(table):
+							return table
+						else:
+							i += 1
 					else:
 						liquidator = table.pop(i)
 						l = calc_lf(debtor, price, cr, lf)
@@ -313,7 +319,7 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 # tester functions 
 # price = 100, generates 25 liquidators and 25 debtors
-table = gen(25,50,100)
+table = gen(500,1000,100)
 
 
 print_table(table)
@@ -322,11 +328,11 @@ print("\n")
 print("\n")
 
 # price goes down twice
-table = liquidation(table, 50, 150, 10)
+table = liquidation(table, 80, 150, 10)
 
-table = redemption(table, 200000, 100, 150, 1)
+#table = redemption(table, 200000, 100, 150, 1)
 
-table = reparametrize(table, 1, 0, 500000, 0, 150, 100)
+#table = reparametrize(table, 1, 0, 500000, 0, 150, 100)
 
 print_table(table)
 
