@@ -22,7 +22,7 @@ CONTRACT buck : public contract {
     
     // admin
     ACTION update(uint32_t eos_price);
-    ACTION process(uint8_t kind);
+    ACTION processrex(const name& account, bool bought);
     
     #if DEBUG
     ACTION zdestroy();
@@ -123,7 +123,6 @@ CONTRACT buck : public contract {
     };
     
     TABLE processing {
-      uint64_t  identifier; /// cpp id or redeemer account
       asset     current_balance;
       
       uint64_t primary_key() const { return identifier; }

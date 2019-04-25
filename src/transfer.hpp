@@ -35,9 +35,11 @@ void buck::withdraw(const name& from, const asset& quantity) {
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  sub_funds(from, quantity);
+  // to-do check if there is enough of matured rex
   
-  inline_transfer(from, quantity, "withdraw funds", EOSIO_TOKEN);
+  sub_funds(from, quantity);
+  sell_rex(from);
+  processrex(from, false);
   
   run(3);
 }
@@ -55,9 +57,8 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  // to-do to protect from spam, check if depositing more than 1 EOS
-  
-  add_funds(from, quantity, _self);
+  buy_rex(quantity);
+  processrex(from, true);
 
   run(3);
 }
