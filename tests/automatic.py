@@ -63,7 +63,7 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		# generate cdps
-		cdp_table = test.gen(2, 5, price)
+		cdp_table = test.gen(20, 50, price)
 		
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
@@ -78,12 +78,13 @@ class Test(unittest.TestCase):
 		run(buck)	
 
 		for cdp in cdp_table:
-			print(cdp)
 			row = get_cdp(buck, cdp.id)
 			cdp.new_time(int(row["modified_round"]))
 			self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
 			self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
 			self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
+
+			print(cdp)
 
 
 
