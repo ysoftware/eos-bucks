@@ -64,7 +64,7 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		COMMENT("Open CDP")
-		cdp_table = test.gen(5, 15, price)
+		cdp_table = test.gen(20, 40, price)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
@@ -72,6 +72,8 @@ class Test(unittest.TestCase):
 		sleep(2) # wait for maturity
 
 		update(buck, price)
+		run(buck)	
+		run(buck)	
 		run(buck)	
 
 		self.compare(buck, cdp_table)

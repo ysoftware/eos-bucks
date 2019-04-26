@@ -85,8 +85,8 @@ def close(contract, user, cdp_id):
 		{ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
 def run(contract, max=50):
-	contract.push_action("run",
-		{ "max": max }, permission=[(contract, Permission.ACTIVE)])
+	contract.push_action("run", { "max": max }, permission=[(contract, Permission.ACTIVE)])
+	time.sleep(1)
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):
 	contract.push_action("change",
