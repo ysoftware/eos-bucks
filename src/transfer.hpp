@@ -94,7 +94,6 @@ void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32
     r.account = account;
     r.acr = acr;
     r.collateral = ZERO_EOS;
-    r.timestamp = current_time_point();
     r.rex = ZERO_REX;
     r.debt = ZERO_BUCK;
     r.accrued_debt = ZERO_BUCK;

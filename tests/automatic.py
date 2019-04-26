@@ -64,7 +64,7 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		COMMENT("Open CDP")
-		cdp_table = test.gen(5, 10, price)
+		cdp_table = test.gen(5, 15, price)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
@@ -79,7 +79,6 @@ class Test(unittest.TestCase):
 
 		COMMENT("Liquidation sorting")
 
-		test.print_table(cdp_table)
 		# match debtors sorting
 		top_debtors = get_debtors(buck, limit=50)
 		for i in range(0, len(top_debtors)):
@@ -98,7 +97,7 @@ class Test(unittest.TestCase):
 		COMMENT("Liquidation")
 
 		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
-		price = 70
+		price = 75
 
 		test.liquidation(cdp_table, price)
 		update(buck, price)
@@ -114,11 +113,11 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		print(cdp)
-		self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
-		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
-		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
-		# self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "open: rounds modified does not match")
+		# print(cdp)
+		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
+		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
+		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
+		# self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "rounds modified don't match")
 
 	def compare(self, buck, cdp_table):
 		for cdp in cdp_table:

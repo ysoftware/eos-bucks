@@ -158,7 +158,6 @@ CONTRACT buck : public contract {
       asset       accrued_debt;
       asset       collateral;
       asset       rex;
-      time_point  timestamp;
       time_point  accrued_timestamp;
       uint32_t    modified_round;
       

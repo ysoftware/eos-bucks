@@ -149,20 +149,20 @@ def calc_lf(cdp, price, cr, lf):
 	if ccr >= 100 + lf:
 		l = lf
 	elif ccr < 75:
-		l = - 25
+		l = -25
 	else: 
 		l = ccr - 100
 	return l
 	
 def x_value(d, l, c, p):
 		x = (100+l)*(750*d-5*c*p) // (50000-1500*l)
-		print("x val", x)
 		return x
 		
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
-	val = (cr-ccr)*cdp.debt // 100+x_value(cdp.debt, lf, cdp.collateral, price)
-	print("bad debt", val)
+	# print("ccr", ccr)
+	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
+	# print("bad debt", val)
 	return val
 	
 	
@@ -173,8 +173,9 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	acr = cdp2.acr
 	v = calc_bad_debt(cdp, price, cr, l)
 	v2 = (c*price-d*acr)*(100-l) // (acr*(100-l)-10000)
-	print("v2", v2)
-	print("val", min(v,v2, cdp.debt))
+	# print("bailable", v2)
+	# print("lf", l)
+	print("using", min(v,v2, cdp.debt))
 	return min(v,v2, cdp.debt)
 	
 	
@@ -184,9 +185,9 @@ def liquidation(table, price, cr=150, lf=10):
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100) :
 			debtor = table.pop(len(table)-1)
-			#print("\n")
-			print("debtor")
-			print(debtor)
+			print("\n")
+			print("debtor", debtor)
+
 			#print("\n")
 			if debtor.cd * price >= cr * 100 + epsilon (cr*100):
 				table.append(debtor)
@@ -204,10 +205,7 @@ def liquidation(table, price, cr=150, lf=10):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
-					#print("\n")
-					print("liquidator")
-					print(liquidator)
-					#print("\n")
+					print("liquidator", liquidator)
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
@@ -230,6 +228,7 @@ def liquidation(table, price, cr=150, lf=10):
 						#i += 1
 					if i == len(table):
 						return table
+		pring("liquidation done")
 		return table
 
 			
