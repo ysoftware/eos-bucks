@@ -386,6 +386,17 @@ void buck::run_liquidation(uint8_t max) {
       const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
       const int64_t used_collateral_amount = used_debt_amount / (price * (100 - liquidation_fee));
       
+      
+      PRINT("debtor", debtor_itr->id)
+      PRINT("x", x)
+      PRINT("bad_debt", bad_debt)
+      PRINT("liquidator", liquidator_itr->id)
+      PRINT("bailable", bailable)
+      PRINT("used debt", used_debt_amount)
+      PRINT_("...\n\n")
+      
+      
+      
       // to-do check rounding
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, EOS);

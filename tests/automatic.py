@@ -57,14 +57,14 @@ class Test(unittest.TestCase):
 	def test(self):
 
 		# initialize
-		price = 1000
+		price = 100
 		destroy(buck)
 		update(buck, price)
 
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		COMMENT("Open CDP")
-		cdp_table = test.gen(10, 20, price)
+		cdp_table = test.gen(5, 10, price)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
@@ -76,27 +76,58 @@ class Test(unittest.TestCase):
 
 		self.compare(buck, cdp_table)
 
+
+		COMMENT("Liquidation sorting")
+
+
+		test.print_table(cdp_table)
+		# match debtors sorting
+		top_debtors = get_debtors(buck, limit=50)
+		for i in range(0, len(top_debtors)):
+			debtor = top_debtors[i]
+			if amount(debtor["debt"]) == 0: break
+			self.match(cdp_table[i * -1 - 1], debtor)
+
+		# match liquidators sorting
+		top_liquidators = get_liquidators(buck, limit=50)
+		for i in range(0, len(top_liquidators)):
+			liquidator = top_liquidators[i]
+			if liquidator["acr"] == 0: break
+			self.match(cdp_table[i], liquidator)
+
+
 		COMMENT("Liquidation")
-		price = int(price * 0.8)
+
+		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
+		price = 70
 
 		test.liquidation(cdp_table, price)
 		update(buck, price)
 		run(buck)
+
+		test.print_table(cdp_table)
+		table(buck, "cdp")
+
 		self.compare(buck, cdp_table)
 
+		# check if liquidated something
+		top_debtor = get_debtor(buck)
+		current_debt = top_debtor["debt"]
+		self.assertNotEqual(previous_debt, current_debt, "liquidation did not do anything")
+
+
+	def match(self, cdp, row):
+		# print(cdp)
+		self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
+		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
+		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
+		# self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "open: rounds modified does not match")
 
 	def compare(self, buck, cdp_table):
 		for cdp in cdp_table:
-				print(cdp)
 				row = get_cdp(buck, cdp.id)
-				if cdp.time == 0:
-					cdp.time = int(row["modified_round"])
-				self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
-				self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
-				self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
-				self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "open: rounds modified does not match")
-
-
+				if cdp.time == 0: cdp.time = int(row["modified_round"]) # update round time
+				self.match(cdp, row)
 
 # main
 

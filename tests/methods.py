@@ -134,9 +134,9 @@ def take(contract, user, quantity):
 def fundbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="balance"))
 
-def get_cdp(buck, id, element=None):
-	data = table(buck, "cdp", buck, lower=id, upper=id, limit=5, element=element)
-	return data
+def get_cdp(buck, id, element=None): return table(buck, "cdp", buck, lower=id, upper=id, limit=1, element=element)
+def get_debtors(buck, limit=1): return table(buck, "cdp", index=2, limit=limit, row=None)
+def get_liquidators(buck, limit=1): return table(buck, "cdp", index=3, limit=limit, row=None)
 
 # requests
 
