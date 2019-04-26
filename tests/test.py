@@ -26,6 +26,10 @@ class CDP:
 		self.collateral = collateral_new
 	def new_time(self, time_new):
 		self.new_time = time_new
+	def __eq__(self, other):
+		if isinstance(other, CDP):
+			return self.collateral == other.collateral and self.acr == other.acr and self.cd == other.cd and self.time == other.time
+		return False
 
 def epsilon(value):
 	return value // 20000
@@ -36,11 +40,12 @@ def epsilon(value):
 def generate_liquidators(k):
 	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,151)
+	rand2 = random.randint(150,300)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, 0)
 	liquidators.append(liquidator)
 	for i in range (0,k):
 		helper = liquidators[i].acr
+		rand = random.randrange(1000000,10000000,10000)
 		rand2 = random.randint(helper,helper+1)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, 0))
 	return liquidators
@@ -65,9 +70,14 @@ def generate_debtors(k, n, price):
 def gen(k, n, price):
 	liquidators = generate_liquidators(k)
 	debtors = generate_debtors(k, n, price)
-	return liquidators + debtors
 
+	return remove_duplicates(liquidators + debtors)
 
+def remove_duplicates(t):
+	for i in t:
+		if i in t[t.index(i)+1:]:
+			t.remove(i)
+	return t
 
 
 # Function for inserting CDP into the table
@@ -335,21 +345,21 @@ def reparametrize(table, id, c, d, acr, cr, price):
 # tester functions 
 # price = 100, generates 25 liquidators and 25 debtors
 #table = [CDP(10000000, 0, 9999999, 200, 0, 0), CDP(10000000, 5000000, 200, 0, 1, 0), CDP(10000000, 5000000, 200, 0, 2, 0), CDP(10000000, 5000000, 200, 0, 3, 0), CDP(10000000, 5000000, 200, 0, 4, 0), CDP(10000000, 5000000, 200, 0, 5, 0)]
-table = gen(2000,200000,100)
+# table = gen(2000,200000,100)
 
 
-print("\n")
-print_table(table)
-print("\n")
-#table = cdp_insert(table, CDP(500000, 500000, 100, 0, 200, 0))
+# print("\n")
+# print_table(table)
+# print("\n")
+# #table = cdp_insert(table, CDP(500000, 500000, 100, 0, 200, 0))
 
 
-#def liquidation(table, price, cr, lf):	
-table = liquidation(table, 40, 150, 10)
+# #def liquidation(table, price, cr, lf):	
+# table = liquidation(table, 40, 150, 10)
 
-print("\n")
-print_table(table)
-print("\n")
+# print("\n")
+# print_table(table)
+# print("\n")
 
 
 #def redemption(table, amount, price, cr, rf):
