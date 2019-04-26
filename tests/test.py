@@ -28,7 +28,7 @@ class CDP:
 		self.new_time = time_new
 
 def epsilon(value):
-	return value // 20000
+	return value // 500000
 		
 	
 # Functions for generation of sorted CDPs with random values
