@@ -312,6 +312,7 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
+  PRINT_("run_liquidation")
   uint64_t processed = 0;
   const uint32_t price = get_eos_price();
   
@@ -335,10 +336,15 @@ void buck::run_liquidation(uint8_t max) {
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
       
+      PRINT("lowest debtor_ccr", debtor_ccr)
+      PRINT_("DONE")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
     }
+    
+    
+    PRINT("debtor", debtor_itr->id)
     
     // loop through liquidators
     while (debtor_ccr < CR) {
@@ -361,10 +367,15 @@ void buck::run_liquidation(uint8_t max) {
         liquidator_ccr = liquidator_collateral * price / liquidator_debt;
       }
       
+      PRINT("liquidator", liquidator_itr->id)
+      PRINT("liquidator_acr", liquidator_acr)
+      PRINT("liquidator_ccr", liquidator_ccr)
+      
       // this and all further liquidators can not bail out anymore bad debt
-      if (liquidator_acr > 0 && liquidator_ccr <= liquidator_acr || liquidator_itr == liquidator_index.end()) {
+      if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end()) {
         
         // to-do bailout pool?
+        PRINT_("failed to liquidate")
         set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
@@ -387,10 +398,8 @@ void buck::run_liquidation(uint8_t max) {
       const int64_t used_collateral_amount = used_debt_amount / (price * (100 - liquidation_fee));
       
       
-      PRINT("debtor", debtor_itr->id)
       PRINT("x", x)
       PRINT("bad_debt", bad_debt)
-      PRINT("liquidator", liquidator_itr->id)
       PRINT("bailable", bailable)
       PRINT("used debt", used_debt_amount)
       PRINT_("...\n\n")
@@ -430,4 +439,8 @@ void buck::run_liquidation(uint8_t max) {
     processed++;
     debtor_itr++;
   }
+  
+  PRINT("reached end?", debtor_itr != debtor_index.end())
+  PRINT("did enough?", processed < max)
+  PRINT_("liq over")
 }
