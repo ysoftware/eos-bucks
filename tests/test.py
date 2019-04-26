@@ -176,7 +176,7 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	
 # Contract functions
 
-def liquidation(table, price, cr, lf):	
+def liquidation(table, price, cr=150, lf=10):	
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100) :
 			debtor = table.pop(len(table)-1)
