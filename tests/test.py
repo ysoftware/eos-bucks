@@ -41,8 +41,8 @@ def generate_liquidators(k):
 	liquidators.append(liquidator)
 	for i in range (0,k):
 		helper = liquidators[i].acr
-		rand = random.randrange(1000000,10000000,10000)
-		rand2 = random.randint(helper,helper+1)
+		# rand = random.randrange(1000000,10000000,10000)
+		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, 0))
 	return liquidators
 
