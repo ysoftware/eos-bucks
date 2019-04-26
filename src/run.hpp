@@ -312,7 +312,7 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
-  PRINT_("run_liquidation")
+  PRINT("run_liquidation", max)
   uint64_t processed = 0;
   const uint32_t price = get_eos_price();
   
@@ -345,6 +345,8 @@ void buck::run_liquidation(uint8_t max) {
     
     
     PRINT("debtor", debtor_itr->id)
+    PRINT("debt", debtor_itr->debt)
+    PRINT("col", debtor_itr->collateral)
     
     // loop through liquidators
     while (debtor_ccr < CR) {
@@ -367,6 +369,7 @@ void buck::run_liquidation(uint8_t max) {
         liquidator_ccr = liquidator_collateral * price / liquidator_debt;
       }
       
+      PRINT("liquidation_fee", liquidation_fee)
       PRINT("liquidator", liquidator_itr->id)
       PRINT("liquidator_acr", liquidator_acr)
       PRINT("liquidator_ccr", liquidator_ccr)
@@ -442,5 +445,7 @@ void buck::run_liquidation(uint8_t max) {
   
   PRINT("reached end?", debtor_itr != debtor_index.end())
   PRINT("did enough?", processed < max)
+  PRINT("processed", processed)
+  PRINT("max", max)
   PRINT_("liq over")
 }

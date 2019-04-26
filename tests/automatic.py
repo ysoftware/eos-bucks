@@ -98,7 +98,7 @@ class Test(unittest.TestCase):
 		COMMENT("Liquidation")
 
 		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
-		price = 90
+		price = 70
 
 		test.liquidation(cdp_table, price)
 		update(buck, price)
