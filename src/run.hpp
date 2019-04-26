@@ -162,11 +162,6 @@ void buck::run_requests(uint8_t max) {
             // issue debt
             const int64_t debt_amount = (price * add_collateral.amount / maturity_itr->ccr);
             change_debt = asset(debt_amount, BUCK);
-            
-            PRINT("price", price)
-            PRINT("add_collateral.amount", add_collateral.amount)
-            PRINT("maturity_itr->ccr", maturity_itr->ccr)
-            PRINT("debt_amount", debt_amount)
           }
           
           asset change_accrued_debt = ZERO_BUCK;

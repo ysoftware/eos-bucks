@@ -36,7 +36,7 @@ def epsilon(value):
 def generate_liquidators(k):
 	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,300)
+	rand2 = random.randint(150,200)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, 0)
 	liquidators.append(liquidator)
 	for i in range (0,k):
@@ -49,7 +49,7 @@ def generate_liquidators(k):
 def generate_debtors(k, n, price):
 	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,300)
+	rand2 = random.randint(150,170)
 	debtor = CDP(rand, 0, rand2,0, k+1, 0)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
 	debtors.append(debtor)

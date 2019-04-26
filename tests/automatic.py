@@ -57,35 +57,44 @@ class Test(unittest.TestCase):
 	def test(self):
 
 		# initialize
-		price = 100
+		price = 1000
 		destroy(buck)
 		update(buck, price)
+
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
-		# generate cdps
-		cdp_table = test.gen(20, 50, price)
-		
+		COMMENT("Open CDP")
+		cdp_table = test.gen(10, 20, price)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
 
-		sleep(1)
-		update(buck, price)
-		run(buck)
+		sleep(2) # wait for maturity
 
-		sleep(1)
 		update(buck, price)
 		run(buck)	
 
+		self.compare(buck, cdp_table)
+
+		COMMENT("Liquidation")
+		price = int(price * 0.8)
+
+		test.liquidation(cdp_table, price)
+		update(buck, price)
+		run(buck)
+		self.compare(buck, cdp_table)
+
+
+	def compare(self, buck, cdp_table):
 		for cdp in cdp_table:
-			row = get_cdp(buck, cdp.id)
-			cdp.new_time(int(row["modified_round"]))
-			self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
-			self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
-			self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
-
-			print(cdp)
-
+				print(cdp)
+				row = get_cdp(buck, cdp.id)
+				if cdp.time == 0:
+					cdp.time = int(row["modified_round"])
+				self.assertEqual(cdp.acr, row["acr"], "open: acr does not match")
+				self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "open: debt does not match")
+				self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "open: collateral does not match")
+				self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "open: rounds modified does not match")
 
 
 

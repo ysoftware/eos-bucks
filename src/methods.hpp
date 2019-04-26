@@ -71,7 +71,6 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
 }
 
 void buck::update_supply(const asset& quantity) {
-  PRINT("modifying supply", quantity)
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.supply += quantity;
   });
