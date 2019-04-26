@@ -5,6 +5,7 @@
 
 import unittest
 from eosfactory.eosf import *
+from functools import reduce
 from datetime import datetime
 import time
 
@@ -38,13 +39,13 @@ def create_issue(contract, to, symbol):
 	contract.push_action("create",
 		{
 			"issuer": to,
-			"maximum_supply": "1000000000.0000 {}".format(symbol)
+			"maximum_supply": "1000000000000.0000 {}".format(symbol)
 		},
 		permission=[(contract, Permission.ACTIVE)])
 	contract.push_action("issue",
 		{
 			"to": to,
-			"quantity": "1000000000.0000 {}".format(symbol),
+			"quantity": "1000000000000.0000 {}".format(symbol),
 			"memo": ""
 		},
 		permission=[(to, Permission.ACTIVE)])
@@ -66,7 +67,7 @@ def buyram(contract):
 
 # contract actions
 
-def open(contract, user, ccr, acr, quantity, token_contract):
+def open(contract, user, ccr, acr, quantity):
 	contract.push_action("open",
 		{
 			"account": user,
@@ -82,7 +83,7 @@ def close(contract, user, cdp_id):
 	contract.push_action("closecdp",
 		{ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
-def run(contract, max=15):
+def run(contract, max=50):
 	contract.push_action("run",
 		{ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
@@ -132,8 +133,8 @@ def take(contract, user, quantity):
 def fundbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="balance"))
 
-def get_cdp(buck, id):
-	data = table(buck, "cdp", buck, lower=id, upper=id, limit=100)
+def get_cdp(buck, id, element=None):
+	data = table(buck, "cdp", buck, lower=id, upper=id, limit=5, element=element)
 	return data
 
 # requests
@@ -161,10 +162,21 @@ def amount(quantity, force=True, default=0):
 		else: return default
 	assert("value is not an asset")
 
+def asset(amount, symbol="EOS", precision=4):
+	a = str(int(amount))
+	s = "0" if len(a) <= 4 else a[:len(a) - precision]
+	e = a[-precision:]
+	if len(e) < 4:
+		e = "".join(list(map(lambda x: "0", range(0, 4-len(e))))) + e
+	return s + "." + e + " " + symbol
+
+def unpack(value):
+	return amount(asset(value))
+
 # field and value - to query from given results
-def table(contract, table, scope=None, row=0, element=None, field=None, value=None, lower="", upper="", limit=10):
+def table(contract, table, scope=None, row=0, element=None, field=None, index=1, keytype="i64", value=None, lower="", upper="", limit=10):
 	if scope == None: scope = contract
-	data = contract.table(table, scope, lower=lower, upper=upper, limit=limit).json["rows"]
+	data = contract.table(table, scope, lower=str(lower), upper=str(upper), index=index, limit=limit, key_type=keytype).json["rows"]
 
 	# query
 	if field is not None and value is not None:
