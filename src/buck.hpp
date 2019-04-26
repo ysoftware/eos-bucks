@@ -173,9 +173,9 @@ CONTRACT buck : public contract {
       
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
-        static const int64_t MAX = 100;
+        static const int64_t MAX = 1000000000;
         
-        if (acr == 0 || collateral.amount == 0 || rex.amount == 0) {
+        if (acr == 0 || collateral.amount == 0) {
           return MAX * 3; // end of the table
         }
         
@@ -191,7 +191,7 @@ CONTRACT buck : public contract {
       
       // index to search for debtors with highest ccr
       uint64_t debtor() const {
-        static const int64_t MAX = 100;
+        static const int64_t MAX = 1000000000;
         
         if (debt.amount + accrued_debt.amount == 0 || rex.amount == 0) {
           return MAX; // end of the table

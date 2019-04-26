@@ -346,9 +346,9 @@ void buck::run_liquidation(uint8_t max) {
       int64_t liquidation_fee = LF;
       if (debtor_ccr < 100 + LF) { liquidation_fee = debtor_ccr - 100; }
       
-      const int64_t x = ((75 * debt_amount * (100 + liquidation_fee)) 
-                            - (50 * collateral_amount * price * (100 + liquidation_fee)))
-                          / (50 - (150 * liquidation_fee));
+      const int64_t x = (100 + liquidation_fee) 
+                          * (750 * debt_amount - (5 * collateral_amount * price))
+                          / (50000-1500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) + x;
       
@@ -378,9 +378,10 @@ void buck::run_liquidation(uint8_t max) {
         update_excess_collateral(-cdp_itr->collateral);
       }
       
+      
       const int64_t bailable = ((liquidator_collateral * price - liquidator_debt * liquidator_acr)
                                     * (100 - liquidation_fee))
-                                  / (liquidator_acr * (100 - liquidation_fee) - 100);
+                                  / (liquidator_acr * (100 - liquidation_fee) - 10000);
       
       const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
       const int64_t used_collateral_amount = used_debt_amount / (price * (100 - liquidation_fee));
