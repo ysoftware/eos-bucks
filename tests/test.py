@@ -59,15 +59,19 @@ def generate_debtors(k, n, price):
 	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
+	ccr = rand2
 	debtor = CDP(rand, 0, rand2,0, k+1, 0)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
+	debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 	debtors.append(debtor)
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
-		helper = debtors[0].cd
-		rand2 = random.randint(helper, helper + 1)
+		helper = ccr
+		rand2 = random.randint(helper+1, helper + 2)
+		ccr = rand2
 		debtor = CDP(rand, 0, rand2, 0, i+1, 0)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
+		debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 		debtors.insert(0, debtor)
 	return debtors
 
@@ -354,11 +358,11 @@ def reparametrize(table, id, c, d, acr, cr, price):
 # price = 100, generates 25 liquidators and 25 debtors
 #table = [CDP(10000000, 0, 9999999, 200, 0, 0), CDP(10000000, 5000000, 200, 0, 1, 0), CDP(10000000, 5000000, 200, 0, 2, 0)]
 
-table = gen(50,10000,100)
+table = gen(50,100,200)
 print("\n")
 print_table(table)
 print("\n")
-table = liquidation(table,90, 150, 10)
+table = liquidation(table,150, 150, 10)
 print("\n")
 print_table(table)
 print("\n")
