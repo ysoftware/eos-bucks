@@ -1,4 +1,13 @@
 import random
+from math import exp
+
+
+IR = 25 # insurance ratio
+LF = 10 # liquidation fee
+SR = 100 - IR # savings ratio
+r = 0.04 # interest rate
+
+
 
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
@@ -28,7 +37,7 @@ class CDP:
 		self.new_time = time_new
 
 def epsilon(value):
-	return value // 500000
+	return value // 500
 		
 	
 # Functions for generation of sorted CDPs with random values
@@ -36,12 +45,12 @@ def epsilon(value):
 def generate_liquidators(k):
 	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,200)
+	rand2 = random.randint(150,155)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, 0)
 	liquidators.append(liquidator)
 	for i in range (0,k):
 		helper = liquidators[i].acr
-		# rand = random.randrange(1000000,10000000,10000)
+		rand = random.randrange(1000000,10000000,10000)
 		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, 0))
 	return liquidators
@@ -49,16 +58,20 @@ def generate_liquidators(k):
 def generate_debtors(k, n, price):
 	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,170)
+	rand2 = random.randint(150,155)
+	ccr = rand2
 	debtor = CDP(rand, 0, rand2,0, k+1, 0)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
+	debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 	debtors.append(debtor)
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
-		helper = debtors[0].cd
-		rand2 = random.randint(helper, helper + 1)
+		helper = ccr
+		rand2 = random.randint(helper+1, helper + 2)
+		ccr = rand2
 		debtor = CDP(rand, 0, rand2, 0, i+1, 0)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
+		debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 		debtors.insert(0, debtor)
 	return debtors
 
@@ -141,7 +154,7 @@ def print_table(table):
 # Helper functions for calculations
 
 def calc_ccr(cdp, price):
-	ccr = cdp.collateral * price // cdp.debt
+	ccr = cdp.cd * price // 100
 	return ccr
 	
 def calc_lf(cdp, price, cr, lf):
@@ -149,7 +162,7 @@ def calc_lf(cdp, price, cr, lf):
 	if ccr >= 100 + lf:
 		l = lf
 	elif ccr < 75:
-		l = -25
+		l = - 25
 	else: 
 		l = ccr - 100
 	return l
@@ -160,9 +173,7 @@ def x_value(d, l, c, p):
 		
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
-	# print("ccr", ccr)
-	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
-	# print("bad debt", val)
+	val = (cr-ccr)*cdp.debt // 100+x_value(cdp.debt, lf, cdp.collateral, price)
 	return val
 	
 	
@@ -173,10 +184,18 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	acr = cdp2.acr
 	v = calc_bad_debt(cdp, price, cr, l)
 	v2 = (c*price-d*acr)*(100-l) // (acr*(100-l)-10000)
-	# print("bailable", v2)
-	# print("lf", l)
-	print("using", min(v,v2, cdp.debt))
 	return min(v,v2, cdp.debt)
+	
+# Taxes
+
+def add_tax(cdp, time, r, SR, IR, price):
+	interest = cdp.debt * ceil(exp((r*(time-cdp.time))/(3.154*(10^7)))-1)
+	cdp.add_debt(interest * SR)
+	cdp.add_collateral(-interest * IR)
+	cdp.new_cd = cdp.collateral // cdp.debt
+	return cdp
+	
+	
 	
 	
 # Contract functions
@@ -186,10 +205,10 @@ def liquidation(table, price, cr=150, lf=10):
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100) :
 			debtor = table.pop(len(table)-1)
 			print("\n")
-			print("debtor", debtor)
-
-			#print("\n")
-			if debtor.cd * price >= cr * 100 + epsilon (cr*100):
+			print("debtor")
+			print(debtor)
+			print("\n")
+			if debtor.cd * price >= cr * 100 - epsilon (cr*100):
 				table.append(debtor)
 				return table
 			else:
@@ -205,7 +224,10 @@ def liquidation(table, price, cr=150, lf=10):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
-					print("liquidator", liquidator)
+					print("\n")
+					print("liquidator")
+					print(liquidator)
+					print("\n")
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
@@ -228,7 +250,6 @@ def liquidation(table, price, cr=150, lf=10):
 						#i += 1
 					if i == len(table):
 						return table
-		pring("liquidation done")
 		return table
 
 			
@@ -335,19 +356,30 @@ def reparametrize(table, id, c, d, acr, cr, price):
 
 # tester functions 
 # price = 100, generates 25 liquidators and 25 debtors
-# table = [CDP(10000000, 0, 9999999, 200, 0, 0), CDP(10000000, 5000000, 200, 0, 1, 0), CDP(10000000, 5000000, 200, 0, 2, 0), CDP(10000000, 5000000, 200, 0, 3, 0), CDP(10000000, 5000000, 200, 0, 4, 0), CDP(10000000, 5000000, 200, 0, 5, 0)]
-# table = gen(2,20,100)
+#table = [CDP(10000000, 0, 9999999, 200, 0, 0), CDP(10000000, 5000000, 200, 0, 1, 0), CDP(10000000, 5000000, 200, 0, 2, 0)]
+
+table = gen(50,100,200)
+print("\n")
+print_table(table)
+print("\n")
+table = liquidation(table,150, 150, 10)
+print("\n")
+print_table(table)
+print("\n")
+
+#table = gen(20,1000,100)
 
 
 
-# print("\n")
-# print_table(table)
-# print("\n")
+
+#print("\n")
+#print_table(table)
+#print("\n")
 # #table = cdp_insert(table, CDP(500000, 500000, 100, 0, 200, 0))
 
 
 # #def liquidation(table, price, cr, lf):	
-# table = liquidation(table, 40, 150, 10)
+
 
 # print("\n")
 # print_table(table)
@@ -357,12 +389,16 @@ def reparametrize(table, id, c, d, acr, cr, price):
 #def redemption(table, amount, price, cr, rf):
 #table = redemption(table, 20000000, 40, 150, 1)
 
-#table = reparametrize(table, 1, 0, 500000, 0, 150, 100)
+#def reparametrize(table, id, c, d, acr, cr, price):	
+#table = reparametrize(table, 1, -10000000, 0, 0, 150, 100)
+#table = reparametrize(table, 2, 10000, 500000, 0, 150, 100)
 
 
 #print("\n")
 #print_table(table)
 #print("\n")
+
+	
 
 	
 		
