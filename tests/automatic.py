@@ -72,9 +72,9 @@ class Test(unittest.TestCase):
 		sleep(2) # wait for maturity
 
 		update(buck, price)
-		run(buck)	
-		run(buck)	
-		run(buck)	
+		run(buck)
+		run(buck)
+		run(buck)
 
 		self.compare(buck, cdp_table)
 

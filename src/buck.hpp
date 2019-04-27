@@ -163,19 +163,18 @@ CONTRACT buck : public contract {
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
+      
       uint64_t by_accrued_time() const {
-        if (debt.amount + accrued_debt.amount == 0) {
-          return UINT64_MAX;
-        }
+        if (debt.amount + accrued_debt.amount == 0) { return UINT64_MAX; }
         return time_point_sec(accrued_timestamp).utc_seconds; 
       }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
-        static const int64_t MAX = 1000000000;
+        static const uint64_t MAX = 1000000000000;
         
         if (acr == 0 || collateral.amount == 0) {
-          return MAX * 3; // end of the table
+          return UINT64_MAX; // end of the table
         }
         
         const int64_t c = collateral.amount;
@@ -184,19 +183,18 @@ CONTRACT buck : public contract {
           return MAX - c / acr; // descending c/acr
         }
         
-        const int64_t cd = c / debt.amount + accrued_debt.amount;
+        const uint64_t cd = c * 100000000 / (debt.amount + accrued_debt.amount);
         return MAX * 2 - cd; // descending cd
       }
       
       // index to search for debtors with highest ccr
       uint64_t debtor() const {
-        static const int64_t MAX = 1000000000;
         
-        if (debt.amount + accrued_debt.amount == 0 || rex.amount == 0) {
-          return MAX; // end of the table
+        if (debt.amount + accrued_debt.amount == 0) {
+          return UINT64_MAX; // end of the table
         }
         
-        const int64_t cd = collateral.amount / (debt.amount + accrued_debt.amount);
+        const uint64_t cd = collateral.amount * 100000000 / (debt.amount + accrued_debt.amount);
         return cd; // ascending cd
       }
     };
