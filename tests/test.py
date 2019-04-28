@@ -18,9 +18,10 @@ time = 0 # initial time
 
 def time_now(time_last):
 	global time
-	time = random.randint(time, time + 7884 * 10 ** 3)	
+	time = random.randint(time_last, time_last + 7884 * 10 ** 3)	
 	return time
-
+ 
+ 
 
 
 class CDP:
@@ -94,8 +95,8 @@ def generate_debtors(k, n, price, t):
 
 
 def gen(k, n, price, t):
-	liquidators = generate_liquidators(k)
-	debtors = generate_debtors(k, n, price)
+	liquidators = generate_liquidators(k, t)
+	debtors = generate_debtors(k, n, price, t)
 	return liquidators + debtors
 
 # Function for inserting CDP into the table
@@ -149,7 +150,7 @@ def cdp_index(table, id):
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
-	return "Not found"
+	return False
 			
 			
 			
@@ -210,7 +211,7 @@ def add_tax(cdp, price):
 	global AEC
 	global CIT
 	global TEC
-	t = time_now(cdp)
+	t = time
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = ceil(cdp.debt * (exp((r*(t-cdp.time))/(3.154*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
@@ -286,7 +287,7 @@ def redemption(table, amount, price, cr, rf):
 	i = len(table)-1
 	while amount > epsilon(amount) and i != -1:
 			cdp = table.pop(i)
-			cdp = add_tax(cdp)
+			cdp = add_tax(cdp, price)
 			if cdp.cd * price >= (100 - rf)*100:
 				if cdp.debt <= epsilon(cdp.debt):
 					table = cdp_insert(table,cdp)
@@ -317,7 +318,7 @@ def redemption(table, amount, price, cr, rf):
 def reparametrize(table, id, c, d, cr, price):	
 	global TEC
 	cdp = table.pop(cdp_index(table, id))
-	cdp = add_tax(cdp)
+	cdp = add_tax(cdp, price)
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
@@ -326,7 +327,7 @@ def reparametrize(table, id, c, d, cr, price):
 	elif c > 0:
 		cdp.add_collateral(c)
 	elif c < 0:
-		if cdp.collateral + c > 5 + epsilon(5)
+		if cdp.collateral + c > 5 + epsilon(5):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
 			else:
@@ -381,7 +382,7 @@ def update_round(new_time, old_time):
 # liq, reparam, redeem, change_acr
 
 
-def random_test():
+def random_test(k, n, round):
 	global time
 	global CR
 	global LF
@@ -395,14 +396,38 @@ def random_test():
 	global CIT
 	global comission
 	global time
-	time = random.randint(1556463885, time_now(1556463885))
-	table = gen(5,10, 100, time)
-	
+	time = random.randint(1556463885,time_now(1556463885))
+	price = random.randint(100, 1000)
+	table = gen(k,n, price, time)
+	length = len(table)
 	AEC = TEC
-	
-	
-	
+	old_time = time
+	for i in range(0, round):
+		print("\n")
+		print("round")
+		print(i)
+		print("\n")
+		old_price = price
+		price = random.randint(100, 1000)
+		time = random.randint(old_time, time_now(old_time))
+		if price < old_price:
+			table = liquidation(table, price, 150, 10)
+		update_round(time, old_time)
+		old_time = time
+		for i in range(0, random.randint(0,length-1)):
+			if cdp_index(table, i) != False:
+				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+	print_table(table)
+		
 
+random_test(5,10,5)		
+		
+#def redemption(table, amount, price, cr, rf):
+			
+		
+	
+	
 
 
 # tester functions 
