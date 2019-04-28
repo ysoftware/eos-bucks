@@ -237,10 +237,19 @@ def add_tax(cdp, price):
 def liquidation(table, price, cr, lf):	
 		global TEC
 		i = 0
-		while table[i].cd * price >= cr * 100 + epsilon (cr*100) :
+		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
 			debtor = add_tax(debtor,price)
-			if debtor.cd * price >= cr * 100 - epsilon (cr*100):
+			print("\n")
+			print("price")
+			print(price)
+			print("\n")
+			print("debtor")
+			print(debtor)
+			print("\n")
+			if debtor.debt == 0:
+				return table
+			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 				table.append(debtor)
 				return table
 			else:
@@ -258,6 +267,10 @@ def liquidation(table, price, cr, lf):
 					liquidator = table.pop(i)
 					TEC -= liquidator.collateral * 100 // liquidator.acr
 					liquidator = add_tax(liquidator, price)
+					print("\n")
+					print("liquidator")
+					print(liquidator)
+					print("\n")
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
@@ -411,17 +424,26 @@ def random_test(k, n, round):
 		price = random.randint(100, 1000)
 		time = random.randint(old_time, time_now(old_time))
 		if price < old_price:
+			print("\n")
+			print("liquidating")
 			table = liquidation(table, price, 150, 10)
+			print("done liquidating")
 		update_round(time, old_time)
 		old_time = time
 		for i in range(0, random.randint(0,length-1)):
 			if cdp_index(table, i) != False:
+				print("\n")
+				print("reparametrizing")
+				print("\n")
 				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+		print("\n")
+		print("redeeming")
+		print("\n")
 		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
 	print_table(table)
 		
 
-random_test(5,10,5)		
+random_test(50,500,100)		
 		
 #def redemption(table, amount, price, cr, rf):
 			
