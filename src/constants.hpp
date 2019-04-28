@@ -2,15 +2,17 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-/// defines if contract uses test rex environment
-#define REX_TESTING true
 /// defines if contract will print logs and enable debug features
 #define DEBUG true
+/// defines if contract uses test rex environment
+#define REX_TESTING true
+/// defines if testing of time points is enabled
+#define TEST_TIME true
 
 static const uint32_t seconds_per_day     = 86'400;
 static const uint32_t BASE_ROUND_DURATION = 1'000;
-static const uint32_t YEAR                = 60 * 60 * 3; // 31'557'600;
-static const uint32_t ACCRUAL_PERIOD      = 150; // 2'629'800;
+static const uint32_t YEAR                = 31'557'600;
+static const uint32_t ACCRUAL_PERIOD      = 2'629'800;
 
 static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);

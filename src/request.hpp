@@ -62,7 +62,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     
     // open maturity request
     _maturityreq.emplace(account, [&](auto& r) {
-      r.maturity_timestamp = time_point_sec{0};
+      r.maturity_timestamp = time_point_sec(0);
       r.add_collateral = change_collateral;
       r.change_debt = change_debt;
       r.cdp_id = cdp_id;
@@ -72,7 +72,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   _reparamreq.emplace(account, [&](auto& r) {
     r.cdp_id = cdp_id;
-    r.timestamp = current_time_point();
+    r.timestamp = get_current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
   });
@@ -124,7 +124,7 @@ void buck::closecdp(uint64_t cdp_id) {
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
     r.cdp_id = cdp_id;
-    r.timestamp = current_time_point();
+    r.timestamp = get_current_time_point();
   });
   
   run_requests(2);
@@ -143,14 +143,14 @@ void buck::redeem(const name& account, const asset& quantity) {
   if (redeem_itr != _redeemreq.end()) {
     _redeemreq.modify(redeem_itr, same_payer, [&](auto& r) {
       r.quantity += quantity;
-      r.timestamp = current_time_point();
+      r.timestamp = get_current_time_point();
     });
   }
   else {
     _redeemreq.emplace(account, [&](auto& r) {
       r.account = account;
       r.quantity = quantity;
-      r.timestamp = current_time_point();
+      r.timestamp = get_current_time_point();
     });
   }
   

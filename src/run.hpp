@@ -15,7 +15,7 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
-  const time_point now = current_time_point();
+  const time_point now = get_current_time_point();
   const uint32_t price = get_eos_price();
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   uint8_t status = get_processing_status();

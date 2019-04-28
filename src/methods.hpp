@@ -2,6 +2,16 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+inline time_point buck::get_current_time_point() const {
+  #if TEST_TIME
+  time_test_i _time(_self, _self.value);
+  if (_time.begin() != _time.end()) { return _time.begin()->now; }
+  else { return time_point_sec(0); }
+  #else
+  return current_time_point();
+  #endif
+}
+
 void buck::sub_funds(const name& from, const asset& quantity) {
   if (quantity.amount == 0) return;
   eosio::print("- "); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");

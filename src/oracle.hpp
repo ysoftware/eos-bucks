@@ -3,9 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::update(uint32_t eos_price) {
-  #if !DEBUG
   require_auth(_self);
-  #endif
   
   init();
   process_taxes();
@@ -14,7 +12,7 @@ void buck::update(uint32_t eos_price) {
   const uint32_t previous_price = stats.oracle_eos_price;
   
   _stat.modify(stats, same_payer, [&](auto& r) {
-    r.oracle_timestamp = current_time_point();
+    r.oracle_timestamp = get_current_time_point();
     r.oracle_eos_price = eos_price;
   });
   
