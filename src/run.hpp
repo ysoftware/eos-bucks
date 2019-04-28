@@ -323,7 +323,7 @@ void buck::run_liquidation(uint8_t max) {
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
-    int64_t debt_amount = debtor_itr->debt.amount;
+    int64_t debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
     int64_t collateral_amount = debtor_itr->collateral.amount;
     
     int64_t debtor_ccr = CR;
@@ -332,7 +332,7 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     PRINT("debtor id", debtor_itr->id)
-    PRINT("total debt", debtor_itr->debt + debtor_itr->accrued_debt) 
+    PRINT("total debt", debt_amount) 
     PRINT("col", debtor_itr->collateral)
     PRINT("ccr", debtor_ccr)
     
@@ -359,7 +359,6 @@ void buck::run_liquidation(uint8_t max) {
                           / (50000 - 1500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
-      PRINT("bad debt", bad_debt)
       
       const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
       const int64_t liquidator_debt = liquidator_itr->debt.amount;
@@ -403,6 +402,7 @@ void buck::run_liquidation(uint8_t max) {
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, EOS);
       
+      PRINT("bad debt", bad_debt)
       PRINT("bailable", bailable)
       PRINT("used_debt", used_debt)
       PRINT_("\n")
