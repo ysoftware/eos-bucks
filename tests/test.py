@@ -13,7 +13,7 @@ AEC = 0 # aggregated excess collateral
 T = 3154 * 10**4 # round in seconds (a year for test purposes)
 
 def time_now(cdp):
-	return 3154 * 10**4 # a year passed
+	return 0 # 3154 * 10**4 # a year passed
 
 
 

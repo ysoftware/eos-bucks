@@ -3,7 +3,9 @@
 // Created by Yaroslav Erohin.
 
 void buck::update(uint32_t eos_price) {
+  #if !DEBUG
   require_auth(_self);
+  #else
   
   init();
   process_taxes();

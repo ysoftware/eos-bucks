@@ -9,7 +9,9 @@
 #define RM(x) { x table(_self, _self.value); auto item = table.begin(); while (item != table.end()) item = table.erase(item); }
 
 void buck::zdestroy() {
+  #if !DEBUG
   require_auth(_self);
+  #else
   
   RM(stats_i)
   RM(cdp_maturity_req_i)
@@ -42,7 +44,9 @@ void buck::zdestroy() {
 
 #if TEST_TIME
 void buck::zmaketime(uint64_t seconds) {
+  #if !DEBUG
   require_auth(_self);
+  #else
   
   time_test_i _time(_self, _self.value);
   if (_time.begin() != _time.end()) {
