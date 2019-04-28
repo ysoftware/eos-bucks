@@ -39,8 +39,7 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
 bool buck::init() {
   if (_stat.begin() != _stat.end()) { return false; }
   
-  time_point_sec cts{ current_time_point() };
-  static const uint32_t now = cts.utc_seconds;
+  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
   
   _stat.emplace(_self, [&](auto& r) {
     r.supply = ZERO_BUCK;

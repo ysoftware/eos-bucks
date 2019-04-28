@@ -19,7 +19,7 @@ void buck::process_taxes() {
     add_balance(SCRUGE, scruge_savings, _self, true);
   }
   
-  time_point_sec cts{ current_time_point() };
+  time_point_sec cts{ get_current_time_point() };
   static const uint32_t now = cts.utc_seconds;
   const auto delta_round = now - tax.current_round;
   
@@ -68,7 +68,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   if (price == 0) return;
   
-  const auto time_now = current_time_point();
+  const auto time_now = get_current_time_point();
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
