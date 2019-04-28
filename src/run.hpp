@@ -312,11 +312,8 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
-  PRINT("run_liquidation", max)
-  
   uint64_t processed = 0;
   const uint32_t price = get_eos_price();
-  PRINT("price", price)
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
@@ -331,18 +328,17 @@ void buck::run_liquidation(uint8_t max) {
     
     int64_t debtor_ccr = CR;
     if (debt_amount > 0) {
-      PRINT_("calculating ccr")
       debtor_ccr = collateral_amount * price / debt_amount;
     }
     
-    PRINT("debtor", debtor_itr->id)
-    PRINT("debt", debtor_itr->debt)
+    PRINT("debtor id", debtor_itr->id)
+    PRINT("total debt", debtor_itr->debt + debtor_itr->accrued_debt) 
     PRINT("col", debtor_itr->collateral)
+    PRINT("ccr", debtor_ccr)
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
       
-      PRINT("lowest debtor_ccr", debtor_ccr)
       PRINT_("DONE")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
@@ -363,6 +359,7 @@ void buck::run_liquidation(uint8_t max) {
                           / (50000 - 1500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
+      PRINT("bad debt", bad_debt)
       
       const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
       const int64_t liquidator_debt = liquidator_itr->debt.amount;
@@ -373,14 +370,14 @@ void buck::run_liquidation(uint8_t max) {
         liquidator_ccr = liquidator_collateral * price / liquidator_debt;
       }
       
-      
       PRINT("liquidator", liquidator_itr->id)
+      PRINT("ccr", liquidator_ccr)
       
       // this and all further liquidators can not bail out anymore bad debt
       if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end()) {
         
         // to-do bailout pool?
-        PRINT_("failed to liquidate")
+        PRINT_("FAILED")
         set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
@@ -406,7 +403,7 @@ void buck::run_liquidation(uint8_t max) {
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, EOS);
       
-      
+      PRINT("bailable", bailable)
       PRINT("used_debt", used_debt)
       PRINT_("\n")
       

@@ -174,7 +174,7 @@ CONTRACT buck : public contract {
         static const uint64_t MAX = 1000000000000;
         
         if (acr == 0 || collateral.amount == 0) {
-          return UINT64_MAX; // end of the table
+          return MAX * 3; // end of the table
         }
         
         const int64_t c = collateral.amount;
@@ -197,6 +197,14 @@ CONTRACT buck : public contract {
         const uint64_t cd = collateral.amount * 100000000 / (debt.amount + accrued_debt.amount);
         return cd; // ascending cd
       }
+      
+      // uint64_t liquidation() const {
+      //   static const uint64_t MAX = 1000000000000;
+        
+      //   const auto total_debt = debt + accrued_debt;
+        
+        
+      // }
     };
     
     typedef multi_index<"accounts"_n, account> accounts_i;
