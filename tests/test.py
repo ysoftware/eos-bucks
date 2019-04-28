@@ -430,7 +430,7 @@ def random_test(k, n, round):
 			print("done liquidating")
 		update_round(time, old_time)
 		old_time = time
-		for i in range(0, random.randint(0,length-1)):
+		for i in range(0, random.randint(0,length-1) // 500):
 			if cdp_index(table, i) != False:
 				print("\n")
 				print("reparametrizing")
@@ -443,7 +443,7 @@ def random_test(k, n, round):
 	print_table(table)
 		
 
-random_test(50,500,100)		
+random_test(10000,100000,100)		
 		
 #def redemption(table, amount, price, cr, rf):
 			
