@@ -5,11 +5,9 @@
 inline time_point buck::get_current_time_point() const {
   #if TEST_TIME
   time_test_i _time(_self, _self.value);
-  if (_time.begin() != _time.end()) { return _time.begin()->now; }
-  else { return time_point_sec(0); }
-  #else
-  return current_time_point();
+  if (_time.begin() != _time.end()) return _time.begin()->now;
   #endif
+  return current_time_point();
 }
 
 void buck::sub_funds(const name& from, const asset& quantity) {
