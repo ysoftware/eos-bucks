@@ -64,8 +64,9 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		COMMENT("Open CDP")
-		cdp_table = test.gen(20, 40, price)
+		cdp_table = test.gen(5, 10, price)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
+			print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
 
@@ -82,14 +83,14 @@ class Test(unittest.TestCase):
 		COMMENT("Liquidation sorting")
 
 		# match debtors sorting
-		top_debtors = get_debtors(buck, limit=50)
+		top_debtors = get_debtors(buck, limit=20)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
 			self.match(cdp_table[i * -1 - 1], debtor)
 
 		# match liquidators sorting
-		top_liquidators = get_liquidators(buck, limit=50)
+		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table
@@ -99,7 +100,7 @@ class Test(unittest.TestCase):
 		COMMENT("Liquidation")
 
 		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
-		price = 75
+		price = 70
 
 		test.liquidation(cdp_table, price)
 		update(buck, price)
