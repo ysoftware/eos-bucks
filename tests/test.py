@@ -2,18 +2,24 @@ import random
 from math import exp
 from math import ceil
 
-
-IR = 25 # insurance ratio
-LF = 10 # liquidation fee
+CR = 150 # collateral ratio
+LF = 10 # Liquidation Fee
+IR = 20 # insurance ratio
 SR = 100 - IR # savings ratio
-r = 0.04 # interest rate
+r = 0.05 # interest rate
 IDP = 0 # insurance dividend pool
-TEC = 0 # tota excess collateral
+TEC = 0 # total excess collateral
 AEC = 0 # aggregated excess collateral
-T = 3154 * 10**4 # round in seconds (a year for test purposes)
+T = 1800 # round in seconds
+CIT = 0 # collected insurance tax
+commission = 20 # our commission
+time = 0 # initial time
 
-def time_now(cdp):
-	return 3154 * 10**4 # a year passed
+
+def time_now(time_last):
+	global time
+	time = random.randint(time, time + 7884 * 10 ** 3)	
+	return time
 
 
 
@@ -50,28 +56,28 @@ def epsilon(value):
 	
 # Functions for generation of sorted CDPs with random values
 
-def generate_liquidators(k):
+def generate_liquidators(k, t):
 	global TEC
 	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
-	liquidator = CDP(rand, 0, 9999999, rand2, 0, 0)
+	liquidator = CDP(rand, 0, 9999999, rand2, 0, t)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators.append(liquidator)
 	for i in range (0,k):
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
-		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, 0))
+		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, t))
 		liquidator = liquidators[len(liquidators)-1]
 		TEC += liquidator.collateral * 100 // liquidator.acr
 	return liquidators
 
-def generate_debtors(k, n, price):
+def generate_debtors(k, n, price, t):
 	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
 	ccr = rand2
-	debtor = CDP(rand, 0, rand2,0, k+1, 0)
+	debtor = CDP(rand, 0, rand2,0, k+1, t)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
 	debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 	debtors.append(debtor)
@@ -80,14 +86,14 @@ def generate_debtors(k, n, price):
 		helper = ccr
 		rand2 = random.randint(helper+1, helper + 2)
 		ccr = rand2
-		debtor = CDP(rand, 0, rand2, 0, i+1, 0)
+		debtor = CDP(rand, 0, rand2, 0, i+1, t)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
 		debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 		debtors.insert(0, debtor)
 	return debtors
 
 
-def gen(k, n, price):
+def gen(k, n, price, t):
 	liquidators = generate_liquidators(k)
 	debtors = generate_debtors(k, n, price)
 	return liquidators + debtors
@@ -202,12 +208,14 @@ def calc_val(cdp, cdp2, price, cr, lf):
 def add_tax(cdp, price):
 	global IDP
 	global AEC
+	global CIT
+	global TEC
 	t = time_now(cdp)
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = ceil(cdp.debt * (exp((r*(t-cdp.time))/(3.154*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
-		IDP += interest * IR // price
+		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(t)
 	else:
@@ -216,6 +224,7 @@ def add_tax(cdp, price):
 		AEC -= ec *(t - cdp.time) // T
 		cdp.add_collateral(val)
 		cdp.new_time(t)
+		TEC += val * 100 // cdp.acr
 		IDP -= val
 	return cdp
 	
@@ -224,7 +233,8 @@ def add_tax(cdp, price):
 	
 # Contract functions
 
-def liquidation(table, price, cr=150, lf=10):	
+def liquidation(table, price, cr, lf):	
+		global TEC
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100) :
 			debtor = table.pop(len(table)-1)
@@ -245,6 +255,7 @@ def liquidation(table, price, cr=150, lf=10):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
+					TEC -= liquidator.collateral * 100 // liquidator.acr
 					liquidator = add_tax(liquidator, price)
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
@@ -258,6 +269,7 @@ def liquidation(table, price, cr=150, lf=10):
 					else:
 						debtor.new_cd(debtor.collateral * 100 // debtor.debt)
 					if liquidator.debt <= 100:
+						TEC += liquidator.collateral * 100 // liquidator.acr
 						liquidator.new_cd(9999999)
 					else:
 						liquidator.new_cd(liquidator.collateral * 100 // liquidator.debt)
@@ -274,6 +286,7 @@ def redemption(table, amount, price, cr, rf):
 	i = len(table)-1
 	while amount > epsilon(amount) and i != -1:
 			cdp = table.pop(i)
+			cdp = add_tax(cdp)
 			if cdp.cd * price >= (100 - rf)*100:
 				if cdp.debt <= epsilon(cdp.debt):
 					table = cdp_insert(table,cdp)
@@ -301,22 +314,27 @@ def redemption(table, amount, price, cr, rf):
 				i -= 1
 	return table
 	
-def reparametrize(table, id, c, d, acr, cr, price):	
+def reparametrize(table, id, c, d, cr, price):	
+	global TEC
 	cdp = table.pop(cdp_index(table, id))
-	cdp.new_acr(acr)
+	cdp = add_tax(cdp)
+	if cdp.acr != 0 and cdp.debt == 0:
+		TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
-		cdp.add_debt(d)
-	if c > 0:
+		if cdp.debt + d > 50000 + epsilon(50000):
+			cdp.add_debt(d)
+	elif c > 0:
 		cdp.add_collateral(c)
-	if c < 0:
-		if cdp.debt == 0:
-			cdp.add_collateral(-c)
-		else:
-			if calc_ccr(cdp, price) < cr:
-				return table
+	elif c < 0:
+		if cdp.collateral + c > 5 + epsilon(5)
+			if cdp.debt == 0:
+				cdp.add_collateral(-c)
 			else:
-				cdp.add_collateral(-(min(-c,(cr-100) * cdp.debt // price)))
-	if d > 0:
+				if calc_ccr(cdp, price) < cr:
+					return table
+				else:
+					cdp.add_collateral(-(min(-c,(cr-100) * cdp.debt // price)))
+	elif d > 0:
 		if cdp.debt == 0:
 			cdp.add_debt(min(d,cdp.collateral * price // cr))
 		else:
@@ -328,37 +346,59 @@ def reparametrize(table, id, c, d, acr, cr, price):
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 	else:
 		cdp.new_cd(9999999)
+	if cdp.acr != 0 and cdp.debt == 0:
+		TEC += cdp.collateral * 100 // cdp.acr
 	table = cdp_insert(table,cdp)
 	return table
 	
+def change_acr(table, id, acr):
+	cdp = table.pop(cdp_index(table,id))
+	if cdp.acr != 0 and cdp.debt < 50000:
+		TEC -= cdp.collateral * 100 // cdp.acr
+	cdp.new_acr(acr)
+	if cdp.acr != 0 and cdp.debt < 50000:
+		TEC += cdp.collateral * 100 // cdp.acr
+	
+	
 
 		
 			
 			
 			
 			
-# Round 1 starts	
-#old_price = price
-#price = price // random.uniform(0.5, 2.0)
-
-#update(buck, price)
-
-# Liquidation
-
-
-				
-				
-
-				
-			
-			
-			
+def update_round(new_time, old_time):
+	global AEC	
+	global IDP
+	global CIT
+	AEC += TEC * (new_time - old_time) // T
+	IDP += CIT * (100 - commission) // 100
+	CIT = 0
 	
 	
-		
-		 
-		
 	
+#random testing
+
+# liq, reparam, redeem, change_acr
+
+
+def random_test():
+	global time
+	global CR
+	global LF
+	global IR
+	global r
+	global SR
+	global IDP
+	global TEC
+	global AEC
+	global T
+	global CIT
+	global comission
+	global time
+	time = random.randint(1556463885, time_now(1556463885))
+	table = gen(5,10, 100, time)
+	
+	AEC = TEC
 	
 	
 	
@@ -371,28 +411,19 @@ def reparametrize(table, id, c, d, acr, cr, price):
 #def __init__(self, collateral, debt, cd, acr, id, time):
 
 #table = gen(5,10,100)
-table = [CDP(1000000, 0, 9999999, 200, 0, 0), CDP(1000000, 500000, 200, 0, 1, 0)]
-TEC = 500000
-AEC = TEC
+#table = [CDP(1000000, 0, 9999999, 200, 0, 0), CDP(1000000, 500000, 200, 0, 1, 0)]
+#TEC = 500000
+#AEC = TEC
 
 
-print("\n")
-print_table(table)
-print("\n")
+
 
 #def liquidation(table, price, cr, lf):	
 
-table = liquidation(table,80, 150, 10)
-print("\n")
-print(IDP)
-print("\n")
+
 
 #def add_tax(cdp, time, r, SR, IR, price):
 #add_tax(table[2], 3.154*(10^7), 0.05, SR, IR, 100)
-
-print("\n")
-print_table(table)
-print("\n")
 
 
 
@@ -426,6 +457,41 @@ print("\n")
 
 	
 
+
+# buyers - people buying BUCK
+# sellers - people selling BUCK
+# people send EOS and BUCK to the contract
+# when oracle updates, and after liquidation and all other things happen, exchange gets executed
+
+
+#for buyer in buyers:
+	#eos = buyer.eos.amount
+	#for seller in sellers:
+		#buck = seller.buck.amount
+		#if eos * price > buck:
+			#seller.buck.amount = 0
+			#seller.eos.amount = buck / price
+			#buyer.buck.amount = buck
+			#buyers.eos.amount = eos - buck / price
+		#elif eos * price < buck:
+		#	seller.buck.amount = buck - eos * price
+		#	seller.eos.amount = eos
+			#buyer.buck.amount = eos * price
+			#buyers.eos.amount = 0
+			#break # choose next buyer
+		#else:
+			#seller.buck.amount = 0
+			#seller.eos.amount = eos
+			#buyer.buck.amunt = eos * price
+			#buyer.eos.amount = 0
+			#break # choose both next buyer and seller
+
+		
+			
+			
+			
+			
+		
 	
 		
 	
