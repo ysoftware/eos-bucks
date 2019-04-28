@@ -9,8 +9,7 @@ from functools import reduce
 from datetime import datetime
 import time
 
-def timeMs():
-	return int(time.time()*1000.0)
+def timeMs(): return int(time.time()*1000.0)
 
 # actions
 
@@ -20,42 +19,25 @@ def deploy(contract):
 	contract.deploy()
 
 def perm(contract, key):
-	contract.set_account_permission(
-		Permission.ACTIVE,
+	contract.set_account_permission(Permission.ACTIVE,
 		{
-				"threshold" : 1,
-				"keys" : [{ "key": key.key_public, "weight": 1 }],
-				"accounts": [{
-					"permission": {
-						"actor": contract,
-						"permission": "eosio.code"
-					},
-					"weight": 1
-				}],
-			},
+			"threshold" : 1, "keys" : [{ "key": key.key_public, "weight": 1 }],
+			"accounts": [{ "permission": { "actor": contract, "permission": "eosio.code" }, "weight": 1 }],
+		},
 		Permission.OWNER, (contract, Permission.OWNER))
 
 def create_issue(contract, to, symbol):
-	contract.push_action("create",
-		{
-			"issuer": to,
-			"maximum_supply": "1000000000000.0000 {}".format(symbol)
-		},
-		permission=[(contract, Permission.ACTIVE)])
-	contract.push_action("issue",
-		{
-			"to": to,
-			"quantity": "1000000000000.0000 {}".format(symbol),
-			"memo": ""
-		},
-		permission=[(to, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, action="create",
+		data={ "issuer": to, "maximum_supply": "1000000000000.0000 {}".format(symbol) }, permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, action="issue",
+		data={ "to": to, "quantity": "1000000000000.0000 {}".format(symbol), "memo": "" }, permission=[(to, Permission.ACTIVE)])
 
 def destroy(contract):
-	contract.push_action("zdestroy", "[]", permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
 
 def transfer(contract, fromAccount, to, quantity, memo=""):
-	contract.push_action("transfer",
-		{
+	contract.push_action(force_unique=True, action="transfer",
+		data={
 			"from": fromAccount,
 			"to": to,
 			"quantity": quantity,
@@ -63,13 +45,13 @@ def transfer(contract, fromAccount, to, quantity, memo=""):
 		}, permission=[(fromAccount, Permission.ACTIVE)])
 
 def buyram(contract):
-	contract.push_action("buyram", "[]", permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, action="buyram", data="[]", permission=[(contract, Permission.ACTIVE)])
 
 # contract actions
 
 def open(contract, user, ccr, acr, quantity):
-	contract.push_action("open",
-		{
+	contract.push_action(force_unique=True, action="open",
+		data={
 			"account": user,
 			"ccr": ccr,
 			"acr": acr,
@@ -77,56 +59,53 @@ def open(contract, user, ccr, acr, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def update(contract, eos=200):
-	contract.push_action("update", { "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
-	time.sleep(1)
+	contract.push_action(force_unique=True, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
 
 def close(contract, user, cdp_id):
-	contract.push_action("closecdp",
-		{ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
 def run(contract, max=50):
-	contract.push_action("run", { "max": max }, permission=[(contract, Permission.ACTIVE)])
-	time.sleep(1)
+	contract.push_action(force_unique=True, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):
-	contract.push_action("change",
-		{
+	contract.push_action(force_unique=True, action="change",
+		data={
 			"cdp_id": cdp_id,
 			"change_debt": change_debt,
 			"change_collateral": change_collat
 		}, permission=[(user, Permission.ACTIVE)])
 
 def changeacr(contract, user, cdp_id, acr):
-	contract.push_action("changeacr",
-		{
+	contract.push_action(force_unique=True, action="changeacr",
+		data={
 			"cdp_id": cdp_id,
 			"acr": acr
 		}, permission=[(user, Permission.ACTIVE)])
 
 def redeem(contract, user, quantity):
-	contract.push_action("redeem",
-		{
+	contract.push_action(force_unique=True, action="redeem",
+		data={
 			"account": user,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def withdraw(contract, user, quantity):
-	contract.push_action("redeem",
-		{
+	contract.push_action(force_unique=True, action="redeem",
+		data={
 			"from": user,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def save(contract, user, quantity):
-	contract.push_action("save",
-		{
+	contract.push_action(force_unique=True, action="save",
+		data={
 			"account": user,
 			"value": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def take(contract, user, quantity):
-	contract.push_action("take",
-		{
+	contract.push_action(force_unique=True, action="take",
+		data={
 			"account": user,
 			"value": quantity
 		}, permission=[(user, Permission.ACTIVE)])
