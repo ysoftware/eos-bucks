@@ -9,14 +9,14 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(const name& account, const asset& quantity, uint32_t ccr, uint32_t acr);
+    ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
     ACTION withdraw(const name& from, const asset& quantity);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
-    ACTION changeacr(uint64_t cdp_id, uint32_t acr);
+    ACTION changeacr(uint64_t cdp_id, uint16_t acr);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
-    ACTION run(uint64_t max);
+    ACTION run(uint8_t max);
     ACTION save(const name& account, const asset& value);
     ACTION take(const name& account, const asset& value);
     
@@ -142,7 +142,7 @@ CONTRACT buck : public contract {
       uint64_t        cdp_id;
       asset           change_debt;
       asset           add_collateral;
-      uint32_t        ccr;
+      uint16_t        ccr;
       time_point      maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -151,51 +151,45 @@ CONTRACT buck : public contract {
     
     TABLE cdp {
       uint64_t    id;
-      uint32_t    acr;
+      uint16_t    acr;
       name        account;
       asset       debt;
       asset       accrued_debt;
       asset       collateral;
-      time_point  timestamp;
+      asset       rex;
       time_point  accrued_timestamp;
       uint32_t    modified_round;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
+      
       uint64_t by_accrued_time() const {
-        if (debt.amount + accrued_debt.amount == 0) {
-          return UINT64_MAX;
-        }
+        if (debt.amount + accrued_debt.amount == 0) return UINT64_MAX;
         return time_point_sec(accrued_timestamp).utc_seconds; 
       }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
-        static const int64_t MAX = 100;
         
-        if (acr == 0 || collateral.amount == 0) {
-          return MAX * 3; // end of the table
-        }
+        static const uint64_t MAX = 100'000'000;
+        const uint64_t c = collateral.amount;
         
-        const int64_t c = collateral.amount;
+        if (acr == 0 || c == 0) return MAX * 3; // end of the table
         
-        if (debt.amount + accrued_debt.amount == 0) {
-          return MAX - c / acr; // descending c/acr
-        }
+        const uint64_t td = (debt + accrued_debt).amount;
+        if (td == 0) return MAX - c / acr; // descending c/acr
         
-        const int64_t cd = c / debt.amount + accrued_debt.amount;
+        const uint64_t cd = c * 10'000'000 / td;
         return MAX * 2 - cd; // descending cd
       }
       
       // index to search for debtors with highest ccr
       uint64_t debtor() const {
-        static const int64_t MAX = 100;
         
-        if (debt.amount + accrued_debt.amount == 0 || rex.amount == 0) {
-          return MAX; // end of the table
-        }
+        const uint64_t td = (debt + accrued_debt).amount;
+        if (td == 0) return UINT64_MAX; // end of the table
         
-        const int64_t cd = collateral.amount / (debt.amount + accrued_debt.amount);
+        const uint64_t cd = collateral.amount * 10'000'000 / td;
         return cd; // ascending cd
       }
     };
@@ -262,8 +256,8 @@ CONTRACT buck : public contract {
     asset withdraw_savings_dividends(const name& account);
     void update_supply(const asset& quantity);
     
-    void run_requests(uint64_t max);
-    void run_liquidation(uint64_t max);
+    void run_requests(uint8_t max);
+    void run_liquidation(uint8_t max);
     void set_liquidation_status(LiquidationStatus status);
     void set_processing_status(ProcessingStatus status);
     

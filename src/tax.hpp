@@ -66,16 +66,14 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   const auto price = get_eos_price();
   
-  if (price == 0) {
-    return;
-  }
+  if (price == 0) return;
   
   const auto time_now = current_time_point();
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
   static const uint128_t DM = 1000000000000;
-  const uint128_t v = (exp(double(AR * (now - last)) / (double) YEAR) - 1) * DM;
+  const uint128_t v = (exp(double(AR) / 100 * double(now - last) / double(YEAR)) - 1) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
   const int64_t accrued_collateral_amount = accrued_amount * IR / price;
@@ -99,7 +97,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 
 /// issue cdp dividends from the insurance pool
 void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->debt.amount != 0) { return; }
+  if (cdp_itr->debt.amount != 0) return;
   
   const auto& tax = *_tax.begin();
   
@@ -119,9 +117,6 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
   const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;
-  
-  // don't update modified_round if dividends calculated is 0
-  if (dividends_amount == 0) { return; }
   
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, EOS);
@@ -182,7 +177,7 @@ void buck::save(const name& account, const asset& value) {
   accounts_i _accounts(_self, account.value);
   auto account_itr = _accounts.find(BUCK.code().raw());
   
-  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+  _accounts.modify(account_itr, account, [&](auto& r) {
     r.savings += value;
   });
   
@@ -203,7 +198,7 @@ void buck::take(const name& account, const asset& value) {
   
   check(account_itr->savings >= value, "overdrawn savings balance");
 
-  _accounts.modify(account_itr, same_payer, [&](auto& r) {
+  _accounts.modify(account_itr, account, [&](auto& r) {
     r.savings -= value;
   });
   

@@ -63,7 +63,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   run(3);
 }
 
-void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32_t acr) {
+void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
   
@@ -95,7 +95,6 @@ void buck::open(const name& account, const asset& quantity, uint32_t ccr, uint32
     r.account = account;
     r.acr = acr;
     r.collateral = ZERO_REX;
-    r.timestamp = current_time_point();
     r.debt = ZERO_BUCK;
     r.accrued_debt = ZERO_BUCK;
     r.modified_round = 0;
