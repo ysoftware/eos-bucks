@@ -63,7 +63,6 @@ void buck::add_savings_pool(const asset& value) {
 
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
-  PRINT_("accr")
   const auto& tax = *_tax.begin();
   const auto price = get_eos_price();
   
@@ -98,7 +97,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 
 /// issue cdp dividends from the insurance pool
 void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
-  PRINT_("with")
   if (cdp_itr->debt.amount != 0) return;
   
   const auto& tax = *_tax.begin();
@@ -119,9 +117,6 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
   const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;
-  
-  // don't update modified_round if dividends calculated is 0
-  if (dividends_amount == 0) return;
   
   const auto user_aggregated = asset(user_aggregated_amount, EOS);
   const auto dividends = asset(dividends_amount, EOS);

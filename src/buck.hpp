@@ -174,13 +174,13 @@ CONTRACT buck : public contract {
         
         static const uint64_t MAX = 100'000'000;
         const uint64_t c = collateral.amount;
+        
+        if (acr == 0 || c == 0) return MAX * 3; // end of the table
+        
         const uint64_t td = (debt + accrued_debt).amount;
-        
-        if (td == 0 || acr == 0 || c == 0) return MAX * 3; // end of the table
-        
-        const uint64_t cd = c * 10'000'000 / td;
         if (td == 0) return MAX - c / acr; // descending c/acr
         
+        const uint64_t cd = c * 10'000'000 / td;
         return MAX * 2 - cd; // descending cd
       }
       

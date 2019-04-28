@@ -75,7 +75,6 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
     
     update_supply(-value);
   }
-  PRINT_("exit add balance")
 }
 
 void buck::update_supply(const asset& quantity) {

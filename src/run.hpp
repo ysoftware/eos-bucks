@@ -149,7 +149,6 @@ void buck::run_requests(uint8_t max) {
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
-          PRINT_("matur")
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
           
           // calculate new debt and collateral
@@ -187,8 +186,6 @@ void buck::run_requests(uint8_t max) {
           else if (cdp_itr->debt.amount - change_debt.amount == 0) {
             update_excess_collateral(cdp_itr->collateral + add_collateral);
           }
-          
-          PRINT_("cdp modify")
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
