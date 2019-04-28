@@ -5,7 +5,7 @@
 void buck::update(uint32_t eos_price) {
   #if !DEBUG
   require_auth(_self);
-  #else
+  #endif
   
   init();
   process_taxes();
