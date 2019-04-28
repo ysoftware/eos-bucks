@@ -18,7 +18,7 @@ time = 0 # initial time
 
 def time_now(time_last):
 	global time
-	time = random.randint(time_last, time_last + 7884 * 10 ** 3)	
+	time = random.randint(time_last, time_last + 7884 * 10 ** 3) # adding 3 months
 	return time
  
  
@@ -59,12 +59,11 @@ def epsilon(value):
 
 def generate_liquidators(k, t):
 	global TEC
-	liquidators = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, t)
 	TEC += liquidator.collateral * 100 // liquidator.acr
-	liquidators.append(liquidator)
+	liquidators = [liquidator]
 	for i in range (0,k):
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
@@ -74,14 +73,13 @@ def generate_liquidators(k, t):
 	return liquidators
 
 def generate_debtors(k, n, price, t):
-	debtors = []
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2,0, k+1, t)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
 	debtor.new_cd(debtor.collateral * 100 // debtor.debt)
-	debtors.append(debtor)
+	debtors = [debtor]
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
 		helper = ccr
@@ -147,15 +145,16 @@ def cdp_insert(table, cdp):
 	
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(table, id):
+	if len(table) == 0:
+		return False
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
-	return False
 			
 			
 			
 def print_table(table):
-	if len(table) == 0:
+	if table == []:
 		print("table is empty")
 	else:
 		for i in range(0,len(table)):
@@ -365,13 +364,17 @@ def reparametrize(table, id, c, d, cr, price):
 	table = cdp_insert(table,cdp)
 	return table
 	
-def change_acr(table, id, acr):
+def change_acr(table, id, acr, price):
+	global TEC
 	cdp = table.pop(cdp_index(table,id))
+	cdp = add_tax(cdp, price)
 	if cdp.acr != 0 and cdp.debt < 50000:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	cdp.new_acr(acr)
 	if cdp.acr != 0 and cdp.debt < 50000:
 		TEC += cdp.collateral * 100 // cdp.acr
+	table = cdp_insert(table, cdp)
+	return table
 	
 	
 
@@ -396,6 +399,7 @@ def update_round(new_time, old_time):
 
 
 def random_test(k, n, round):
+	# globals, check at the top their mission
 	global time
 	global CR
 	global LF
@@ -409,41 +413,56 @@ def random_test(k, n, round):
 	global CIT
 	global comission
 	global time
-	time = random.randint(1556463885,time_now(1556463885))
+	time = random.randint(1556463885,time_now(1556463885)) # generating random time between now and 3 months after
 	price = random.randint(100, 1000)
-	table = gen(k,n, price, time)
+	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
 	length = len(table)
-	AEC = TEC
+	AEC = TEC # Aggregated Excess Collateral is zero at the moment of initilization, therefore has to be updated once liquidators have been generated
 	old_time = time
-	for i in range(0, round):
+	for i in range(0, round): # round is the number of rounds for the random walk
 		print("\n")
 		print("round")
 		print(i)
 		print("\n")
 		old_price = price
 		price = random.randint(100, 1000)
-		time = random.randint(old_time, time_now(old_time))
+		time = random.randint(old_time, time_now(old_time)) 
 		if price < old_price:
 			print("\n")
 			print("liquidating")
 			table = liquidation(table, price, 150, 10)
 			print("done liquidating")
-		update_round(time, old_time)
+		update_round(time, old_time) 
 		old_time = time
-		for i in range(0, random.randint(0,length-1) // 500):
+		k = 10
+		for i in range(0, random.randint(0,length-1) ):
 			if cdp_index(table, i) != False:
 				print("\n")
 				print("reparametrizing")
 				print("\n")
 				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+				k -= 1
+			if k == 0:
+				break
+		k = 10
+		for i in range(0, random.randint(0, length - 1)):
+			if cdp_index(table, i) != False:
+				print("\n")
+				print("reparametrizing ACR")
+				print("\n")
+				table = change_acr(table, i, random.randint(150,1000), price)
+				k -= 1
+			if k == 0:
+				break
 		print("\n")
 		print("redeeming")
 		print("\n")
 		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
 	print_table(table)
+	# can add checks to ensure that insurance dividend pool is calculated rightly
 		
 
-random_test(10000,100000,100)		
+random_test(1000,30000,20)		
 		
 #def redemption(table, amount, price, cr, rf):
 			
