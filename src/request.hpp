@@ -80,7 +80,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   run_requests(2);
 }
 
-void buck::changeacr(uint64_t cdp_id, uint32_t acr) {
+void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   // to-do validation

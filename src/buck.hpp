@@ -13,7 +13,7 @@ CONTRACT buck : public contract {
     ACTION withdraw(const name& from, const asset& quantity);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
-    ACTION changeacr(uint64_t cdp_id, uint32_t acr);
+    ACTION changeacr(uint64_t cdp_id, uint16_t acr);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION redeem(const name& account, const asset& quantity);
     ACTION run(uint8_t max);
@@ -143,7 +143,7 @@ CONTRACT buck : public contract {
       uint64_t        cdp_id;
       asset           change_debt;
       asset           add_collateral;
-      uint32_t        ccr;
+      uint16_t        ccr;
       time_point      maturity_timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -152,7 +152,7 @@ CONTRACT buck : public contract {
     
     TABLE cdp {
       uint64_t    id;
-      uint32_t    acr;
+      uint16_t    acr;
       name        account;
       asset       debt;
       asset       accrued_debt;

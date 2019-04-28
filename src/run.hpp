@@ -149,7 +149,7 @@ void buck::run_requests(uint8_t max) {
         if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
-          
+          PRINT_("matur")
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
           
           // calculate new debt and collateral
@@ -167,7 +167,7 @@ void buck::run_requests(uint8_t max) {
           asset change_accrued_debt = ZERO_BUCK;
           if (change_debt.amount > 0) {
             
-            add_balance(cdp_itr->account, change_debt, cdp_itr->account, true);
+            add_balance(cdp_itr->account, change_debt, same_payer, true);
           }
           else {
             
@@ -187,6 +187,8 @@ void buck::run_requests(uint8_t max) {
           else if (cdp_itr->debt.amount - change_debt.amount == 0) {
             update_excess_collateral(cdp_itr->collateral + add_collateral);
           }
+          
+          PRINT_("cdp modify")
           
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
             r.collateral += add_collateral;
@@ -210,7 +212,7 @@ void buck::run_requests(uint8_t max) {
       }
     }
     else if (status == ProcessingStatus::processing_redemption_requests) {
-      
+
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
         
@@ -271,7 +273,7 @@ void buck::run_requests(uint8_t max) {
         if (redeem_quantity.amount > 0) {
           
           // return unredeemed amount
-          add_balance(redeem_itr->account, redeem_quantity, _self, false);
+          add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
         }
       
         add_savings_pool(saved_debt);
@@ -304,7 +306,7 @@ void buck::run_requests(uint8_t max) {
   while (i < max && accrual_item != accrual_index.end() &&
         accrual_item->debt.amount > 0 &&
         time_point_sec(time_point(now - accrual_item->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
-          
+    
     accrue_interest(_cdp.require_find(accrual_item->id));
     accrual_item = accrual_index.begin(); // take first element after index updated
     i++;

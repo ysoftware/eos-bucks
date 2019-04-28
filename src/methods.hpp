@@ -3,7 +3,8 @@
 // Created by Yaroslav Erohin.
 
 void buck::sub_funds(const name& from, const asset& quantity) {
-  eosio::print("- "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");
+  if (quantity.amount == 0) return;
+  eosio::print("- "); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
   auto fund_itr = _fund.require_find(from.value, "no fund balance found");
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
   _fund.modify(fund_itr, from, [&](auto& r) {
@@ -12,7 +13,10 @@ void buck::sub_funds(const name& from, const asset& quantity) {
 }
 
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
-  eosio::print("+ "); eosio::print(quantity); eosio::print("@ "); eosio::print(from); eosio::print("\n");
+  if (quantity.amount != 0) {
+    eosio::print("+ "); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
+  }
+  
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
     _fund.modify(fund_itr, ram_payer, [&](auto& r) {
@@ -28,7 +32,9 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
 }
 
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
-  eosio::print("+ "); eosio::print(value); eosio::print("@ "); eosio::print(owner); eosio::print("\n");
+  if (value.amount != 0) {
+    eosio::print("+ "); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
+  }
   
   accounts_i accounts(_self, owner.value);
   auto account_itr = accounts.find(value.symbol.code().raw());
@@ -53,7 +59,8 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
 }
 
 void buck::sub_balance(const name& owner, const asset& value, bool change_supply) {
-  eosio::print("- "); eosio::print(value); eosio::print("@ "); eosio::print(owner); eosio::print("\n");
+  if (value.amount == 0) return;
+  eosio::print("- "); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
   
   accounts_i accounts(_self, owner.value);
   const auto account_itr = accounts.require_find(value.symbol.code().raw(), "no balance object found");
@@ -68,6 +75,7 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
     
     update_supply(-value);
   }
+  PRINT_("exit add balance")
 }
 
 void buck::update_supply(const asset& quantity) {
