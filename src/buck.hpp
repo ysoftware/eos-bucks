@@ -9,7 +9,7 @@ CONTRACT buck : public contract {
     buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(const name& account, const asset& quantity, uint32_t ccr, uint32_t acr);
+    ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
     ACTION withdraw(const name& from, const asset& quantity);
     ACTION closecdp(uint64_t cdp_id);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
@@ -175,10 +175,12 @@ CONTRACT buck : public contract {
         static const uint64_t MAX = 100'000'000;
         const uint64_t c = collateral.amount;
         const uint64_t td = (debt + accrued_debt).amount;
-        const uint64_t cd = c * 10'000'000 / td;
         
-        if (acr == 0 || c == 0) return MAX * 3; // end of the table
+        if (td == 0 || acr == 0 || c == 0) return MAX * 3; // end of the table
+        
+        const uint64_t cd = c * 10'000'000 / td;
         if (td == 0) return MAX - c / acr; // descending c/acr
+        
         return MAX * 2 - cd; // descending cd
       }
       
@@ -186,9 +188,9 @@ CONTRACT buck : public contract {
       uint64_t debtor() const {
         
         const uint64_t td = (debt + accrued_debt).amount;
-        const uint64_t cd = collateral.amount * 10'000'000 / td;
-        
         if (td == 0) return UINT64_MAX; // end of the table
+        
+        const uint64_t cd = collateral.amount * 10'000'000 / td;
         return cd; // ascending cd
       }
     };
