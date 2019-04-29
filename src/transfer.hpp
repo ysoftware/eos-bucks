@@ -29,13 +29,13 @@ void buck::withdraw(const name& from, const asset& quantity) {
   
   require_auth(from);
   
-  check(quantity.symbol == EOS, "you have to transfer EOS");
-  check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
-
+  check(quantity.symbol == REX, "you have to transfer REX");
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  sub_funds(from, quantity);
+  time_point_sec maturity_time = get_amount_maturity(from, quantity);
+  check(current_time_point_sec() > maturity_time, "insufficient mature rex");
+  
   sell_rex(from, quantity);
   
   run(3);
