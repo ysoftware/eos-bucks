@@ -10,10 +10,10 @@ r = 0.05 # interest rate
 IDP = 0 # insurance dividend pool
 TEC = 0 # total excess collateral
 AEC = 0 # aggregated excess collateral
-T = 1800 # round in seconds
 CIT = 0 # collected insurance tax
 commission = 20 # our commission
 time = 0 # initial time
+oracle_time = 0
 
 
 def time_now(time_last):
@@ -150,6 +150,9 @@ def cdp_index(table, id):
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
+	return False
+	
+	
 			
 			
 			
@@ -210,22 +213,24 @@ def add_tax(cdp, price):
 	global AEC
 	global CIT
 	global TEC
-	t = time
+	global oracle_time
+	global time
 	if cdp.debt > epsilon(cdp.debt):	
-		interest = ceil(cdp.debt * (exp((r*(t-cdp.time))/(3.154*10**7))-1))
+		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-		cdp.new_time(t)
+		cdp.new_time(time)
 	else:
 		ec = cdp.collateral * 100 // cdp.acr 
-		val = IDP * ec *(t-cdp.time) // (T * AEC)
-		AEC -= ec *(t - cdp.time) // T
-		cdp.add_collateral(val)
-		cdp.new_time(t)
-		TEC += val * 100 // cdp.acr
-		IDP -= val
+		if oracle_time != cdp.time:
+			val = IDP * ec *(oracle_time-cdp.time) // AEC
+			AEC -= ec *(oracle_time - cdp.time) 
+			cdp.add_collateral(val)
+			cdp.new_time(oracle_time)
+			TEC += val * 100 // cdp.acr
+			IDP -= val
 	return cdp
 	
 	
@@ -235,17 +240,12 @@ def add_tax(cdp, price):
 
 def liquidation(table, price, cr, lf):	
 		global TEC
+		if table == []:
+			return table
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
 			debtor = add_tax(debtor,price)
-			print("\n")
-			print("price")
-			print(price)
-			print("\n")
-			print("debtor")
-			print(debtor)
-			print("\n")
 			if debtor.debt == 0:
 				return table
 			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
@@ -264,12 +264,9 @@ def liquidation(table, price, cr, lf):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
-					TEC -= liquidator.collateral * 100 // liquidator.acr
 					liquidator = add_tax(liquidator, price)
-					print("\n")
-					print("liquidator")
-					print(liquidator)
-					print("\n")
+					if liquidator.debt <= 100:
+						TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
@@ -296,6 +293,7 @@ def liquidation(table, price, cr, lf):
 			
 
 def redemption(table, amount, price, cr, rf):
+	global time
 	i = len(table)-1
 	while amount > epsilon(amount) and i != -1:
 			cdp = table.pop(i)
@@ -316,11 +314,6 @@ def redemption(table, amount, price, cr, rf):
 					cdp.add_debt(-d)
 					cdp.add_collateral((-d*100) // (price+rf))
 					amount -= d
-					if cdp.debt <= epsilon(cdp.debt):
-						cdp.new_cd(9999999)
-					else:
-						cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-					table = cdp_insert(table,cdp)
 					i -= 1
 			else:
 				table = cdp_insert(table,cdp)
@@ -368,10 +361,10 @@ def change_acr(table, id, acr, price):
 	global TEC
 	cdp = table.pop(cdp_index(table,id))
 	cdp = add_tax(cdp, price)
-	if cdp.acr != 0 and cdp.debt < 50000:
+	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	cdp.new_acr(acr)
-	if cdp.acr != 0 and cdp.debt < 50000:
+	if cdp.acr != 0 and cdp.debt < 500:
 		TEC += cdp.collateral * 100 // cdp.acr
 	table = cdp_insert(table, cdp)
 	return table
@@ -383,13 +376,17 @@ def change_acr(table, id, acr, price):
 			
 			
 			
-def update_round(new_time, old_time):
+def update_round():
 	global AEC	
 	global IDP
 	global CIT
-	AEC += TEC * (new_time - old_time) // T
+	global oracle_time
+	global time
+	global TEC
+	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
+	oracle_time = time
 	
 	
 	
@@ -409,37 +406,28 @@ def random_test(k, n, round):
 	global IDP
 	global TEC
 	global AEC
-	global T
 	global CIT
 	global comission
 	global time
-	time = random.randint(1556463885,time_now(1556463885)) # generating random time between now and 3 months after
+	global oracle_time
+	time = time_now(1556463885) # generating random time between now and 3 months after
 	price = random.randint(100, 1000)
 	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
 	length = len(table)
-	AEC = TEC # Aggregated Excess Collateral is zero at the moment of initilization, therefore has to be updated once liquidators have been generated
-	old_time = time
+	oracle_time = time
+	print("\n")
+	print_table(table)
+	print("\n")
 	for i in range(0, round): # round is the number of rounds for the random walk
-		print("\n")
-		print("round")
-		print(i)
-		print("\n")
 		old_price = price
 		price = random.randint(100, 1000)
-		time = random.randint(old_time, time_now(old_time)) 
+		time = time_now(time)
+		update_round()
 		if price < old_price:
-			print("\n")
-			print("liquidating")
 			table = liquidation(table, price, 150, 10)
-			print("done liquidating")
-		update_round(time, old_time) 
-		old_time = time
 		k = 10
 		for i in range(0, random.randint(0,length-1) ):
 			if cdp_index(table, i) != False:
-				print("\n")
-				print("reparametrizing")
-				print("\n")
 				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
 				k -= 1
 			if k == 0:
@@ -447,22 +435,18 @@ def random_test(k, n, round):
 		k = 10
 		for i in range(0, random.randint(0, length - 1)):
 			if cdp_index(table, i) != False:
-				print("\n")
-				print("reparametrizing ACR")
-				print("\n")
 				table = change_acr(table, i, random.randint(150,1000), price)
 				k -= 1
 			if k == 0:
 				break
-		print("\n")
-		print("redeeming")
-		print("\n")
 		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+	print("\n")
 	print_table(table)
+	print("\n")
 	# can add checks to ensure that insurance dividend pool is calculated rightly
 		
-
-random_test(1000,30000,20)		
+for i in range(0, 10):
+	random_test(5,10,2)		
 		
 #def redemption(table, amount, price, cr, rf):
 			
