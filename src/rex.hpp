@@ -63,7 +63,18 @@ void buck::processrex(const name& account, bool bought) {
     add_funds(account, diff, _self);
     
     // to-do setup maturity for this rex
+    const time_point_sec maturity = get_maturity();
+    auto fund_itr = _fund.require_find(account.value, "to-do should not happen? processrex");
+    _fund.modify(fund_itr, same_payer, [&](auto& r) {
+        if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
+          r.rex_maturities.back().second += diff.amount;
+        } 
+        else {
+          r.rex_maturities.emplace_back(maturity, diff.amount);
+        }
+    });
     
+    process_maturities(fund_itr);
   }
   
   // user sold rex. transfer eos 
