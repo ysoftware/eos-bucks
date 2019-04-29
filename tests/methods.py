@@ -110,6 +110,10 @@ def take(contract, user, quantity):
 			"value": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
+def maketime(contract, time):
+	contract.push_action(force_unique=True, action="zmaketime",
+		data={ "seconds": time }, permission=[(contract, Permission.ACTIVE)])
+
 def fundbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="balance"))
 
