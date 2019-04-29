@@ -108,7 +108,7 @@ void buck::run_requests(uint8_t max) {
           const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
           const int64_t change_amount = std::min(can_withdraw, -reparam_itr->change_collateral.amount);
       
-          const asset change = asset(change_amount, EOS);
+          const asset change = asset(change_amount, REX);
           change_collateral = change;
         }
         
@@ -236,7 +236,7 @@ void buck::run_requests(uint8_t max) {
         // to-do verify timestamp
         auto redeem_quantity = redeem_itr->quantity;
         asset rex_return = ZERO_REX;
-        asset collateral_return = ZERO_EOS;
+        asset collateral_return = ZERO_REX;
         
         asset burned_debt = ZERO_BUCK; // used up
         asset saved_debt = ZERO_BUCK; // to savings pool
@@ -256,7 +256,7 @@ void buck::run_requests(uint8_t max) {
           const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
           const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
           const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
-          const asset using_collateral = asset(using_collateral_amount, EOS);
+          const asset using_collateral = asset(using_collateral_amount, REX);
           
           redeem_quantity -= using_debt + using_accrued_debt;
           collateral_return += using_collateral;
@@ -397,7 +397,7 @@ void buck::run_liquidation(uint8_t max) {
       
       // to-do check rounding
       const asset used_debt = asset(used_debt_amount, BUCK);
-      const asset used_collateral = asset(used_collateral_amount, EOS);
+      const asset used_collateral = asset(used_collateral_amount, REX);
       
       PRINT("bad debt", bad_debt)
       PRINT("bailable", bailable)

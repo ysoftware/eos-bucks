@@ -18,12 +18,11 @@ static const symbol& EOS   = symbol("EOS", 4);
 static const symbol& BUCK  = symbol("BUCK", 4);
 static const symbol& REX   = symbol("REX", 4);
 
-static const asset& ZERO_EOS   = asset(0, EOS);
 static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
 
 /// minimal collateral is 5 EOS
-static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
+static const asset& MIN_COLLATERAL = asset(5'0000, REX);
 
 /// minimal cdp debt is 50 BUCK
 static const asset& MIN_DEBT       = asset(50'0000, BUCK);

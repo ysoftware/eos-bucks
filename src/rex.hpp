@@ -43,7 +43,7 @@ asset buck::get_rex_balance() const {
 asset buck::get_eos_rex_balance() const {
   rex_fund_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
-  if (balance_itr == _balance.end()) return ZERO_EOS;
+  if (balance_itr == _balance.end()) return asset(0, EOS);
   return balance_itr->balance;
 }
 
