@@ -54,11 +54,12 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
   #endif
   
-  // to-do check if there is enough of matured rex
-
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
+  check(fund_itr->matured_rex >= quantity, "your rex is not mature enough to be used");
+  
   _fund.modify(fund_itr, from, [&](auto& r) {
     r.balance -= quantity;
+    r.matured_rex -= quantity;
   });
 }
 
