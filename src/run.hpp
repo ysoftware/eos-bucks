@@ -39,7 +39,16 @@ void buck::run_requests(uint8_t max) {
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
-        close_itr++; // this request will be removed in process method
+        
+        if (cdp_itr->debt.amount == 0) {
+          withdraw_insurance_dividends(cdp_itr);
+          update_excess_collateral(-cdp_itr->collateral);
+        }
+        
+        _cdp.erase(cdp_itr);
+        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
+      
+        close_itr = _closereq.erase(close_itr);
         did_work = true;
     }
       
