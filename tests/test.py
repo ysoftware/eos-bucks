@@ -218,6 +218,9 @@ def add_tax(cdp, price):
 		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
+		if cdp.collateral <0 or cdp.debt <0:
+			print("1")
+			exit()
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(time)
@@ -227,6 +230,9 @@ def add_tax(cdp, price):
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
+			if cdp.collateral <0 or cdp.debt <0:
+				print("2")
+				exit()
 			cdp.new_time(oracle_time)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
@@ -245,6 +251,11 @@ def liquidation(table, price, cr, lf):
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
 			debtor = add_tax(debtor,price)
+			if debtor.debt < 0 or debtor.collateral < 0:
+				print("liq debtor problem")
+				print(debtor.debt)
+				print(debtor.collateral)
+				exit()
 			if debtor.debt == 0:
 				return table
 			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
@@ -264,6 +275,11 @@ def liquidation(table, price, cr, lf):
 				else:
 					liquidator = table.pop(i)
 					liquidator = add_tax(liquidator, price)
+					if liquidator.debt < 0 or liquidator.collateral < 0:
+						print("liq liquidator problem")
+						print(liquidator.debt)
+						print(liquidator.collateral)
+						exit()
 					if liquidator.debt <= 100:
 						TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
@@ -273,6 +289,12 @@ def liquidation(table, price, cr, lf):
 					liquidator.add_debt(val)
 					liquidator.add_collateral(c)
 					debtor.add_collateral(-c)
+					if debtor.collateral <0 or debtor.debt <0:
+						print("3")
+						exit()
+					if liquidator.collateral <0 or liquidator.debt <0:
+						print("4")
+						exit()
 					if debtor.debt <=  100:
 						debtor.new_cd(9999999)
 					else:
@@ -297,32 +319,51 @@ def redemption(table, amount, price, cr, rf):
 	while amount > epsilon(amount) and i != -1:
 			cdp = table.pop(i)
 			cdp = add_tax(cdp, price)
-			if cdp.cd * price >= (100 - rf)*100:
-				if cdp.debt <= epsilon(cdp.debt):
-					table = cdp_insert(table,cdp)
-					return table
-				elif amount < cdp.debt:
-					cdp.add_debt(-amount)
-					cdp.add_collateral(-(amount*100)//(price+rf))
-					amount = 0
-					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-					table = cdp_insert(table,cdp)
-					return table
-				else:
-					d = cdp.debt
-					cdp.add_debt(-d)
-					cdp.add_collateral((-d*100) // (price+rf))
-					amount -= d
-					i -= 1
-			else:
+			if cdp.debt < 0 or cdp.collateral < 0:
+				print("redemption problem")
+				print(cdp)
+				exit()
+			if cdp.debt <= 50:
 				table = cdp_insert(table,cdp)
-				i -= 1
+				return table
+			else:
+				if cdp.collateral * price // cdp.debt >= 100 - rf:
+					if cdp.debt <= epsilon(cdp.debt):
+						table = cdp_insert(table,cdp)
+						return table
+					elif amount < cdp.debt:
+						cdp.add_debt(-amount)
+						cdp.add_collateral(-(amount*100)//(price+rf))
+						if cdp.collateral <0 or cdp.debt <0:
+							print("5")
+							exit()
+						amount = 0
+						cdp.new_cd(cdp.collateral * 100 // cdp.debt)
+						table = cdp_insert(table,cdp)
+						return table
+					else:
+						d = cdp. debt
+						cdp.new_debt(0)
+						cdp.add_collateral((d*100) // (price+rf))
+						print("\n")
+						print(cdp.collateral)
+						print(cdp.debt)
+						if cdp.collateral <0 or cdp.debt <0:
+							print("6")
+							exit()
+						amount -= d
+						i -= 1
 	return table
 	
 def reparametrize(table, id, c, d, cr, price):	
 	global TEC
 	cdp = table.pop(cdp_index(table, id))
 	cdp = add_tax(cdp, price)
+	if cdp.debt < 0 or cdp.collateral < 0:
+				print("reparam problem")
+				print(cdp.debt)
+				print(cdp.collateral)
+				exit()
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
@@ -353,6 +394,9 @@ def reparametrize(table, id, c, d, cr, price):
 		cdp.new_cd(9999999)
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
+	if cdp.collateral <0 or cdp.debt <0:
+						print("4")
+						exit()
 	table = cdp_insert(table,cdp)
 	return table
 	
@@ -360,6 +404,11 @@ def change_acr(table, id, acr, price):
 	global TEC
 	cdp = table.pop(cdp_index(table,id))
 	cdp = add_tax(cdp, price)
+	if cdp.debt < 0 or cdp.collateral <  0:
+				print("acr")
+				print(cdp.debt)
+				print(cdp.collateral)
+				exit()
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	cdp.new_acr(acr)
