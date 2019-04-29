@@ -39,7 +39,6 @@ void buck::run_requests(uint8_t max) {
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
-        sell_rex(cdp_itr->id, cdp_itr->collateral, ProcessKind::closing);
         close_itr++; // this request will be removed in process method
         did_work = true;
     }
@@ -87,9 +86,6 @@ void buck::run_requests(uint8_t max) {
             r.change_debt = change_debt;
             r.ccr = 0;
           });
-          
-          // buy rex for this cdp
-          buy_rex(cdp_itr->id, reparam_itr->change_collateral);
         }
         
         // removing collateral
@@ -101,7 +97,6 @@ void buck::run_requests(uint8_t max) {
           const asset change = asset(change_amount, EOS);
           new_collateral -= change;
           
-          sell_rex(cdp_itr->id, -reparam_itr->change_collateral, ProcessKind::reparam);
           shouldRemove = false;
         }
         
@@ -233,16 +228,13 @@ void buck::run_requests(uint8_t max) {
           const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
           const int64_t using_collateral_amount = using_debt_amount / (price + RF);
-          const int64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
           
           const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
           const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
           const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
           const asset using_collateral = asset(using_collateral_amount, EOS);
-          const asset using_rex = asset(using_rex_amount, REX);
           
           redeem_quantity -= using_debt + using_accrued_debt;
-          rex_return += using_rex;
           collateral_return += using_collateral;
           
           // to receive dividends after selling rex
@@ -250,14 +242,12 @@ void buck::run_requests(uint8_t max) {
             r.account = redeem_itr->account;
             r.cdp_id = debtor_itr->id;
             r.collateral = using_collateral;
-            r.rex = using_rex;
           });
           
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
             r.accrued_debt -= using_accrued_debt;
             r.collateral -= using_collateral;
-            r.rex -= using_rex;
           });
           
           saved_debt += using_accrued_debt;
@@ -282,7 +272,6 @@ void buck::run_requests(uint8_t max) {
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         else {
-          sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
           add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
           redeem_itr++; // this request will be removed in process method
         }

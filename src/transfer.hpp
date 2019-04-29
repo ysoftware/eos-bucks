@@ -35,10 +35,10 @@ void buck::withdraw(const name& from, const asset& quantity) {
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  // to-do check if there is enough of matured rex
-  
   sub_funds(from, quantity);
-  sell_rex(from);
+  
+  // buy rex
+  sell_rex(quantity);
   processrex(from, false);
   
   run(3);
@@ -105,6 +105,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   add_balance(account, ZERO_BUCK, account, false);
   add_funds(account, ZERO_REX, account);
   
+  // to-do check if there is enough matured rex, then open cdp immediately
+  
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
     r.maturity_timestamp = get_maturity();
@@ -113,8 +115,6 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     r.cdp_id = id;
     r.ccr = ccr;
   });
-  
-  buy_rex(id, quantity);
   
   run(3);
 }

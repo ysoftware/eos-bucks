@@ -37,9 +37,9 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
    {}
 
 bool buck::init() {
-  if (_stat.begin() != _stat.end()) { return false; }
+  if (_stat.begin() != _stat.end()) return false;
   
-  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
+  static const uint32_t now = current_time_point_sec().utc_seconds;
   
   _stat.emplace(_self, [&](auto& r) {
     r.supply = ZERO_BUCK;
@@ -54,11 +54,11 @@ bool buck::init() {
   _tax.emplace(_self, [&](auto& r) {
     r.current_round = 0;
     
-    r.insurance_pool = ZERO_EOS;
-    r.collected_insurance = ZERO_EOS;
-    r.total_excess = ZERO_EOS;
-    r.aggregated_excess = ZERO_EOS;
-    r.changed_excess = ZERO_EOS;
+    r.insurance_pool = ZERO_REX;
+    r.collected_insurance = ZERO_REX;
+    r.total_excess = ZERO_REX;
+    r.aggregated_excess = ZERO_REX;
+    r.changed_excess = ZERO_REX;
     
     r.savings_pool = ZERO_BUCK;
     r.collected_savings = ZERO_BUCK;
@@ -68,7 +68,7 @@ bool buck::init() {
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self, false);
-  add_funds(SCRUGE, ZERO_EOS, _self);
+  add_funds(SCRUGE, ZERO_REX, _self);
   
   return true;
 }

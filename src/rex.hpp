@@ -2,20 +2,20 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-// void buck::process_maturities( const rex_balance_table::const_iterator& bitr) {
-//   const time_point_sec now = current_time_point_sec();
-//   _rexbalance.modify( bitr, same_payer, [&]( auto& rb ) {
-//     while ( !rb.rex_maturities.empty() && rb.rex_maturities.front().first <= now ) {
-//       rb.matured_rex += rb.rex_maturities.front().second;
-//       rb.rex_maturities.pop_front();
-//     }
-//   });
-// }
+void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
+  const time_point_sec now = current_time_point_sec();
+  _fund.modify(fund_itr, same_payer, [&](auto& r) {
+    while (!r.rex_maturities.empty() && r.rex_maturities.front().first <= now) {
+      r.matured_rex += r.rex_maturities.front().second;
+      r.rex_maturities.pop_front();
+    }
+  });
+}
 
 time_point_sec buck::get_maturity() const {
-  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
-  static const uint32_t r = now % seconds_per_day;
   const uint32_t num_of_maturity_buckets = 5;
+  static const uint32_t now = current_time_point_sec().utc_seconds;
+  static const uint32_t r   = now % seconds_per_day;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
   return rms;
 }
@@ -23,14 +23,14 @@ time_point_sec buck::get_maturity() const {
 asset buck::get_rex_balance() const {
   rex_balance_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
-  if (balance_itr == _balance.end()) { return ZERO_REX; }
+  if (balance_itr == _balance.end()) return ZERO_REX;
   return balance_itr->rex_balance;
 }
 
 asset buck::get_eos_rex_balance() const {
   rex_fund_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);
-  if (balance_itr == _balance.end()) { return ZERO_EOS; }
+  if (balance_itr == _balance.end()) return ZERO_EOS;
   return balance_itr->balance;
 }
 
@@ -206,6 +206,7 @@ bool buck::is_mature(uint64_t cdp_id) const {
 // }
 
 void buck::processrex(const name& account, bool bought) {
+  const auto rexprocess_itr = _process.begin();
   
   // user bought rex. send it to the funds
   if (bought) {
@@ -223,7 +224,7 @@ void buck::processrex(const name& account, bool bought) {
     const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_rex_balance();
     const auto diff = current_balance - previos_balance; // EOS
-    _inline_transfer(account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
+    inline_transfer(account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
   }
 }
 
@@ -257,6 +258,6 @@ void buck::sell_rex(const asset& quantity) {
   // sell rex
   action(permission_level{ _self, "active"_n },
 		REX_ACCOUNT, "sellrex"_n,
-		std::make_tuple(_self, sell_rex)
+		std::make_tuple(_self, quantity)
 	).send();
 }
