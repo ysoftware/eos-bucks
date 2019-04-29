@@ -88,7 +88,13 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
-  // open cdp
+  // open account if doesn't exist
+  add_balance(account, ZERO_BUCK, account, false);
+  add_funds(account, ZERO_REX, account);
+  
+  // to-do check if there is enough matured rex, then open cdp immediately
+  
+  // create cdp
   const auto id = _cdp.available_primary_key();
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
@@ -101,15 +107,9 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     r.accrued_timestamp = get_current_time_point();
   });
   
-  // open account if doesn't exist
-  add_balance(account, ZERO_BUCK, account, false);
-  add_funds(account, ZERO_REX, account);
-  
-  // to-do check if there is enough matured rex, then open cdp immediately
-  
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
-    r.maturity_timestamp = get_maturity();  // to-do use rex amount maturity
+    r.maturity_timestamp = get_amount_maturity(account, quantity);
     r.add_collateral = quantity;
     r.change_debt = ZERO_BUCK;
     r.cdp_id = id;

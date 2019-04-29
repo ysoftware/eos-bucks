@@ -282,6 +282,7 @@ CONTRACT buck : public contract {
     ProcessingStatus get_processing_status() const;
     LiquidationStatus get_liquidation_status() const;
     time_point_sec current_time_point_sec() const;
+    time_point_sec get_amount_maturity(const name& account, const asset& quantity) const;
     
     // tables
     cdp_i               _cdp;

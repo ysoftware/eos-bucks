@@ -92,11 +92,9 @@ void buck::run_requests(uint8_t max) {
           
             // get maturity request
             _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-              r.maturity_timestamp = get_maturity(); // to-do use rex amount maturity
               r.add_collateral = change_collateral;
               r.cdp_id = cdp_itr->id;
               r.change_debt = change_debt;
-              r.ccr = 0;
             });
           }
           else {

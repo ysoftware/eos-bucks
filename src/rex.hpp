@@ -12,6 +12,19 @@ void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
   });
 }
 
+time_point_sec buck::get_amount_maturity(const name& account, const asset& quantity) const {
+  const time_point_sec now = current_time_point_sec();
+  auto fund_itr = _fund.require_find(account.value, "to-do should not happen? get_amount_maturity");
+  int64_t i = 0;
+  for (auto maturity: fund_itr->rex_maturities) {
+    i += maturity.second;
+    if (i >= quantity.amount) {
+      return maturity.first;
+    }
+  }
+  return time_point_sec(0);
+}
+
 time_point_sec buck::get_maturity() const {
   const uint32_t num_of_maturity_buckets = 5;
   static const uint32_t now = current_time_point_sec().utc_seconds;
