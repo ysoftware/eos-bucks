@@ -15,7 +15,6 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
-  const time_point now = get_current_time_point();
   const uint32_t price = get_eos_price();
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   uint8_t status = get_processing_status();
@@ -145,8 +144,8 @@ void buck::run_requests(uint8_t max) {
       if (maturity_itr != maturity_index.end()) {
         
         // look for a first valid request
-        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
-        if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < now && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
+        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < oracle_timestamp && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
+        if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < oracle_timestamp && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
           
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
@@ -300,6 +299,7 @@ void buck::run_requests(uint8_t max) {
   auto accrual_item = accrual_index.begin();
   
   int i = 0;
+  const time_point now = get_current_time_point();
   while (i < max && accrual_item != accrual_index.end() &&
         accrual_item->debt.amount > 0 &&
         time_point_sec(time_point(now - accrual_item->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
