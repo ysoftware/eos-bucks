@@ -12,7 +12,6 @@ void buck::zdestroy() {
   RM(stats_i)
   RM(cdp_maturity_req_i)
   RM(processing_i)
-  RM(red_processing_i)
   RM(redeem_req_i)
   RM(close_req_i)
   RM(reparam_req_i)

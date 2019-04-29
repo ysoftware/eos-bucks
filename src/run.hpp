@@ -38,8 +38,16 @@ void buck::run_requests(uint8_t max) {
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
-        sell_rex(cdp_itr->id, cdp_itr->collateral, ProcessKind::closing);
-        close_itr++; // this request will be removed in process method
+        
+        if (cdp_itr->debt.amount == 0) {
+          withdraw_insurance_dividends(cdp_itr);
+          update_excess_collateral(-cdp_itr->collateral);
+        }
+        
+        _cdp.erase(cdp_itr);
+        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
+      
+        close_itr = _closereq.erase(close_itr);
         did_work = true;
     }
       
@@ -48,15 +56,15 @@ void buck::run_requests(uint8_t max) {
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
-        bool shouldRemove = true;
+        bool shouldWaitMaturity = false;
         
         asset change_debt = ZERO_BUCK;
-        asset new_collateral = cdp_itr->collateral;
+        asset change_collateral = ZERO_REX;
         const int64_t total_debt_amount = cdp_itr->debt.amount + cdp_itr->accrued_debt.amount;
         
-        const uint64_t ccr = CR; // used in to calculate relation with CR
+        int64_t ccr = CR; // used in to calculate relation with CR
         if (total_debt_amount > 0) {
-          cdp_itr->collateral.amount * price / total_debt_amount;
+          ccr = cdp_itr->collateral.amount * price / total_debt_amount;
         }
   
         // adding debt
@@ -75,20 +83,22 @@ void buck::run_requests(uint8_t max) {
         
         // adding collateral
         if (reparam_itr->change_collateral.amount > 0) {
-          new_collateral += reparam_itr->change_collateral;
-          
-          // get maturity request
+          change_collateral = reparam_itr->change_collateral;
           const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "to-do: remove. could not find maturity (run)");
-          _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-            r.maturity_timestamp = get_maturity();
-            r.add_collateral = reparam_itr->change_collateral;
-            r.cdp_id = cdp_itr->id;
-            r.change_debt = change_debt;
-            r.ccr = 0;
-          });
+
+          if (true) { // to-do check maturity 
+            shouldWaitMaturity = true;
           
-          // buy rex for this cdp
-          buy_rex(cdp_itr->id, reparam_itr->change_collateral);
+            // get maturity request
+            _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
+              r.add_collateral = change_collateral;
+              r.cdp_id = cdp_itr->id;
+              r.change_debt = change_debt;
+            });
+          }
+          else {
+            _maturityreq.erase(maturity_itr);
+          }
         }
         
         // removing collateral
@@ -97,24 +107,21 @@ void buck::run_requests(uint8_t max) {
           const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
           const int64_t change_amount = std::min(can_withdraw, -reparam_itr->change_collateral.amount);
       
-          const asset change = asset(change_amount, EOS);
-          new_collateral -= change;
-          
-          sell_rex(cdp_itr->id, -reparam_itr->change_collateral, ProcessKind::reparam);
-          shouldRemove = false;
+          const asset change = asset(change_amount, REX);
+          change_collateral = change;
         }
         
         // to-do check new ccr parameters
         // don't give debt if ccr < CR
-  
-        // not removing collateral here, update immediately
-        if (reparam_itr->change_collateral.amount == 0) {
+        
+        // not removing collateral here, update immediately, also check maturity
+        if (!shouldWaitMaturity) {
           asset change_accrued_debt = ZERO_BUCK;
           
           if (change_debt.amount > 0) {
             add_balance(cdp_itr->account, change_debt, same_payer, true);
           }
-          else {
+          else if (change_debt.amount < 0) {
             const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
             change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
             change_debt += change_accrued_debt; // add to negative
@@ -123,20 +130,32 @@ void buck::run_requests(uint8_t max) {
             update_supply(change_debt);
           }
           
+          if (change_collateral.amount > 0) {
+            // we already paid for it
+          }
+          else if (change_collateral.amount < 0) {
+            
+            add_funds(cdp_itr->account, change_collateral, same_payer);
+          }
+
+          // stop being an insurer
+          if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
+            withdraw_insurance_dividends(cdp_itr);
+            update_excess_collateral(-cdp_itr->collateral); // remove old amount
+          }
+          // become an insurer
+          else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+            update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
+          }
+          
           _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral = new_collateral;
+            r.collateral += change_collateral;
             r.accrued_debt += change_accrued_debt;
             r.debt += change_debt;
           });
         }
         
-        // check if request should be removed here or is handled in process method
-        if (shouldRemove) {
-          reparam_itr = _reparamreq.erase(reparam_itr);
-        }
-        else {
-          reparam_itr++;
-        }
+        reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }
       
@@ -216,7 +235,7 @@ void buck::run_requests(uint8_t max) {
         // to-do verify timestamp
         auto redeem_quantity = redeem_itr->quantity;
         asset rex_return = ZERO_REX;
-        asset collateral_return = ZERO_EOS;
+        asset collateral_return = ZERO_REX;
         
         asset burned_debt = ZERO_BUCK; // used up
         asset saved_debt = ZERO_BUCK; // to savings pool
@@ -232,31 +251,19 @@ void buck::run_requests(uint8_t max) {
           const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
           const int64_t using_collateral_amount = using_debt_amount / (price + RF);
-          const int64_t using_rex_amount =  debtor_itr->rex.amount * using_collateral_amount / debtor_itr->collateral.amount;
           
           const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
           const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
           const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
-          const asset using_collateral = asset(using_collateral_amount, EOS);
-          const asset using_rex = asset(using_rex_amount, REX);
+          const asset using_collateral = asset(using_collateral_amount, REX);
           
           redeem_quantity -= using_debt + using_accrued_debt;
-          rex_return += using_rex;
           collateral_return += using_collateral;
-          
-          // to receive dividends after selling rex
-          _redprocess.emplace(_self, [&](auto& r) {
-            r.account = redeem_itr->account;
-            r.cdp_id = debtor_itr->id;
-            r.collateral = using_collateral;
-            r.rex = using_rex;
-          });
           
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
             r.accrued_debt -= using_accrued_debt;
             r.collateral -= using_collateral;
-            r.rex -= using_rex;
           });
           
           saved_debt += using_accrued_debt;
@@ -275,16 +282,7 @@ void buck::run_requests(uint8_t max) {
         add_savings_pool(saved_debt);
         update_supply(burned_debt);
         
-        if (collateral_return.amount == 0) {
-    
-          // to-do completely failed to redeem. what to do?
-          redeem_itr = _redeemreq.erase(redeem_itr);
-        }
-        else {
-          sell_rex(redeem_itr->account.value, rex_return, ProcessKind::redemption);
-          add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
-          redeem_itr++; // this request will be removed in process method
-        }
+        add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
       }
       else {
         // no more redemption requests
@@ -399,7 +397,7 @@ void buck::run_liquidation(uint8_t max) {
       
       // to-do check rounding
       const asset used_debt = asset(used_debt_amount, BUCK);
-      const asset used_collateral = asset(used_collateral_amount, EOS);
+      const asset used_collateral = asset(used_collateral_amount, REX);
       
       PRINT("bad debt", bad_debt)
       PRINT("bailable", bailable)

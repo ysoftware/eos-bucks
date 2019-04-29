@@ -2,6 +2,19 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+time_point_sec buck::current_time_point_sec() const {
+  const static time_point_sec cts{ current_time_point() };
+  return cts;
+}
+
+/// returns if this amount of rex is matured for this user
+bool buck::check_maturity(const asset& value, const name& account) {
+  
+  // to-do
+  
+  return true;
+}
+
 inline time_point buck::get_current_time_point() const {
   #if TEST_TIME
   time_test_i _time(_self, _self.value);
@@ -10,29 +23,14 @@ inline time_point buck::get_current_time_point() const {
   return current_time_point();
 }
 
-void buck::sub_funds(const name& from, const asset& quantity) {
-  if (quantity.amount == 0) return;
-  
-  #if DEBUG
-  eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
-  #endif
-  
-  auto fund_itr = _fund.require_find(from.value, "no fund balance found");
-  check(fund_itr->balance >= quantity, "overdrawn fund balance");
-  _fund.modify(fund_itr, from, [&](auto& r) {
-    r.balance -= quantity;
-  });
-}
-
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
   #if DEBUG
-  if (quantity.amount != 0) {
-    eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
-  }
+  if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
   #endif
   
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
+    process_maturities(fund_itr);
     _fund.modify(fund_itr, ram_payer, [&](auto& r) {
       r.balance += quantity;
     });
@@ -45,11 +43,28 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
   }
 }
 
+void buck::sub_funds(const name& from, const asset& quantity) {
+  auto fund_itr = _fund.require_find(from.value, "no fund balance found");
+  process_maturities(fund_itr);
+  
+  if (quantity.amount == 0) return;
+  
+  #if DEBUG
+  eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
+  #endif
+  
+  check(fund_itr->balance >= quantity, "overdrawn fund balance");
+  check(fund_itr->matured_rex >= quantity.amount, "your rex is not mature enough to be used");
+  
+  _fund.modify(fund_itr, from, [&](auto& r) {
+    r.balance -= quantity;
+    r.matured_rex -= quantity.amount;
+  });
+}
+
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
   #if DEBUG
-  if (value.amount != 0) {
-    eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
-  }
+  if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
   #endif
   
   accounts_i accounts(_self, owner.value);
@@ -69,7 +84,6 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
   }
   
   if (change_supply) {
-    
     update_supply(value);
   }
 }
@@ -91,7 +105,6 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   });
   
   if (change_supply) {
-    
     update_supply(-value);
   }
 }
