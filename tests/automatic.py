@@ -6,7 +6,6 @@
 import unittest
 from eosfactory.eosf import *
 from methods import *
-from time import sleep
 import test
 import string
 
@@ -55,41 +54,46 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
+		DAY = 60 * 60 * 24
 
 		# initialize
-		price = 100
 		destroy(buck)
+
+		time = 0
+		maketime(buck, time)
+
+		price = 100
 		update(buck, price)
 
 		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
 
 		COMMENT("Open CDP")
-		cdp_table = test.gen(5, 10, price)
+		
+		cdp_table = test.gen(5, 10, price, time)
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
 
-		sleep(2) # wait for maturity
+		COMMENT("Mature")
+
+		time += DAY * 5 + 1
+		maketime(buck, time)
 
 		update(buck, price)
 		run(buck)
 		run(buck)
-		run(buck)
-
+		
 		self.compare(buck, cdp_table)
 
-
 		COMMENT("Liquidation sorting")
-
-		# match debtors sorting
+		
 		top_debtors = get_debtors(buck, limit=20)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
 			self.match(cdp_table[i * -1 - 1], debtor)
 
-		# match liquidators sorting
 		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
@@ -102,21 +106,17 @@ class Test(unittest.TestCase):
 		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
 		price = 70
 
-		test.liquidation(cdp_table, price)
+		test.liquidation(cdp_table, price, 150, 10)
 		update(buck, price)
 		run(buck)
 
-		print("liquidation complete")
-		test.print_table(cdp_table)
-		table(buck, "cdp")
-
+		COMMENT("liquidation complete")
 		self.compare(buck, cdp_table)
 
 		# to-do check if liquidation even took place?
 
 
 	def match(self, cdp, row):
-		# print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")

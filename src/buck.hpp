@@ -23,6 +23,10 @@ CONTRACT buck : public contract {
     // admin
     ACTION update(uint32_t eos_price);
     ACTION processrex(const name& account, bool bought);
+  
+    #if TEST_TIME
+    ACTION zmaketime(uint64_t seconds);
+    #endif
     
     #if DEBUG
     ACTION zdestroy();
@@ -219,13 +223,13 @@ CONTRACT buck : public contract {
     
     // rex 
     
-   struct rex_fund {
+    struct rex_fund {
       uint8_t version = 0;
       name    owner;
       asset   balance;
 
       uint64_t primary_key() const { return owner.value; }
-   };
+    };
 
     struct rex_balance {
       uint8_t version = 0;
@@ -236,12 +240,25 @@ CONTRACT buck : public contract {
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities; /// REX daily maturity buckets
 
       uint64_t primary_key() const { return owner.value; }
-   };
+    };
 
     typedef multi_index<"rexbal"_n, rex_balance> rex_balance_i;
     typedef multi_index<"rexfund"_n, rex_fund> rex_fund_i;
     
+    // test time
+    
+    #if TEST_TIME
+    struct time_test {
+      time_point_sec now;
+     
+      uint64_t primary_key() const { return 0; }
+    };
+    
+    typedef multi_index<"testtime"_n, time_test> time_test_i;
+    #endif
+    
     // methods
+    
     bool init();
     void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
     void sub_balance(const name& owner, const asset& value, bool change_supply);
@@ -271,6 +288,7 @@ CONTRACT buck : public contract {
     
     // getters
     uint32_t get_eos_price() const;
+    time_point get_current_time_point() const;
     bool is_mature(uint64_t cdp_id) const;
     time_point_sec get_maturity() const;
     asset get_rex_balance() const;

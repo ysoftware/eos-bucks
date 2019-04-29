@@ -3,13 +3,7 @@
 // Created by Yaroslav Erohin.
 
 time_point_sec buck::get_maturity() const {
-  static const uint32_t now = time_point_sec(current_time_point()).utc_seconds;
-
-  // maturity for testing is 1 second
-  #if REX_TESTING
-  return time_point_sec(now + 1);
-  #endif
-  
+  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
   static const uint32_t r = now % seconds_per_day;
   const uint32_t num_of_maturity_buckets = 5;
   static const time_point_sec rms{ now - r + num_of_maturity_buckets * seconds_per_day };
@@ -32,7 +26,7 @@ asset buck::get_eos_rex_balance() const {
 
 bool buck::is_mature(uint64_t cdp_id) const {
   const auto rexprocess_itr = _maturityreq.find(cdp_id);
-  return rexprocess_itr == _maturityreq.end() || rexprocess_itr->maturity_timestamp < current_time_point();
+  return rexprocess_itr == _maturityreq.end() || rexprocess_itr->maturity_timestamp < get_current_time_point();
 }
 
 // void buck::process(uint8_t kind) {
