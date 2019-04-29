@@ -5,7 +5,7 @@
 /// defines if contract will print logs and enable debug features
 #define DEBUG true
 /// defines if contract uses test rex environment
-#define REX_TESTING true
+#define REX_TESTING false
 /// defines if testing of time points is enabled
 #define TEST_TIME true
 

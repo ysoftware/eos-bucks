@@ -36,10 +36,7 @@ void buck::withdraw(const name& from, const asset& quantity) {
 	check(quantity.amount > 0, "must transfer positive quantity");
   
   sub_funds(from, quantity);
-  
-  // buy rex
-  sell_rex(quantity);
-  processrex(from, false);
+  sell_rex(from, quantity);
   
   run(3);
 }
@@ -57,8 +54,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  buy_rex(quantity);
-  processrex(from, true);
+  buy_rex(from, quantity);
 
   run(3);
 }
@@ -93,6 +89,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   add_funds(account, ZERO_REX, account);
   
   // to-do check if there is enough matured rex, then open cdp immediately
+  
   
   // create cdp
   const auto id = _cdp.available_primary_key();

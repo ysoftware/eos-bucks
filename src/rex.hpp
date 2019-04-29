@@ -48,23 +48,23 @@ asset buck::get_eos_rex_balance() const {
 }
 
 bool buck::is_mature(uint64_t cdp_id) const {
-  const auto rexprocess_itr = _maturityreq.find(cdp_id);
-  return rexprocess_itr == _maturityreq.end() || rexprocess_itr->maturity_timestamp < get_current_time_point();
+  const auto maturity_itr = _maturityreq.find(cdp_id);
+  return maturity_itr == _maturityreq.end() || maturity_itr->maturity_timestamp < get_current_time_point();
 }
 
-void buck::processrex(const name& account, bool bought) {
+void buck::processrex() {
   check(_process.begin() != _process.end(), "this action is not to be executed by a user");
   const auto rexprocess_itr = _process.begin();
   
   // user bought rex. send it to the funds
-  if (bought) {
+  if (rexprocess_itr->current_balance.symbol == REX) {
     const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_rex_balance();
     const auto diff = current_balance - previos_balance; // REX
-    add_funds(account, diff, _self);
+    add_funds(rexprocess_itr->account, diff, _self);
     
     const time_point_sec maturity = get_maturity();
-    auto fund_itr = _fund.require_find(account.value, "to-do should not happen? processrex");
+    auto fund_itr = _fund.require_find(rexprocess_itr->account.value, "to-do should not happen? processrex");
     _fund.modify(fund_itr, same_payer, [&](auto& r) {
         if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
           r.rex_maturities.back().second += diff.amount;
@@ -77,22 +77,23 @@ void buck::processrex(const name& account, bool bought) {
     process_maturities(fund_itr);
   }
   
-  // user sold rex. transfer eos 
+  // user sold rex. transfer eos
   else {
     const auto previos_balance = rexprocess_itr->current_balance;
-    const auto current_balance = get_rex_balance();
+    const auto current_balance = get_eos_rex_balance();
     const auto diff = current_balance - previos_balance; // EOS
-    inline_transfer(account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
+    inline_transfer(rexprocess_itr->account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
   }
   
   _process.erase(_process.begin());
 }
 
-void buck::buy_rex(const asset& quantity) {
+void buck::buy_rex(const name& account, const asset& quantity) {
   
   // store info current rex balance and this cdp
   _process.emplace(_self, [&](auto& r) {
     r.current_balance = get_rex_balance();
+    r.account = account;
   });
   
   // deposit
@@ -106,18 +107,30 @@ void buck::buy_rex(const asset& quantity) {
 		REX_ACCOUNT, "buyrex"_n,
 		std::make_tuple(_self, quantity)
 	).send();
+	
+	action(permission_level{ _self, "active"_n }, 
+  	_self, "processrex"_n, 
+  	std::make_tuple(account, true)
+	).send();
 }
 
-void buck::sell_rex(const asset& quantity) {
+void buck::sell_rex(const name& account, const asset& quantity) {
   
   // store info current eos balance in rex pool for this cdp
   _process.emplace(_self, [&](auto& r) {
     r.current_balance = get_eos_rex_balance();
+    r.account = account;
   });
   
   // sell rex
   action(permission_level{ _self, "active"_n },
 		REX_ACCOUNT, "sellrex"_n,
 		std::make_tuple(_self, quantity)
-	).send();
+  ).send();
+	
+  action(permission_level{ _self, "active"_n }, 
+    _self, "processrex"_n, 
+    std::make_tuple(account, false)
+  ).send();
+
 }

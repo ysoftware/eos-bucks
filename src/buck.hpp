@@ -22,7 +22,7 @@ CONTRACT buck : public contract {
     
     // admin
     ACTION update(uint32_t eos_price);
-    ACTION processrex(const name& account, bool bought);
+    ACTION processrex();
   
     #if TEST_TIME
     ACTION zmaketime(uint64_t seconds);
@@ -126,7 +126,8 @@ CONTRACT buck : public contract {
     };
     
     TABLE processing {
-      asset     current_balance;
+      asset current_balance;
+      name  account;
       
       uint64_t primary_key() const { return 0; }
     };
@@ -268,8 +269,8 @@ CONTRACT buck : public contract {
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     
     bool check_maturity(const asset& value, const name& account);
-    void buy_rex(const asset& quantity);
-    void sell_rex(const asset& quantity);
+    void buy_rex(const name& account, const asset& quantity);
+    void sell_rex(const name& account, const asset& quantity);
     void process_maturities(const fund_i::const_iterator& fund_itr);
     
     // getters
