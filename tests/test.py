@@ -151,8 +151,7 @@ def cdp_index(table, id):
 		if table[i].id == id:
 			return i
 	return False
-	
-	
+
 			
 			
 			

@@ -21,7 +21,7 @@ void buck::zdestroy() {
   RM(taxation_i)
   
   RMS(accounts_i, "yaroslaveroh"_n.value)
-  RMS(accounts_i, "buckbuckbuck"_n.value)
+  RMS(accounts_i, "scrugeosbuck"_n.value)
   RMS(accounts_i, "testaccountp"_n.value)
   RMS(accounts_i, "scrugescruge"_n.value)
 }
@@ -43,12 +43,12 @@ void buck::zmaketime(uint64_t seconds) {
   time_test_i _time(_self, _self.value);
   if (_time.begin() != _time.end()) {
     _time.modify(_time.begin(), same_payer, [&](auto& r) {
-      r.now = time_point_sec(seconds);
+      r.now = time_point(time_point_sec(seconds));
     });
   }
   else {
     _time.emplace(_self, [&](auto& r) {
-      r.now = time_point_sec(seconds);
+      r.now = time_point(time_point_sec(seconds));
     });
   }
 }

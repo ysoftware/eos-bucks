@@ -19,8 +19,7 @@ void buck::process_taxes() {
     add_balance(SCRUGE, scruge_savings, _self, true);
   }
   
-  time_point_sec cts{ get_current_time_point() };
-  static const uint32_t now = cts.utc_seconds;
+  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
   const auto delta_round = now - tax.current_round;
   
   // update excess collateral
