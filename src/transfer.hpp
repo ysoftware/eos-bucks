@@ -29,15 +29,14 @@ void buck::withdraw(const name& from, const asset& quantity) {
   
   require_auth(from);
   
-  check(quantity.symbol == EOS, "you have to transfer EOS");
-  check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
-
+  check(quantity.symbol == REX, "you have to transfer REX");
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  sub_funds(from, quantity);
+  time_point_sec maturity_time = get_amount_maturity(from, quantity);
+  check(current_time_point_sec() > maturity_time, "insufficient mature rex");
   
-  inline_transfer(from, quantity, "withdraw funds", EOSIO_TOKEN);
+  sell_rex(from, quantity);
   
   run(3);
 }
@@ -55,9 +54,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  // to-do to protect from spam, check if depositing more than 1 EOS
-  
-  add_funds(from, quantity, _self);
+  buy_rex(from, quantity);
 
   run(3);
 }
@@ -87,34 +84,34 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
-  // open cdp
+  // open account if doesn't exist
+  add_balance(account, ZERO_BUCK, account, false);
+  add_funds(account, ZERO_REX, account);
+  
+  // to-do check if there is enough matured rex, then open cdp immediately
+  
+  
+  // create cdp
   const auto id = _cdp.available_primary_key();
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
     r.acr = acr;
-    r.collateral = ZERO_EOS;
-    r.rex = ZERO_REX;
+    r.collateral = ZERO_REX;
     r.debt = ZERO_BUCK;
     r.accrued_debt = ZERO_BUCK;
     r.modified_round = 0;
     r.accrued_timestamp = get_current_time_point();
   });
   
-  // open account if doesn't exist
-  add_balance(account, ZERO_BUCK, account, false);
-  add_funds(account, ZERO_EOS, account);
-  
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
-    r.maturity_timestamp = get_maturity();
+    r.maturity_timestamp = get_amount_maturity(account, quantity);
     r.add_collateral = quantity;
     r.change_debt = ZERO_BUCK;
     r.cdp_id = id;
     r.ccr = ccr;
   });
-  
-  buy_rex(id, quantity);
   
   run(3);
 }

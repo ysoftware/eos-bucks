@@ -5,8 +5,8 @@
 CONTRACT buck : public contract {
   public:
     using contract::contract;
-    
-    buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
+         
+          buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
     ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
@@ -22,7 +22,7 @@ CONTRACT buck : public contract {
     
     // admin
     ACTION update(uint32_t eos_price);
-    ACTION process(uint8_t kind);
+    ACTION processrex();
   
     #if TEST_TIME
     ACTION zmaketime(uint64_t seconds);
@@ -36,9 +36,6 @@ CONTRACT buck : public contract {
     void notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     
   private:
-      
-    enum ProcessKind: uint8_t { bought_rex = 0, sold_rex = 1, reparam = 2, 
-                                closing = 3, redemption = 4 };
     
     enum LiquidationStatus: uint8_t { liquidation_complete = 0, failed = 1, processing_liquidation = 2 }; 
     
@@ -105,6 +102,8 @@ CONTRACT buck : public contract {
     TABLE fund {
       name  account;
       asset balance;
+      int64_t matured_rex = 0;
+      std::deque<std::pair<time_point_sec, int64_t>> rex_maturities;
       
       uint64_t primary_key() const { return account.value; }
     };
@@ -127,20 +126,10 @@ CONTRACT buck : public contract {
     };
     
     TABLE processing {
-      uint64_t  identifier; /// cpp id or redeemer account
-      asset     current_balance;
+      asset current_balance;
+      name  account;
       
-      uint64_t primary_key() const { return identifier; }
-    };
-    
-    TABLE redeem_processing {
-      uint64_t    cdp_id;
-      asset       collateral;
-      asset       rex;
-      name        account;
-      time_point  timestamp;
-      
-      uint64_t primary_key() const { return cdp_id; }
+      uint64_t primary_key() const { return 0; }
     };
     
     TABLE cdp_maturity_req {
@@ -161,7 +150,6 @@ CONTRACT buck : public contract {
       asset       debt;
       asset       accrued_debt;
       asset       collateral;
-      asset       rex;
       time_point  accrued_timestamp;
       uint32_t    modified_round;
       
@@ -213,7 +201,6 @@ CONTRACT buck : public contract {
         > cdp_maturity_req_i;
     
     typedef multi_index<"process"_n, processing> processing_i;
-    typedef multi_index<"redprocess"_n, redeem_processing> red_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, uint64_t, &cdp::debtor>>,
@@ -280,11 +267,11 @@ CONTRACT buck : public contract {
     void set_processing_status(ProcessingStatus status);
     
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
-    inline void inline_process(ProcessKind kind);
     
-    void buy_rex(uint64_t cdp_id, const asset& quantity);
-    void sell_rex(uint64_t cdp_id, const asset& quantity, ProcessKind kind);
-    void sell_rex_redeem(const asset& quantity);
+    bool check_maturity(const asset& value, const name& account);
+    void buy_rex(const name& account, const asset& quantity);
+    void sell_rex(const name& account, const asset& quantity);
+    void process_maturities(const fund_i::const_iterator& fund_itr);
     
     // getters
     uint32_t get_eos_price() const;
@@ -295,6 +282,8 @@ CONTRACT buck : public contract {
     asset get_eos_rex_balance() const;
     ProcessingStatus get_processing_status() const;
     LiquidationStatus get_liquidation_status() const;
+    time_point_sec current_time_point_sec() const;
+    time_point_sec get_amount_maturity(const name& account, const asset& quantity) const;
     
     // tables
     cdp_i               _cdp;
@@ -306,5 +295,4 @@ CONTRACT buck : public contract {
     redeem_req_i        _redeemreq;
     cdp_maturity_req_i  _maturityreq;
     processing_i        _process;
-    red_processing_i    _redprocess;
 };

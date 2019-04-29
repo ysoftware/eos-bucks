@@ -7,7 +7,7 @@ void buck::process_taxes() {
   
   // send part of collected insurance to Scruge
   const uint64_t scruge_insurance_amount = tax.collected_insurance.amount * SP / 100;
-  const auto scruge_insurance = asset(scruge_insurance_amount, EOS);
+  const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
   }
@@ -25,7 +25,7 @@ void buck::process_taxes() {
   // update excess collateral
   const auto new_total_excess = tax.total_excess + tax.changed_excess;
   const uint64_t aggregate_excess_amount = new_total_excess.amount * delta_round / BASE_ROUND_DURATION;
-  const auto aggregate_excess = asset(aggregate_excess_amount, EOS);
+  const auto aggregate_excess = asset(aggregate_excess_amount, REX);
   
   // update savings
   const auto new_total_bucks = tax.total_bucks + tax.changed_bucks;
@@ -38,7 +38,7 @@ void buck::process_taxes() {
     r.insurance_pool += tax.collected_insurance - scruge_insurance;
     r.savings_pool += tax.collected_savings - scruge_savings;
     
-    r.collected_insurance = ZERO_EOS;
+    r.collected_insurance = ZERO_REX;
     r.collected_savings = ZERO_BUCK;
     
     r.aggregated_excess += aggregate_excess;
@@ -47,14 +47,14 @@ void buck::process_taxes() {
     r.total_excess = new_total_excess;
     r.total_bucks = new_total_bucks;
     
-    r.changed_excess = ZERO_EOS;
+    r.changed_excess = ZERO_REX;
     r.changed_bucks = ZERO_BUCK;
   });
 }
 
 // add interest to savings pool
 void buck::add_savings_pool(const asset& value) {
-  if (value.amount <= 0) { return; }
+  if (value.amount <= 0) return;
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
   });
@@ -78,7 +78,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const int64_t accrued_collateral_amount = accrued_amount * IR / price;
   const int64_t accrued_debt_amount = accrued_amount * SR / 100;
   
-  const asset accrued_collateral = asset(accrued_collateral_amount, EOS);
+  const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -117,8 +117,8 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
   const int64_t dividends_amount = (uint128_t) ipa * user_aggregated_amount / aea;
   
-  const auto user_aggregated = asset(user_aggregated_amount, EOS);
-  const auto dividends = asset(dividends_amount, EOS);
+  const auto user_aggregated = asset(user_aggregated_amount, REX);
+  const auto dividends = asset(dividends_amount, REX);
   
   add_funds(cdp_itr->account, dividends, same_payer);
   

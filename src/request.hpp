@@ -12,16 +12,16 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   check(change_debt.amount != 0 || change_collateral.amount != 0, 
     "can not create empty reparametrization request");
-  
+      
   check(cdp_itr->debt.symbol == change_debt.symbol, "debt symbol mismatch");
   check(cdp_itr->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
-  
+    
   const auto account = cdp_itr->account;
   require_auth(account);
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
-  
+            
   // revert previous request to replace it with the new one
-  
+    
   const auto reparam_itr = _reparamreq.find(cdp_id);
   if (reparam_itr != _reparamreq.end()) {
     
@@ -62,7 +62,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     
     // open maturity request
     _maturityreq.emplace(account, [&](auto& r) {
-      r.maturity_timestamp = time_point_sec(0);
+      r.maturity_timestamp = get_amount_maturity(cdp_itr->account, change_collateral);
       r.add_collateral = change_collateral;
       r.change_debt = change_debt;
       r.cdp_id = cdp_id;
