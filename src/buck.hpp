@@ -9,16 +9,16 @@ CONTRACT buck : public contract {
           buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
-    ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
     ACTION withdraw(const name& from, const asset& quantity);
-    ACTION closecdp(uint64_t cdp_id);
+    ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
     ACTION changeacr(uint64_t cdp_id, uint16_t acr);
-    ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
+    ACTION close(uint64_t cdp_id);
     ACTION redeem(const name& account, const asset& quantity);
-    ACTION run(uint8_t max);
+    ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION save(const name& account, const asset& value);
     ACTION take(const name& account, const asset& value);
+    ACTION run(uint8_t max);
     
     // admin
     ACTION update(uint32_t eos_price);

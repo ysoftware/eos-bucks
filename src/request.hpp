@@ -102,7 +102,7 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   });
 }
 
-void buck::closecdp(uint64_t cdp_id) {
+void buck::close(uint64_t cdp_id) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   // to-do validation
