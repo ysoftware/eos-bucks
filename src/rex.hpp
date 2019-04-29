@@ -53,6 +53,7 @@ bool buck::is_mature(uint64_t cdp_id) const {
 }
 
 void buck::processrex(const name& account, bool bought) {
+  check(_process.begin() != _process.end(), "this action is not to be executed by a user");
   const auto rexprocess_itr = _process.begin();
   
   // user bought rex. send it to the funds
@@ -62,7 +63,6 @@ void buck::processrex(const name& account, bool bought) {
     const auto diff = current_balance - previos_balance; // REX
     add_funds(account, diff, _self);
     
-    // to-do setup maturity for this rex
     const time_point_sec maturity = get_maturity();
     auto fund_itr = _fund.require_find(account.value, "to-do should not happen? processrex");
     _fund.modify(fund_itr, same_payer, [&](auto& r) {
@@ -84,6 +84,8 @@ void buck::processrex(const name& account, bool bought) {
     const auto diff = current_balance - previos_balance; // EOS
     inline_transfer(account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
   }
+  
+  _process.erase(_process.begin());
 }
 
 void buck::buy_rex(const asset& quantity) {
