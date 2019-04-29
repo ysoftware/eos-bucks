@@ -109,7 +109,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   
   // open maturity request for collateral
   _maturityreq.emplace(account, [&](auto& r) {
-    r.maturity_timestamp = get_maturity();
+    r.maturity_timestamp = get_maturity();  // to-do use rex amount maturity
     r.add_collateral = quantity;
     r.change_debt = ZERO_BUCK;
     r.cdp_id = id;

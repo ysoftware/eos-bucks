@@ -55,7 +55,7 @@ void buck::process_taxes() {
 
 // add interest to savings pool
 void buck::add_savings_pool(const asset& value) {
-  if (value.amount <= 0) { return; }
+  if (value.amount <= 0) return;
   _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
     r.collected_savings += value;
   });
