@@ -2,6 +2,16 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+// void buck::process_maturities( const rex_balance_table::const_iterator& bitr) {
+//   const time_point_sec now = current_time_point_sec();
+//   _rexbalance.modify( bitr, same_payer, [&]( auto& rb ) {
+//     while ( !rb.rex_maturities.empty() && rb.rex_maturities.front().first <= now ) {
+//       rb.matured_rex += rb.rex_maturities.front().second;
+//       rb.rex_maturities.pop_front();
+//     }
+//   });
+// }
+
 time_point_sec buck::get_maturity() const {
   static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
   static const uint32_t r = now % seconds_per_day;
