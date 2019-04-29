@@ -29,9 +29,8 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
   #endif
   
   auto fund_itr = _fund.find(from.value);
-  process_maturities(fund_itr);
-  
   if (fund_itr != _fund.end()) {
+    process_maturities(fund_itr);
     _fund.modify(fund_itr, ram_payer, [&](auto& r) {
       r.balance += quantity;
     });
