@@ -43,12 +43,12 @@ void buck::zmaketime(uint64_t seconds) {
   time_test_i _time(_self, _self.value);
   if (_time.begin() != _time.end()) {
     _time.modify(_time.begin(), same_payer, [&](auto& r) {
-      r.now = time_point_sec(seconds);
+      r.now = time_point(time_point_sec(seconds));
     });
   }
   else {
     _time.emplace(_self, [&](auto& r) {
-      r.now = time_point_sec(seconds);
+      r.now = time_point(time_point_sec(seconds));
     });
   }
 }
