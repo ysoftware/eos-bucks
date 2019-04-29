@@ -131,15 +131,6 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return 0; }
     };
     
-    TABLE redeem_processing {
-      uint64_t    cdp_id;
-      asset       collateral;
-      name        account;
-      time_point  timestamp;
-      
-      uint64_t primary_key() const { return cdp_id; }
-    };
-    
     TABLE cdp_maturity_req {
       uint64_t        cdp_id;
       asset           change_debt;
@@ -209,7 +200,6 @@ CONTRACT buck : public contract {
         > cdp_maturity_req_i;
     
     typedef multi_index<"process"_n, processing> processing_i;
-    typedef multi_index<"redprocess"_n, redeem_processing> red_processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
       indexed_by<"debtor"_n, const_mem_fun<cdp, uint64_t, &cdp::debtor>>,
@@ -303,5 +293,4 @@ CONTRACT buck : public contract {
     redeem_req_i        _redeemreq;
     cdp_maturity_req_i  _maturityreq;
     processing_i        _process;
-    red_processing_i    _redprocess;
 };

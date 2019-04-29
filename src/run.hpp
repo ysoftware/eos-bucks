@@ -246,13 +246,6 @@ void buck::run_requests(uint8_t max) {
           redeem_quantity -= using_debt + using_accrued_debt;
           collateral_return += using_collateral;
           
-          // to receive dividends after selling rex
-          _redprocess.emplace(_self, [&](auto& r) {
-            r.account = redeem_itr->account;
-            r.cdp_id = debtor_itr->id;
-            r.collateral = using_collateral;
-          });
-          
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
             r.accrued_debt -= using_accrued_debt;
@@ -275,15 +268,7 @@ void buck::run_requests(uint8_t max) {
         add_savings_pool(saved_debt);
         update_supply(burned_debt);
         
-        if (collateral_return.amount == 0) {
-    
-          // to-do completely failed to redeem. what to do?
-          redeem_itr = _redeemreq.erase(redeem_itr);
-        }
-        else {
-          add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
-          redeem_itr++; // this request will be removed in process method
-        }
+        add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
       }
       else {
         // no more redemption requests

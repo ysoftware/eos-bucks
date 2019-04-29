@@ -148,62 +148,10 @@ bool buck::is_mature(uint64_t cdp_id) const {
 //     _reparamreq.erase(reparam_itr);
 //   }
 //   else if (kind == ProcessKind::redemption) {
-//     const auto redeem_itr = _redeemreq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find the redemption request");
-//     const auto gained_collateral = rexprocess_itr->current_balance;
-//     _process.erase(rexprocess_itr);
-    
-//     // determine total collateral
-//     asset total_collateral = ZERO_EOS;
-//     asset total_rex = ZERO_REX;
-//     for (auto& redprocess_item: _redprocess) {
-//       if (redprocess_item.account == redeem_itr->account) {
-//         total_collateral += redprocess_item.collateral;
-//         total_rex += redprocess_item.rex;
-//       }
-//     }
-//     const asset dividends = gained_collateral - total_collateral;
-    
-//     // go through all redeem processing rexprocess_itrs and give dividends to cdps pro rata
-//     auto process_itr = _redprocess.begin();
-//     while (process_itr != _redprocess.end()) {
-//       if (process_itr->account != redeem_itr->account) {
-//         process_itr++;
-//         continue;
-//       }
-      
-//       const uint64_t cdp_dividends_amount = process_itr->rex.amount * dividends.amount / total_rex.amount;
-//       const asset cdp_dividends = asset(cdp_dividends_amount, EOS);
-      
-//       const auto cdp_itr = _cdp.require_find(process_itr->cdp_id, "to-do: remove. could not find cdp (redemption)");
-      
-//       if (cdp_dividends.amount > 0) {
-//         add_funds(cdp_itr->account, cdp_dividends, same_payer);
-//       }
-      
-//       process_itr = _redprocess.erase(process_itr);
-//     }
-    
-//     _redeemreq.erase(redeem_itr);
-//   }
+
 //   else if (kind == ProcessKind::closing) {
-//     const auto gained_collateral = rexprocess_itr->current_balance;
-//     _process.erase(rexprocess_itr);
-    
-//     // to-do check if right
-//     if (cdp_itr->debt.amount == 0) {
-//       withdraw_insurance_dividends(cdp_itr);
-//       update_excess_collateral(-cdp_itr->collateral);
-//     }
-    
-//     const auto close_itr = _closereq.require_find(rexprocess_itr->identifier, "to-do: remove. could not find cdp (closing)");
-//     _closereq.erase(close_itr);
-//     _cdp.erase(cdp_itr);
-    
-//     if (gained_collateral.amount > 0) {
-//       add_funds(cdp_itr->account, gained_collateral, same_payer); // to-do receipt
-//     }
-//   }
-// }
+
+
 
 void buck::processrex(const name& account, bool bought) {
   const auto rexprocess_itr = _process.begin();
