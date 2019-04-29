@@ -6,7 +6,6 @@
 import unittest
 from eosfactory.eosf import *
 from methods import *
-from time import sleep
 import test
 import string
 
@@ -70,15 +69,12 @@ class Test(unittest.TestCase):
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
 
-		sleep(2) # wait for maturity
-
 		update(buck, price)
 		run(buck)
 		run(buck)
 		run(buck)
 
 		self.compare(buck, cdp_table)
-
 
 		COMMENT("Liquidation sorting")
 
@@ -106,17 +102,14 @@ class Test(unittest.TestCase):
 		update(buck, price)
 		run(buck)
 
-		print("liquidation complete")
-		test.print_table(cdp_table)
-		table(buck, "cdp")
-
+		COMMENT("liquidation complete")
 		self.compare(buck, cdp_table)
 
 		# to-do check if liquidation even took place?
 
 
 	def match(self, cdp, row):
-		# print(cdp)
+		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
