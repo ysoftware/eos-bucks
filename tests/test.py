@@ -333,7 +333,7 @@ def redemption(table, amount, price, cr, rf):
 						return table
 					elif amount < cdp.debt:
 						cdp.add_debt(-amount)
-						cdp.add_collateral(-(amount*100)//(price+rf))
+						cdp.add_collateral((amount*100)//(price+rf))
 						if cdp.collateral <0 or cdp.debt <0:
 							print("5")
 							exit()
