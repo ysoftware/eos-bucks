@@ -110,7 +110,7 @@ void buck::buy_rex(const name& account, const asset& quantity) {
 	
 	action(permission_level{ _self, "active"_n }, 
   	_self, "processrex"_n, 
-  	std::make_tuple(account, true)
+  	std::make_tuple()
 	).send();
 }
 
@@ -130,7 +130,7 @@ void buck::sell_rex(const name& account, const asset& quantity) {
 	
   action(permission_level{ _self, "active"_n }, 
     _self, "processrex"_n, 
-    std::make_tuple(account, false)
+    std::make_tuple()
   ).send();
 
 }
