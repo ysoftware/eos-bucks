@@ -87,20 +87,23 @@ void buck::run_requests(uint8_t max) {
         // adding collateral
         if (reparam_itr->change_collateral.amount > 0) {
           change_collateral = reparam_itr->change_collateral;
-          const auto maturity_itr = _maturityreq.require_find(cdp_itr->id, "to-do: remove. could not find maturity (run)");
-
-          if (true) { // to-do check maturity 
-            shouldWaitMaturity = true;
           
-            // get maturity request
-            _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-              r.add_collateral = change_collateral;
-              r.cdp_id = cdp_itr->id;
-              r.change_debt = change_debt;
-            });
-          }
-          else {
-            _maturityreq.erase(maturity_itr);
+          const auto maturity_itr = _maturityreq.find(cdp_itr->id);
+
+          if (maturity_itr != _maturityreq.end()) {
+            if (maturity_itr->maturity_timestamp < oracle_timestamp) {
+              shouldWaitMaturity = true;
+            
+              // get maturity request
+              _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
+                r.add_collateral = change_collateral;
+                r.cdp_id = cdp_itr->id;
+                r.change_debt = change_debt;
+              });
+            }
+            else {
+              _maturityreq.erase(maturity_itr);
+            }
           }
         }
         

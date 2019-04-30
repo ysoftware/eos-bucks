@@ -5,6 +5,7 @@
 
 import unittest
 from eosfactory.eosf import *
+import eosfactory.core.setup as setup 
 from methods import *
 import test
 import string
@@ -18,6 +19,7 @@ CONTRACT_WORKSPACE = "eos-buck"
 class Test(unittest.TestCase):
 
 	# setup
+	setup.is_raise_error = True
 
 	@classmethod
 	def tearDownClass(cls):
@@ -153,7 +155,7 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		# print(cdp)
+		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
