@@ -339,16 +339,24 @@ def redemption(amount, price, cr, rf):
 						i -= 1
 	return 
 	
-def reparametrize(id, c, d, price):
+def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
+
+
+	# verify change with old price first (request creation step)
+	new_col = cdp.collateral + c
+	new_debt = cdp.debt + d
+	new_ccr = new_col * old_price / new_debt
+	print("new ccr", new_ccr)
+
+	if new_ccr < CR:
+		return False
+
+
 	cdp = add_tax(cdp, price)
-	# if cdp.debt < 0 or cdp.collateral < 0:
-	# 			print("reparam problem")
-	# 			print(cdp.debt)
-	# 			print(cdp.collateral)
-	# 			exit()
+	# if cdp.debt < 0 or cdp.collat
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
@@ -379,9 +387,6 @@ def reparametrize(id, c, d, price):
 		cdp.new_cd(9999999)
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
-	# if cdp.collateral <0 or cdp.debt <0:
-	# 					print("4")
-	# 					exit()
 	cdp_insert(cdp)
 	return table
 	
@@ -449,7 +454,7 @@ def run_round():
 		if cdp_index(i) != False:
 			v1 = random.randrange(-1000000,10000000,10000)
 			v2 = random.randrange(-1000000,10000000,10000)
-			failed = reparametrize(i, v1, v2, price)
+			failed = reparametrize(i, v1, v2, price, old_price)
 			actions.append([["reparam", i, v1, v2], failed != False])
 			k -= 1
 		if k == 0:

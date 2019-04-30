@@ -124,7 +124,7 @@ class Test(unittest.TestCase):
 					debt = asset(action[0][3], "BUCK")
 
 					if action[1] == False:
-						self.assertRaises(lambda: reparam(buck, user1, cdp, debt, col))
+						assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
 					else: reparam(buck, user1, cdp, debt, col)
 
 				elif action[0][0] == "acr":
@@ -132,14 +132,14 @@ class Test(unittest.TestCase):
 					acr = action[0][2]
 
 					if action[1] == False:
-						self.assertRaises(lambda: changeacr(buck, user1, cdp, acr))
+						assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
 					else: changeacr(buck, user1, cdp, acr)
 
 				elif action[0][0] == "redeem":
 					quantity = asset(action[0][1], "BUCK")
 
 					if action[1] == False:
-						self.assertRaises(lambda: redeem(buck, user1, quantity))
+						assertRaises(self, lambda: redeem(buck, user1, quantity))
 					else: redeem(buck, user1, quantity)
 
 			maketime(buck, round_time)
