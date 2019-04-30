@@ -249,7 +249,7 @@ void buck::run_requests(uint8_t max) {
           
           const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
-          const int64_t using_collateral_amount = using_debt_amount / (convert_to_rex_usd(1) + RF);
+          const int64_t using_collateral_amount = convert_to_usd_rex(using_debt_amount, RF);
           
           const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
           const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
@@ -350,7 +350,7 @@ void buck::run_liquidation(uint8_t max) {
       else { liquidation_fee = debtor_ccr - 100; }
       
       const int64_t x = (100 + liquidation_fee) 
-                          * (750 * debt_amount - 5 * convert_to_rex_usd(collateral_amount))
+                          * (750 * debt_amount - convert_to_rex_usd(5 * collateral_amount))
                           / (50000 - 1500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
@@ -391,7 +391,7 @@ void buck::run_liquidation(uint8_t max) {
                                   / (liquidator_acr * (100 - liquidation_fee) - 10000);
       
       const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
-      const int64_t value2 = used_debt_amount * 10000 / (convert_to_rex_usd(1) * (100 - liquidation_fee));
+      const int64_t value2 = used_debt_amount * 10000 / (convert_to_rex_usd(100 - liquidation_fee));
       const int64_t used_collateral_amount = std::min(collateral_amount, value2);
       
       // to-do check rounding

@@ -288,6 +288,7 @@ CONTRACT buck : public contract {
     
     // getters
     int64_t convert_to_rex_usd(int64_t quantity) const;
+    int64_t convert_to_usd_rex(int64_t quantity, int64_t tax) const;
     uint32_t get_eos_usd_price() const;
     asset get_rex_balance() const;
     asset get_eos_rex_balance() const;
