@@ -2,6 +2,7 @@ import random
 from math import exp
 from math import ceil
 
+table = []
 CR = 150 # collateral ratio
 LF = 10 # Liquidation Fee
 IR = 20 # insurance ratio
@@ -20,8 +21,8 @@ def time_now(time_last):
 	global time
 	time = random.randint(time_last, time_last + 7884 * 10 ** 3) # adding 3 months
 	return time
- 
- 
+
+def epsilon(value): return value // 500
 
 
 class CDP:
@@ -51,8 +52,6 @@ class CDP:
 	def new_time(self, time_new):
 		self.time = time_new
 
-def epsilon(value):
-	return value // 500
 		
 	
 # Functions for generation of sorted CDPs with random values
@@ -93,13 +92,16 @@ def generate_debtors(k, n, price, t):
 
 
 def gen(k, n, price, t):
+	global table
 	liquidators = generate_liquidators(k, t)
 	debtors = generate_debtors(k, n, price, t)
-	return liquidators + debtors
+	table = liquidators + debtors
 
 # Function for inserting CDP into the table
 	
-def cdp_insert(table, cdp):
+def cdp_insert(cdp):
+	global table
+
 	if table == []:
 		return [cdp]
 	c = cdp.collateral
@@ -108,43 +110,44 @@ def cdp_insert(table, cdp):
 	cd = cdp.cd
 	len_table = len(table)
 	if (d <= epsilon(d)) and acr == 0:
-		return table
+		return 
 	elif (d <= epsilon(d)) and acr != 0:
 		for i in range(0,len_table):
 			cdp2 = table[i]
 			d2 = cdp2.debt
 			if d2 >= epsilon(d):
 				table.insert(i,cdp)
-				return table	
+				return 
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
 			if acr2 == 0:
 				table.insert(i, cdp)
-				return table
+				return 
 			else:
 				if cd  > cd2:
 					table.insert(i,cdp)
-					return table
+					return
 		table.append(cdp)
-		return table
+		return 
 	else:
 		for i in range(len(table)-1, -1, -1):
 			cdp2 = table[i]
 			d2 = cdp2.debt
 			if d2 <= epsilon(d2):
 				table.insert(i+1,cdp)
-				return table
+				return 
 			c2 = cdp2.collateral
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
 			if cd < cd2:
 				table.insert(i+1, cdp)
-				return table
+				return 
 		table.insert(0,cdp)
-		return table
+		return 
 	
 # Function for pulling out CDP from the table by querying its ID
-def cdp_index(table, id):
+def cdp_index(id):
+	global table
 	if len(table) == 0:
 		return False
 	for i in range(0, len(table)):
@@ -152,24 +155,15 @@ def cdp_index(table, id):
 			return i
 	return False
 
-			
-			
-			
-def print_table(table):
+
+def print_table():
+	global table
 	if table == []:
 		print("table is empty")
 	else:
 		for i in range(0,len(table)):
 			print(table[i])	
 			
-			
-
-		
-			
-
-
-		
-
 # Helper functions for calculations
 
 def calc_ccr(cdp, price):
@@ -194,8 +188,7 @@ def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	val = (cr-ccr)*cdp.debt // 100+x_value(cdp.debt, lf, cdp.collateral, price)
 	return val
-	
-	
+		
 def calc_val(cdp, cdp2, price, cr, lf):
 	l = calc_lf(cdp, price, cr, lf)
 	c = cdp2.collateral
@@ -237,10 +230,10 @@ def add_tax(cdp, price):
 	
 # Contract functions
 
-def liquidation(table, price, cr, lf):	
-		global TEC
+def liquidation(price, cr, lf):	
+		global TEC, table
 		if table == []:
-			return table
+			return
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
@@ -251,15 +244,15 @@ def liquidation(table, price, cr, lf):
 				print(debtor.collateral)
 				exit()
 			if debtor.debt == 0:
-				return table
+				return 
 			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 				table.append(debtor)
-				return table
+				return 
 			else:
 				if table[i].acr == 0:
 					if i == len(table)-1:
 						table.append(debtor)
-						return table
+						return 
 					else:
 						i += 1
 						table.append(debtor)
@@ -298,15 +291,15 @@ def liquidation(table, price, cr, lf):
 						liquidator.new_cd(9999999)
 					else:
 						liquidator.new_cd(liquidator.collateral * 100 // liquidator.debt)
-					table = cdp_insert(table, liquidator)
+					cdp_insert(liquidator)
 					if debtor.debt >= 10:
-						table = cdp_insert(table, debtor)
+						cdp_insert(debtor)
 					if i == len(table):
-						return table
-		return table
+						return 
+		return 
 
-def redemption(table, amount, price, cr, rf):
-	global time
+def redemption(amount, price, cr, rf):
+	global time, table
 	i = len(table)-1
 	while amount > epsilon(amount) and i != -1:
 			cdp = table.pop(i)
@@ -316,13 +309,13 @@ def redemption(table, amount, price, cr, rf):
 				print(cdp)
 				exit()
 			if cdp.debt <= 50:
-				table = cdp_insert(table,cdp)
-				return table
+				cdp_insert(cdp)
+				return 
 			else:
 				if cdp.collateral * price // cdp.debt >= 100 - rf:
 					if cdp.debt <= epsilon(cdp.debt):
-						table = cdp_insert(table,cdp)
-						return table
+						cdp_insert(cdp)
+						return 
 					elif amount < cdp.debt:
 						cdp.add_debt(-amount)
 						cdp.add_collateral((amount*100)//(price+rf))
@@ -331,8 +324,8 @@ def redemption(table, amount, price, cr, rf):
 							exit()
 						amount = 0
 						cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-						table = cdp_insert(table,cdp)
-						return table
+						cdp_insert(cdp)
+						return 
 					else:
 						d = cdp. debt
 						cdp.new_debt(0)
@@ -345,11 +338,11 @@ def redemption(table, amount, price, cr, rf):
 							exit()
 						amount -= d
 						i -= 1
-	return table
+	return 
 	
-def reparametrize(table, id, c, d, cr, price):	
+def reparametrize(id, c, d, cr, price):	
 	global TEC
-	cdp = table.pop(cdp_index(table, id))
+	cdp = table.pop(cdp_index(id))
 	cdp = add_tax(cdp, price)
 	if cdp.debt < 0 or cdp.collateral < 0:
 				print("reparam problem")
@@ -389,12 +382,12 @@ def reparametrize(table, id, c, d, cr, price):
 	if cdp.collateral <0 or cdp.debt <0:
 						print("4")
 						exit()
-	table = cdp_insert(table,cdp)
+	cdp_insert(cdp)
 	return table
 	
-def change_acr(table, id, acr, price):
-	global TEC
-	cdp = table.pop(cdp_index(table,id))
+def change_acr(id, acr, price):
+	global TEC, table
+	cdp = table.pop(cdp_index(id))
 	cdp = add_tax(cdp, price)
 	if cdp.debt < 0 or cdp.collateral <  0:
 				print("acr")
@@ -406,8 +399,8 @@ def change_acr(table, id, acr, price):
 	cdp.new_acr(acr)
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC += cdp.collateral * 100 // cdp.acr
-	table = cdp_insert(table, cdp)
-	return table
+	cdp_insert(cdp)
+	return 
 			
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC
@@ -423,8 +416,8 @@ def update_round():
 
 
 # returns [time, [{action, failed?}], table]
-def run_round(table):
-	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price
+def run_round():
+	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
 
 	time = time_now(1556463885)
 	oracle_time = time 
@@ -434,7 +427,7 @@ def run_round(table):
 	old_price = price
 	price = random.randint(100, 1000)
 
-	print(f"\nnew round: time: {time}, price: {price}")
+	print(f"\nnew time: {time}, price: {price}")
 
 	time = time_now(time)
 	update_round()
@@ -443,36 +436,38 @@ def run_round(table):
 	if length == 0: return # empty 
 
 	if price < old_price:
-		table = liquidation(table, price, 150, 10)
+		liquidation(price, 150, 10)
 	k = 10
 	for i in range(0, random.randint(0, length-1) ):
-		if cdp_index(table, i) != False:
-			table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+		if cdp_index(i) != False:
+			reparametrize(i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
 			k -= 1
 		if k == 0:
 			break
 	k = 10
 	for i in range(0, random.randint(0, length - 1)):
-		if cdp_index(table, i) != False:
-			table = change_acr(table, i, random.randint(150,1000), price)
+		if cdp_index(i) != False:
+			change_acr(i, random.randint(150,1000), price)
 			k -= 1
 		if k == 0:
 			break
-	table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+	redemption(random.randrange(1000000,100000000,10000), price, 150, 101)
 
 
-for i in range(0, 100):
+for i in range(0, 1):
 	time = time_now(1556463885)
-	price = 100
-	print(f"start: time: {time}, price: {price}")
+	price = random.randint(100, 1000)
+	print(f"start time: {time}, price: {price}")
 
-	d = random.randint(5, 100)
-	l = random.randint(d, d*2)
-	table = gen(d, l, price, time)
+	d = random.randint(5, 10)
+	l = random.randint(int(d * 2), int(d * 4))
 
-	for i in range(3, random.randint(0, 10)):
-		run_round(table)
-		print_table(table)
+	gen(d, l, price, time)
+	print_table()
+
+	for i in range(3, random.randint(3, 10)):
+		run_round()
+		print_table()
 
 	print("\n\n")
 
@@ -482,7 +477,7 @@ def random_test(k, n, round):
 
 	time = time_now(1556463885) # generating random time between now and 3 months after
 	price = random.randint(100, 1000)
-	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
+	gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
 	length = len(table)
 	oracle_time = time
 	for i in range(0, round): # round is the number of rounds for the random walk
@@ -491,22 +486,22 @@ def random_test(k, n, round):
 		time = time_now(time)
 		update_round()
 		if price < old_price:
-			table = liquidation(table, price, 150, 10)
+			liquidation(table, price, 150, 10)
 		k = 10
-		for i in range(0, random.randint(0,length-1) ):
-			if cdp_index(table, i) != False:
-				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+		for i in range(0, random.randint(0,length-1)):
+			if cdp_index(i) != False:
+				reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
 				k -= 1
 			if k == 0:
 				break
 		k = 10
 		for i in range(0, random.randint(0, length - 1)):
-			if cdp_index(table, i) != False:
-				table = change_acr(table, i, random.randint(150,1000), price)
+			if cdp_index(i) != False:
+				change_acr(table, i, random.randint(150,1000), price)
 				k -= 1
 			if k == 0:
 				break
-		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+		redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
 		print_table(table)
 
 
