@@ -51,7 +51,7 @@ void buck::run_requests(uint8_t max) {
       
         close_itr = _closereq.erase(close_itr);
         did_work = true;
-    }
+      }
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {

@@ -25,14 +25,6 @@ void buck::zdestroy() {
   RMS(accounts_i, "scrugescruge"_n.value)
 }
 #else
-
-// disable all other test flags if DEBUG is disabled
-#undef REX_TESTING
-#define REX_TESTING false
-#undef TEST_TIME
-#define TEST_TIME false
-
-// print does nothing
 #define PRINT(x, y) 
 #define PRINT_(x)
 #endif

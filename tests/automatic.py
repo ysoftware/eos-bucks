@@ -110,7 +110,7 @@ class Test(unittest.TestCase):
 		COMMENT("Start rounds")
 
 		# rounds
-		for i in range(0, 2):
+		for i in range(0, 20):
 
 			# actions
 			result = test.run_round()
@@ -145,10 +145,19 @@ class Test(unittest.TestCase):
 					else: redeem(buck, user1, quantity)
 
 			maketime(buck, round_time)
+
+			table(buck, "testtime")
+			table(buck, "stat")
+			table(buck, "maturityreq")
+			table(buck, "reparamreq")
+			table(buck, "redeemreq")
+			print("new price", test.get_price())
+
 			update(buck, test.get_price())
 			run(buck)
 			run(buck)
 			run(buck)
+
 
 			self.compare(buck, cdp_table)
 

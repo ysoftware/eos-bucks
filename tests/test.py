@@ -350,10 +350,11 @@ def reparametrize(id, c, d, price, old_price):
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
 
-	print("reparam", "c", c, "d", d)
+	print("reparam")
 	print(cdp)
+	print(new_col, new_debt, new_ccr)
 
-	if new_ccr < CR or new_col < 5 or new_debt < 50: 
+	if (new_ccr < CR and new_debt != 0) or new_col < 5 or (new_debt < 50 and new_debt != 0):
 		print("should fail at request\n")
 		return False
 
@@ -363,9 +364,9 @@ def reparametrize(id, c, d, price, old_price):
 	if d < 0:
 		if cdp.debt + d > 50000 + epsilon(50000):
 			cdp.add_debt(d)
-	elif c > 0:
+	if c > 0:
 		cdp.add_collateral(c)
-	elif c < 0:
+	if c < 0:
 		if cdp.collateral + c > 5 + epsilon(5):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
@@ -374,7 +375,7 @@ def reparametrize(id, c, d, price, old_price):
 					return
 				else:
 					cdp.add_collateral(-(min(-c, (cr-100) * cdp.debt // price)))
-	elif d > 0:
+	if d > 0:
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
@@ -389,9 +390,7 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-
-	print(cdp)
-	print(f"complete {cdp.id}\n")
+	print("\n")
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
@@ -444,6 +443,7 @@ def run_round():
 	if price < old_price:
 		liquidation(price, 150, 10)
 	k = 10
+
 	for i in range(0, random.randint(0, length - 1)):
 		if cdp_index(i) != False:
 			acr = random.randint(150,1000)
@@ -453,6 +453,7 @@ def run_round():
 		if k == 0:
 			break
 	k = 10
+
 	for i in range(0, random.randint(0, length-1) ):
 		if cdp_index(i) != False:
 			v1 = random.randrange(-1000000,10000000,10000)
@@ -462,9 +463,10 @@ def run_round():
 			k -= 1
 		if k == 0:
 			break
-	v1 = random.randrange(1000000,100000000,10000)
-	failed = redemption(v1, price, 150, 101)
-	actions.append([["redeem", v1], failed != False])
+
+	# v1 = random.randrange(1000000,100000000,10000)
+	# failed = redemption(v1, price, 150, 101)
+	# actions.append([["redeem", v1], failed != False])
 
 	return [time, actions]
 
@@ -488,5 +490,5 @@ def init(x=10):
 
 
 
-init()
-run_round()
+# init()
+# run_round()

@@ -19,7 +19,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   const auto account = cdp_itr->account;
   require_auth(account);
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
-            
+  
   // revert previous request to replace it with the new one
     
   const auto reparam_itr = _reparamreq.find(cdp_id);
@@ -46,8 +46,16 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // to-do what if wants to become insurer (0 debt)?
   
-  check(new_debt > MIN_DEBT, "can not reparametrize debt below the limit");
-  check(new_collateral > MIN_COLLATERAL, "can not reparametrize debt below the limit");
+  PRINT("new_debt", new_debt)
+  PRINT("new_collateral", new_collateral)
+  
+  if (new_debt.amount > 0) {
+    const auto ccr = convert_to_rex_usd(new_collateral.amount) / new_debt.amount;
+    check(ccr > CR, "can not reparametrize below 150% CCR");
+  }
+  
+  check(new_debt > MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
+  check(new_collateral > MIN_COLLATERAL, "can not reparametrize collateral below the limit");
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
