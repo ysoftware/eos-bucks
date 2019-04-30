@@ -33,6 +33,18 @@ time_point_sec buck::get_maturity() const {
   return rms;
 }
 
+int64_t buck::convert_to_rex_usd(int64_t quantity) const {
+  rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
+  const auto pool_itr = _pool.begin();
+  if (pool_itr == _pool.end()) { return quantity * 100; } // test net case (1 rex = 1 eos)
+  
+  const int64_t S0 = pool_itr->total_lendable.amount;
+  const int64_t R0 = pool_itr->total_rex.amount;
+  const int64_t EU = get_eos_usd_price();
+  const int64_t p  = (uint128_t(quantity) * S0) / R0 / EU;
+  return p;
+}
+
 asset buck::get_rex_balance() const {
   rex_balance_i _balance(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto balance_itr = _balance.find(_self.value);

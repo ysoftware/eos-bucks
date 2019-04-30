@@ -229,9 +229,23 @@ CONTRACT buck : public contract {
 
       uint64_t primary_key() const { return owner.value; }
     };
-
+    
+    struct rex_pool {
+      uint8_t    version;
+      asset      total_lent; /// total amount of CORE_SYMBOL in open rex_loans
+      asset      total_unlent; /// total amount of CORE_SYMBOL available to be lent (connector)
+      asset      total_rent; /// fees received in exchange for lent  (connector)
+      asset      total_lendable; /// total amount of CORE_SYMBOL that have been lent (total_unlent + total_lent)
+      asset      total_rex; /// total number of REX shares allocated to contributors to total_lendable
+      asset      namebid_proceeds; /// the amount of CORE_SYMBOL to be transferred from namebids to REX pool
+      uint64_t   loan_num; /// increments with each new loan
+      
+      uint64_t primary_key() const { return 0; }
+    };
+  
     typedef multi_index<"rexbal"_n, rex_balance> rex_balance_i;
     typedef multi_index<"rexfund"_n, rex_fund> rex_fund_i;
+    typedef multi_index<"rexpool"_n, rex_pool> rex_pool_i;
     
     // test time
     
@@ -268,21 +282,21 @@ CONTRACT buck : public contract {
     
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     
-    bool check_maturity(const asset& value, const name& account);
     void buy_rex(const name& account, const asset& quantity);
     void sell_rex(const name& account, const asset& quantity);
     void process_maturities(const fund_i::const_iterator& fund_itr);
     
     // getters
-    uint32_t get_eos_price() const;
-    time_point get_current_time_point() const;
-    bool is_mature(uint64_t cdp_id) const;
-    time_point_sec get_maturity() const;
+    int64_t convert_to_rex_usd(int64_t quantity) const;
+    uint32_t get_eos_usd_price() const;
     asset get_rex_balance() const;
     asset get_eos_rex_balance() const;
     ProcessingStatus get_processing_status() const;
     LiquidationStatus get_liquidation_status() const;
+    time_point get_current_time_point() const;
     time_point_sec current_time_point_sec() const;
+    time_point_sec get_maturity() const;
+    bool is_mature(uint64_t cdp_id) const;
     time_point_sec get_amount_maturity(const name& account, const asset& quantity) const;
     
     // tables

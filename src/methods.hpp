@@ -7,14 +7,6 @@ time_point_sec buck::current_time_point_sec() const {
   return cts;
 }
 
-/// returns if this amount of rex is matured for this user
-bool buck::check_maturity(const asset& value, const name& account) {
-  
-  // to-do
-  
-  return true;
-}
-
 inline time_point buck::get_current_time_point() const {
   #if TEST_TIME
   time_test_i _time(_self, _self.value);
