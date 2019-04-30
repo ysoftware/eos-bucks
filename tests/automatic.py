@@ -56,6 +56,7 @@ class Test(unittest.TestCase):
 	def test(self):
 		MATURE = 60 * 60 * 24 * 5 + 1
 
+		##################################
 		COMMENT("Initialize")
 
 		# transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
@@ -71,12 +72,12 @@ class Test(unittest.TestCase):
 		maketime(buck, test.get_time())
 		update(buck, test.get_price())
 
-		test.print_table()
 
+		##################################
 		COMMENT("Open CDP")
 		cdp_table = test.table
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
-			print(cdp)
+			# print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
@@ -87,16 +88,7 @@ class Test(unittest.TestCase):
 		self.compare(buck, cdp_table)
 
 
-		COMMENT("Start rounds")
-
-		actions = test.run_round()
-		print(actions)
-
-		update(buck, test.get_price())
-		run(buck)
-		run(buck)
-
-		
+		##################################
 		COMMENT("Liquidation sorting")
 		
 		top_debtors = get_debtors(buck, limit=20)
@@ -112,12 +104,56 @@ class Test(unittest.TestCase):
 			self.match(cdp_table[i], liquidator)
 
 
-		self.compare(buck, cdp_table)
+		##################################
+		COMMENT("Start rounds")
+
+		# rounds
+		for i in range(0, 2):
+
+			# actions
+			result = test.run_round()
+			round_time = result[0]
+			actions = result[1]
+
+			for action in actions:
+				print(action)
+
+				if action[0][0] == "reparam":
+					cdp = action[0][1]
+					col = action[0][2]
+					debt = action[0][3]
+
+					if action[1] == False:
+						self.assertRaises(lambda: reparam(buck, user1, cdp, debt, col))
+					else: reparam(buck, user1, cdp, debt, col)
+
+				elif action[0][0] == "acr":
+					cdp = action[0][1]
+					acr = action[0][2]
+
+					if action[1] == False:
+						self.assertRaises(lambda: changeacr(buck, user1, cdp, acr))
+					else: changeacr(buck, user1, cdp, acr)
+
+				elif action[0][0] == "redeem":
+					quantity = action[0][1]
+
+					if action[1] == False:
+						self.assertRaises(lambda: redeem(buck, user1, quantity))
+					else: redeem(buck, user1, quantity)
+
+			maketime(buck, round_time)
+			update(buck, test.get_price())
+			run(buck)
+			run(buck)
+			run(buck)
+
+			self.compare(buck, cdp_table)
 
 
 
 	def match(self, cdp, row):
-		print(cdp)
+		# print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")

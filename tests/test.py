@@ -425,7 +425,7 @@ def run_round():
 	old_price = price
 	price = random.randint(100, 1000)
 
-	print(f"\nnew time: {time}, price: {price}")
+	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
 	time = time_now(time)
 	update_round()
@@ -440,7 +440,7 @@ def run_round():
 		if cdp_index(i) != False:
 			acr = random.randint(150,1000)
 			failed = change_acr(i, acr, price)
-			actions += [["acr", i, acr], failed != False]
+			actions.append([["acr", i, acr], failed != False])
 			k -= 1
 		if k == 0:
 			break
@@ -450,15 +450,15 @@ def run_round():
 			v1 = random.randrange(-1000000,10000000,10000)
 			v2 = random.randrange(-1000000,10000000,10000)
 			failed = reparametrize(i, v1, v2, price)
-			actions += [["reparam", i, v1, v2], failed != False]
+			actions.append([["reparam", i, v1, v2], failed != False])
 			k -= 1
 		if k == 0:
 			break
 	v1 = random.randrange(1000000,100000000,10000)
 	failed = redemption(v1, price, 150, 101)
-	actions += [["redeem", v1], failed != False]
+	actions.append([["redeem", v1], failed != False])
 
-	return [time, [actions]]
+	return [time, actions]
 
 
 def get_time():
@@ -476,6 +476,8 @@ def init(x=10):
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
 	gen(d, l, price, time)
+	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
 
-# init()
+
+
 # print_table()

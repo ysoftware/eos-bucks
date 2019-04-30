@@ -15,6 +15,8 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
+  PRINT_("requests")
+  
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   uint8_t status = get_processing_status();
   
@@ -35,6 +37,7 @@ void buck::run_requests(uint8_t max) {
 
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
+        PRINT_("close req")
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         
@@ -52,6 +55,7 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
+        PRINT_("reparam req")
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
@@ -160,6 +164,7 @@ void buck::run_requests(uint8_t max) {
       
       // maturity requests (issue bucks, add/remove cdp debt, add collateral)
       if (maturity_itr != maturity_index.end()) {
+        PRINT_("maturity req")
         
         // look for a first valid request
         while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
@@ -229,6 +234,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
+        PRINT_("redeem req")
         
         // to-do sorting
         // to-do verify timestamp
@@ -315,6 +321,9 @@ void buck::run_liquidation(uint8_t max) {
   
   auto debtor_itr = debtor_index.begin();
   
+
+  PRINT_("liquidation")
+
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
