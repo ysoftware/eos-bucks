@@ -120,8 +120,8 @@ class Test(unittest.TestCase):
 
 				if action[0][0] == "reparam":
 					cdp = action[0][1]
-					col = action[0][2]
-					debt = action[0][3]
+					col = asset(action[0][2], "REX")
+					debt = asset(action[0][3], "BUCK")
 
 					if action[1] == False:
 						self.assertRaises(lambda: reparam(buck, user1, cdp, debt, col))
@@ -136,7 +136,7 @@ class Test(unittest.TestCase):
 					else: changeacr(buck, user1, cdp, acr)
 
 				elif action[0][0] == "redeem":
-					quantity = action[0][1]
+					quantity = asset(action[0][1], "BUCK")
 
 					if action[1] == False:
 						self.assertRaises(lambda: redeem(buck, user1, quantity))
