@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin.
 
 time_point_sec buck::current_time_point_sec() const {
-  const static time_point_sec cts{ current_time_point() };
+  const static time_point_sec cts{ get_current_time_point() };
   return cts;
 }
 

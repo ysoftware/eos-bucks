@@ -162,8 +162,8 @@ void buck::run_requests(uint8_t max) {
       if (maturity_itr != maturity_index.end()) {
         
         // look for a first valid request
-        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < oracle_timestamp && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0)) { maturity_itr++; }
-        if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < oracle_timestamp && time_point_sec(maturity_itr->maturity_timestamp).utc_seconds != 0) {
+        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
+        if (maturity_itr != maturity_index.end()) {
           
           // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
           const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");

@@ -125,7 +125,7 @@ CONTRACT buck : public contract {
       uint64_t primary_key() const { return cdp_id; }
     };
     
-    TABLE processing {
+    struct processing {
       asset current_balance;
       name  account;
       
