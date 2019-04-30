@@ -97,6 +97,12 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   require_auth(cdp_itr->account);
   
+  // remove excess collateral
+  
+  
+  
+  // add excess collateral
+  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.acr = acr;
   });

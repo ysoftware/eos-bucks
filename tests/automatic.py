@@ -56,43 +56,47 @@ class Test(unittest.TestCase):
 	def test(self):
 		MATURE = 60 * 60 * 24 * 5 + 1
 
-		# initialize
+		COMMENT("Initialize")
+
+		# transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
+
 		destroy(buck)
-
-		time = 0
-		maketime(buck, time)
-
-		price = 100
-		update(buck, price)
+		update(buck, 0)
+		maketime(buck, 0)
 
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 		# mature rex
-		time += MATURE
-		maketime(buck, time)
+		test.init(5)
+		maketime(buck, test.get_time())
+		update(buck, test.get_price())
+
+		test.print_table()
 
 		COMMENT("Open CDP")
-		
-		cdp_table = test.gen(5, 10, price, time)
+		cdp_table = test.table
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
-		COMMENT("Mature")
-
-		time += MATURE
-		maketime(buck, time)
-
-		update(buck, price)
-		run(buck)
+		# match cdps
+		update(buck, test.get_price())
 		run(buck)
 
-		table(buck, "maturityreq")
-		table(buck, "stat")
-		
 		self.compare(buck, cdp_table)
 
+
+		COMMENT("Start rounds")
+
+		actions = test.run_round()
+		print(actions)
+
+		update(buck, test.get_price())
+		run(buck)
+		run(buck)
+
+		
 		COMMENT("Liquidation sorting")
 		
 		top_debtors = get_debtors(buck, limit=20)
@@ -108,22 +112,12 @@ class Test(unittest.TestCase):
 			self.match(cdp_table[i], liquidator)
 
 
-		COMMENT("Liquidation")
-
-		previous_debt = top_debtors[0]["debt"] # to check liquidation passed
-		price = 70
-
-		test.liquidation(cdp_table, price, 150, 10)
-		update(buck, price)
-		run(buck)
-
-		COMMENT("liquidation complete")
 		self.compare(buck, cdp_table)
 
-		# to-do check if liquidation even took place?
 
 
 	def match(self, cdp, row):
+		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
