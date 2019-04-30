@@ -36,7 +36,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
-		return "<#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "cd: " + str("-" if self.cd > 999999 else self.cd) + "\t" + "acr: " +str(self.acr) # + "\t" + " time: " + str(self.time)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + (("acr: " + str(self.acr)) if self.cd > 999999 else ("cd: " + str(self.cd))) # + "\t" + " time: " + str(self.time)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -419,11 +419,10 @@ def update_round():
 def run_round():
 	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
 
+	actions = []
+
 	time = time_now(1556463885)
-	oracle_time = time 
-
-	output = [time, []]
-
+	oracle_time = time
 	old_price = price
 	price = random.randint(100, 1000)
 
@@ -452,6 +451,8 @@ def run_round():
 		if k == 0:
 			break
 	redemption(random.randrange(1000000,100000000,10000), price, 150, 101)
+
+	return [time, []]
 
 
 for i in range(0, 1):
