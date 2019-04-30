@@ -69,7 +69,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
   static const uint128_t DM = 1000000000000;
-  const uint128_t v = (exp(double(AR) / 100 * double(now - last) / double(YEAR)) - 1) * DM;
+  const uint128_t v = (exp(AR / 100 * double(now - last) / double(YEAR)) - 1) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
   const int64_t accrued_collateral_amount = convert_to_usd_rex(accrued_amount * IR, 0);
