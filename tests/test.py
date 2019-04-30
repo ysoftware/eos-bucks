@@ -33,9 +33,9 @@ class CDP:
 		self.id = id
 		self.time = time
 	def __repr__(self):
-		string = "collateral: " + str(self.collateral // 10000) + ","  + str(self.collateral % 10000)
-		string2 = " debt : " + str(self.debt // 10000) + ","  + str(self.debt % 10000)
-		return "<CDP # ID: " + str(self.id)  + "; " + string + "; " + string2  + "; " + "cd: " + str(self.cd) + "% " + "; " + "acr: " +str(self.acr) + "%;" + " time: " + str(self.time)
+		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
+		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
+		return "<#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "cd: " + str("-" if self.cd > 999999 else self.cd) + "\t" + "acr: " +str(self.acr) # + "\t" + " time: " + str(self.time)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -208,17 +208,13 @@ def calc_val(cdp, cdp2, price, cr, lf):
 # Taxes
 
 def add_tax(cdp, price):
-	global IDP
-	global AEC
-	global CIT
-	global TEC
-	global oracle_time
-	global time
+	global IDP, AEC, CIT, TEC, oracle_time, time
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 		if cdp.collateral <0 or cdp.debt <0:
+			print(AEC, ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1)))
 			print("1")
 			exit()
 		CIT += interest * IR // price
@@ -231,15 +227,13 @@ def add_tax(cdp, price):
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			if cdp.collateral <0 or cdp.debt <0:
+				print(val, AEC, ec *(oracle_time-cdp.time))
 				print("2")
 				exit()
 			cdp.new_time(oracle_time)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
 	return cdp
-	
-	
-	
 	
 # Contract functions
 
@@ -311,8 +305,6 @@ def liquidation(table, price, cr, lf):
 						return table
 		return table
 
-			
-
 def redemption(table, amount, price, cr, rf):
 	global time
 	i = len(table)-1
@@ -345,9 +337,9 @@ def redemption(table, amount, price, cr, rf):
 						d = cdp. debt
 						cdp.new_debt(0)
 						cdp.add_collateral((d*100) // (price+rf))
-						print("\n")
-						print(cdp.collateral)
-						print(cdp.debt)
+						# print("\nreparam")
+						# print(cdp.collateral)
+						# print(cdp.debt)
 						if cdp.collateral <0 or cdp.debt <0:
 							print("6")
 							exit()
@@ -416,26 +408,13 @@ def change_acr(table, id, acr, price):
 		TEC += cdp.collateral * 100 // cdp.acr
 	table = cdp_insert(table, cdp)
 	return table
-	
-	
-
-		
-			
-			
-			
 			
 def update_round():
-	global AEC	
-	global IDP
-	global CIT
-	global oracle_time
-	global time
-	global TEC
+	global AEC, IDP, CIT, oracle_time, time, TEC
 	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
 	oracle_time = time
-	
 	
 	
 #random testing
@@ -443,29 +422,69 @@ def update_round():
 # liq, reparam, redeem, change_acr
 
 
+# returns [time, [{action, failed?}], table]
+def run_round(table):
+	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price
+
+	time = time_now(1556463885)
+	oracle_time = time 
+
+	output = [time, []]
+
+	old_price = price
+	price = random.randint(100, 1000)
+
+	print(f"\nnew round: time: {time}, price: {price}")
+
+	time = time_now(time)
+	update_round()
+
+	length = len(table)
+	if length == 0: return # empty 
+
+	if price < old_price:
+		table = liquidation(table, price, 150, 10)
+	k = 10
+	for i in range(0, random.randint(0, length-1) ):
+		if cdp_index(table, i) != False:
+			table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+			k -= 1
+		if k == 0:
+			break
+	k = 10
+	for i in range(0, random.randint(0, length - 1)):
+		if cdp_index(table, i) != False:
+			table = change_acr(table, i, random.randint(150,1000), price)
+			k -= 1
+		if k == 0:
+			break
+	table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+
+
+for i in range(0, 100):
+	time = time_now(1556463885)
+	price = 100
+	print(f"start: time: {time}, price: {price}")
+
+	d = random.randint(5, 100)
+	l = random.randint(d, d*2)
+	table = gen(d, l, price, time)
+
+	for i in range(3, random.randint(0, 10)):
+		run_round(table)
+		print_table(table)
+
+	print("\n\n")
+
 def random_test(k, n, round):
 	# globals, check at the top their mission
-	global time
-	global CR
-	global LF
-	global IR
-	global r
-	global SR
-	global IDP
-	global TEC
-	global AEC
-	global CIT
-	global comission
-	global time
-	global oracle_time
+	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time
+
 	time = time_now(1556463885) # generating random time between now and 3 months after
 	price = random.randint(100, 1000)
 	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
 	length = len(table)
 	oracle_time = time
-	print("\n")
-	print_table(table)
-	print("\n")
 	for i in range(0, round): # round is the number of rounds for the random walk
 		old_price = price
 		price = random.randint(100, 1000)
@@ -488,110 +507,13 @@ def random_test(k, n, round):
 			if k == 0:
 				break
 		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
-	print("\n")
-	print_table(table)
-	print("\n")
-	# can add checks to ensure that insurance dividend pool is calculated rightly
-		
-for i in range(0, 10):
-	random_test(5,10,2)		
-		
-#def redemption(table, amount, price, cr, rf):
-			
-		
-	
-	
+		print_table(table)
 
 
-# tester functions 
 
-
-#def __init__(self, collateral, debt, cd, acr, id, time):
-
-#table = gen(5,10,100)
-#table = [CDP(1000000, 0, 9999999, 200, 0, 0), CDP(1000000, 500000, 200, 0, 1, 0)]
-#TEC = 500000
-#AEC = TEC
+# for i in range(0, 10000):
+# 	random_test(random.randint(5, 20), random.randint(25, 40), 10)
 
 
 
 
-#def liquidation(table, price, cr, lf):	
-
-
-
-#def add_tax(cdp, time, r, SR, IR, price):
-#add_tax(table[2], 3.154*(10^7), 0.05, SR, IR, 100)
-
-
-
-
-
-#print("\n")
-#print_table(table)
-#print("\n")
-
-#table = cdp_insert(table, CDP(500000, 500000, 100, 0, 200, 0))
-
-
-
-
-# print("\n")
-# print_table(table)
-# print("\n")
-
-
-#def redemption(table, amount, price, cr, rf):
-#table = redemption(table, 20000000, 40, 150, 1)
-
-#def reparametrize(table, id, c, d, acr, cr, price):	
-#table = reparametrize(table, 1, -10000000, 0, 0, 150, 100)
-#table = reparametrize(table, 2, 10000, 500000, 0, 150, 100)
-
-
-#print("\n")
-#print_table(table)
-#print("\n")
-
-	
-
-
-# buyers - people buying BUCK
-# sellers - people selling BUCK
-# people send EOS and BUCK to the contract
-# when oracle updates, and after liquidation and all other things happen, exchange gets executed
-
-
-#for buyer in buyers:
-	#eos = buyer.eos.amount
-	#for seller in sellers:
-		#buck = seller.buck.amount
-		#if eos * price > buck:
-			#seller.buck.amount = 0
-			#seller.eos.amount = buck / price
-			#buyer.buck.amount = buck
-			#buyers.eos.amount = eos - buck / price
-		#elif eos * price < buck:
-		#	seller.buck.amount = buck - eos * price
-		#	seller.eos.amount = eos
-			#buyer.buck.amount = eos * price
-			#buyers.eos.amount = 0
-			#break # choose next buyer
-		#else:
-			#seller.buck.amount = 0
-			#seller.eos.amount = eos
-			#buyer.buck.amunt = eos * price
-			#buyer.eos.amount = 0
-			#break # choose both next buyer and seller
-
-		
-			
-			
-			
-			
-		
-	
-		
-	
-
-	

@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		DAY = 60 * 60 * 24
+		MATURE = 60 * 60 * 24 * 5 + 1
 
 		# initialize
 		destroy(buck)
@@ -65,7 +65,11 @@ class Test(unittest.TestCase):
 		price = 100
 		update(buck, price)
 
-		transfer(eosio_token, user1, buck, "1000000000000.0000 EOS", "deposit")
+		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
+
+		# mature rex
+		time += MATURE
+		maketime(buck, time)
 
 		COMMENT("Open CDP")
 		
@@ -73,16 +77,19 @@ class Test(unittest.TestCase):
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
-			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "EOS"))
+			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
 		COMMENT("Mature")
 
-		time += DAY * 5 + 1
+		time += MATURE
 		maketime(buck, time)
 
 		update(buck, price)
 		run(buck)
 		run(buck)
+
+		table(buck, "maturityreq")
+		table(buck, "stat")
 		
 		self.compare(buck, cdp_table)
 
