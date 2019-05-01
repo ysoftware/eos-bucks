@@ -145,7 +145,8 @@ def amount(quantity, force=True, default=0):
 	else: return default
 
 	if isinstance(split, list):
-		if len(split) == 2: return float(split[0])
+		if len(split) == 2: 
+			return float(split[0])
 		elif force: assert("value is not an asset")
 		else: return default
 	assert("value is not an asset")

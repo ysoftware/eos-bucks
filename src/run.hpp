@@ -142,8 +142,8 @@ void buck::run_requests(uint8_t max) {
         PRINT("id", cdp_itr->id)
         PRINT("debt", cdp_itr->debt)
         PRINT("col", cdp_itr->collateral)
-        PRINT("new_debt", change_debt)
-        PRINT("new_collateral", change_collateral) 
+        PRINT("change_debt", change_debt)
+        PRINT("change_collateral", change_collateral) 
         PRINT_("--------")
         
         reparam_itr = _reparamreq.erase(reparam_itr);

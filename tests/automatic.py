@@ -19,8 +19,7 @@ CONTRACT_WORKSPACE = "eos-buck"
 class Test(unittest.TestCase):
 
 	# setup
-	# setup.is_print_response = True
-	# setup.is_raise_error = True
+	setup.is_raise_error = True
 
 	@classmethod
 	def tearDownClass(cls):
@@ -57,7 +56,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		
+
 		##################################
 		COMMENT("Initialize")
 
@@ -165,9 +164,10 @@ class Test(unittest.TestCase):
 	def match(self, cdp, row):
 		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertEqual(unpack(cdp.debt), amount(row["debt"]) + amount(row["accrued_debt"]), "debts don't match")
-		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
-		# self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "rounds modified don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]) + amount(row["accrued_debt"]), 3, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
+		# self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+		print(f"+ Matched cdp #{cdp.id}")
 
 	def compare(self, buck, cdp_table):
 		for cdp in cdp_table:

@@ -1,6 +1,5 @@
 import random
 from math import exp
-from math import ceil
 
 ERR = "error"
 
@@ -211,12 +210,14 @@ def add_tax(cdp, price):
 	print("dt", oracle_time-cdp.time)
 
 	if cdp.debt > epsilon(cdp.debt):	
-		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
+		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(time)
+
+		print("accrued debt", interest * SR // 100, "collateral", -interest * IR // price)
 	else:
 		ec = cdp.collateral * 100 // cdp.acr 
 		if oracle_time != cdp.time:
