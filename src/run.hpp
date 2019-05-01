@@ -259,9 +259,9 @@ void buck::run_requests(uint8_t max) {
   auto accrual_itr = accrual_index.begin();
   
   int i = 0;
-  const time_point now = get_current_time_point();
+  const uint32_t now = _tax.begin()->current_round;
   while (i < max && accrual_itr != accrual_index.end() &&
-        accrual_itr->debt.amount > 0 && accrual_itr->modified_round > ACCRUAL_PERIOD) {
+        accrual_itr->debt.amount > 0 && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
     
     accrue_interest(_cdp.require_find(accrual_itr->id));
     accrual_itr = accrual_index.begin(); // take first element after index updated
