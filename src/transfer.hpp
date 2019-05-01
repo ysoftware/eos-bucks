@@ -75,14 +75,14 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   
   sub_funds(account, quantity);
   
-  auto debt = ZERO_BUCK;
+  auto issue_debt = ZERO_BUCK;
   
   if (ccr > 0) {
     
     // check if debt amount is above the limit (actual amount is calculated at maturity)
     const auto debt_amount = convert_to_rex_usd(quantity.amount) / ccr;
-    debt = asset(debt_amount, BUCK);
-    check(debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
+    issue_debt = asset(debt_amount, BUCK);
+    check(issue_debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
   // open account if doesn't exist
@@ -113,14 +113,6 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     });
   }
   else {
-    
-    // create cdp instantly
-    int64_t debt_amount = 0;
-    if (ccr > 0) { 
-      debt_amount = (convert_to_rex_usd(quantity.amount) / ccr);
-    }
-    
-    const auto issue_debt = asset(debt_amount, BUCK);
     
     const auto id = _cdp.available_primary_key();
     _cdp.emplace(account, [&](auto& r) {
