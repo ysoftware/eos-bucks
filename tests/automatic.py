@@ -88,7 +88,7 @@ class Test(unittest.TestCase):
 		update(buck, test.get_price())
 		run(buck)
 
-		# self.compare(buck, cdp_table)
+		self.compare(buck, cdp_table)
 
 		# ##################################
 		# COMMENT("Liquidation sorting")
@@ -154,8 +154,7 @@ class Test(unittest.TestCase):
 			run(buck)
 			run(buck)
 
-			table(buck, "maturityreq")
-			table(buck, "reparamreq")
+			table(buck, "cdp")
 
 			self.compare(buck, cdp_table)
 
@@ -166,7 +165,7 @@ class Test(unittest.TestCase):
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
-		# self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
 	def compare(self, buck, cdp_table):

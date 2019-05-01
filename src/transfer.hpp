@@ -90,27 +90,46 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   add_funds(account, ZERO_REX, account);
   
   // to-do check if there is enough matured rex, then open cdp immediately
-  
-  
-  // create cdp
-  const auto id = _cdp.available_primary_key();
-  _cdp.emplace(account, [&](auto& r) {
-    r.id = id;
-    r.account = account;
-    r.acr = acr;
-    r.collateral = ZERO_REX;
-    r.debt = ZERO_BUCK;
-    r.modified_round = _tax.begin()->current_round;
-  });
-  
-  // open maturity request for collateral
-  _maturityreq.emplace(account, [&](auto& r) {
-    r.maturity_timestamp = get_amount_maturity(account, quantity);
-    r.add_collateral = quantity;
-    r.change_debt = ZERO_BUCK;
-    r.cdp_id = id;
-    r.ccr = ccr;
-  });
+  if (get_amount_maturity(account, quantity) > get_current_time_point()) {
+    
+    // create cdp
+    const auto id = _cdp.available_primary_key();
+    _cdp.emplace(account, [&](auto& r) {
+      r.id = id;
+      r.account = account;
+      r.acr = acr;
+      r.collateral = ZERO_REX;
+      r.debt = ZERO_BUCK;
+      r.modified_round = _tax.begin()->current_round;
+    });
+    
+    // open maturity request to add collateral and issue debt
+    _maturityreq.emplace(account, [&](auto& r) {
+      r.maturity_timestamp = get_amount_maturity(account, quantity);
+      r.add_collateral = quantity;
+      r.change_debt = ZERO_BUCK;
+      r.cdp_id = id;
+      r.ccr = ccr;
+    });
+  }
+  else {
+    
+    // create cdp instantly
+    const int64_t debt_amount = (convert_to_rex_usd(quantity.amount) / ccr);
+    const auto issue_debt = asset(debt_amount, BUCK);
+    
+    const auto id = _cdp.available_primary_key();
+    _cdp.emplace(account, [&](auto& r) {
+      r.id = id;
+      r.account = account;
+      r.acr = acr;
+      r.collateral = quantity;
+      r.debt = issue_debt;
+      r.modified_round = _tax.begin()->current_round;
+    });
+    
+    add_balance(account, issue_debt, account, true);
+  }
   
   run(3);
 }

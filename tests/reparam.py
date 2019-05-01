@@ -75,11 +75,7 @@ class Test(unittest.TestCase):
 		self.update(price, time)
 
 		open(buck, user1, 200, 0, "100000.0000 REX")
-
-		# give debt (maturity)
-		time += 10
-		self.update(price, time)
-
+		
 		cdp = test.CDP(100000*10**4, 50000*10**4, 200, 0, 0, test.get_time()) # collateral, debt, cd, acr, id, time
 		test.table = [cdp]
 

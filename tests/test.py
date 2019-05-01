@@ -343,7 +343,7 @@ def reparametrize(id, c, d, price, old_price):
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
 
-	print(cdp)
+	print("doing reparam\n", cdp)
 
 	if (new_ccr < CR and new_debt != 0) or new_col < 5 or (new_debt < 50 and new_debt != 0):
 		print("should fail at request\n")
@@ -380,8 +380,9 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-	print(cdp)
-	print("\n")
+
+	print("result:\n", cdp, "\n")
+	
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
