@@ -261,8 +261,7 @@ void buck::run_requests(uint8_t max) {
   int i = 0;
   const time_point now = get_current_time_point();
   while (i < max && accrual_itr != accrual_index.end() &&
-        accrual_itr->debt.amount > 0 &&
-        time_point_sec(time_point(now - accrual_itr->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
+        accrual_itr->debt.amount > 0 && accrual_itr->modified_round > ACCRUAL_PERIOD) {
     
     accrue_interest(_cdp.require_find(accrual_itr->id));
     accrual_itr = accrual_index.begin(); // take first element after index updated

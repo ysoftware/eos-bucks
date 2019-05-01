@@ -60,7 +60,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const auto time_now = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
-  const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
+  const uint32_t last = cdp_itr->modified_round;
   
   static const uint128_t DM = 1000000000000;
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
@@ -72,12 +72,14 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
+  PRINT("tax dt", now - last)
+  
   update_supply(accrued_debt);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
     r.debt += accrued_debt;
-    r.accrued_timestamp = time_now;
+    r.modified_round = now;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {

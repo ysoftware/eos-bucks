@@ -65,8 +65,8 @@ class Test(unittest.TestCase):
 		except: pass
 
 		destroy(buck)
-		update(buck, 0)
 		maketime(buck, 0)
+		update(buck, 0)
 
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 

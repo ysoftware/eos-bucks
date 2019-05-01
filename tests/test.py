@@ -22,9 +22,9 @@ def update(price, t):
 	time = t
 	update_round()
 
-def time_now(time_last):
+def time_now():
 	global time
-	time = random.randint(time_last, time_last + 7884 * 10 ** 3) # adding 3 months
+	time = random.randint(time + 435000, time + 7884 * 10 ** 3) # adding 3 months
 	return time
 
 def epsilon(value): return value // 500
@@ -41,7 +41,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) # + "\t" + " time: " + str(self.time)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -207,7 +207,7 @@ def calc_val(cdp, cdp2, price, cr, lf):
 
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time, time
-	print("dt", oracle_time-cdp.time)
+	print("tax dt", oracle_time-cdp.time)
 
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
@@ -216,8 +216,6 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(time)
-
-		print("accrued debt", interest * SR // 100, "collateral", -interest * IR // price)
 	else:
 		ec = cdp.collateral * 100 // cdp.acr 
 		if oracle_time != cdp.time:
@@ -227,7 +225,6 @@ def add_tax(cdp, price):
 			cdp.new_time(oracle_time)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			print("adding tax2", val)
 	return cdp
 	
 # Contract functions
@@ -421,14 +418,14 @@ def run_round():
 
 	actions = []
 
-	time = time_now(1556463885)
+	time = time_now()
 	oracle_time = time
 	old_price = price
 	price  += 50 # = random.randint(100, 1000)  ## ONLY TEST REPARAM
 
 	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
-	time = time_now(time)
+	time = time_now()
 	update_round()
 
 	length = len(table)
@@ -475,11 +472,12 @@ def get_price():
 
 def init(x=10):
 	global time, price
-	time = time_now(1556463885)
+	time = 0
 	price = random.randint(100, 1000)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
 	gen(1, 1, price, time)
+	time_now()
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
 
 
