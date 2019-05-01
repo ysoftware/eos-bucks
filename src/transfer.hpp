@@ -115,7 +115,11 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   else {
     
     // create cdp instantly
-    const int64_t debt_amount = (convert_to_rex_usd(quantity.amount) / ccr);
+    int64_t debt_amount = 0;
+    if (ccr > 0) { 
+      debt_amount = (convert_to_rex_usd(quantity.amount) / ccr);
+    }
+    
     const auto issue_debt = asset(debt_amount, BUCK);
     
     const auto id = _cdp.available_primary_key();

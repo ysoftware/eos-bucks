@@ -66,15 +66,13 @@ class Test(unittest.TestCase):
 
 		destroy(buck)
 		maketime(buck, 0)
-		update(buck, 0)
+		update(buck, 100)
 
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 		# mature rex
 		test.init(2)
 		maketime(buck, test.get_time())
-		update(buck, test.get_price())
-
 
 		##################################
 		COMMENT("Open CDP")
@@ -83,10 +81,6 @@ class Test(unittest.TestCase):
 			# print(cdp)
 			ccr = 0 if cdp.cd > 999999 else cdp.cd
 			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
-
-		# match cdps
-		update(buck, test.get_price())
-		run(buck)
 
 		self.compare(buck, cdp_table)
 
