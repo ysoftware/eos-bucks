@@ -105,12 +105,9 @@ void buck::run_requests(uint8_t max) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         
-        if (change_collateral.amount > 0) {
-          // we already paid for it
-        }
-        else if (change_collateral.amount < 0) {
+        if (change_collateral.amount < 0) {
           
-          add_funds(cdp_itr->account, change_collateral, same_payer);
+          sub_funds(cdp_itr->account, -change_collateral);
         }
 
         // stop being an insurer
