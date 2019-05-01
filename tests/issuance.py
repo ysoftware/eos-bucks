@@ -62,7 +62,7 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "10000.0000 EOS", "deposit")
 
 		# create cdp, transfer collateral
-		open(buck, user1, 160, 0, "100.0000 EOS", eosio_token)
+		open(buck, user1, 160, 0, "100.0000 REX")
 
 		# maturity
 		sleep(2)

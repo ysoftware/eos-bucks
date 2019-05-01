@@ -15,8 +15,6 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
-  PRINT_("requests")
-  
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   uint8_t status = get_processing_status();
   
@@ -55,11 +53,10 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
-        PRINT_("reparam req")
+        PRINT_("\nreparam req")
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
-        bool shouldWaitMaturity = false;
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
@@ -87,24 +84,6 @@ void buck::run_requests(uint8_t max) {
         // adding collateral
         if (reparam_itr->change_collateral.amount > 0) {
           change_collateral = reparam_itr->change_collateral;
-          
-          const auto maturity_itr = _maturityreq.find(cdp_itr->id);
-
-          if (maturity_itr != _maturityreq.end()) {
-            if (maturity_itr->maturity_timestamp < oracle_timestamp) {
-              shouldWaitMaturity = true;
-            
-              // get maturity request
-              _maturityreq.modify(maturity_itr, same_payer, [&](auto& r) {
-                r.add_collateral = change_collateral;
-                r.cdp_id = cdp_itr->id;
-                r.change_debt = change_debt;
-              });
-            }
-            else {
-              _maturityreq.erase(maturity_itr);
-            }
-          }
         }
         
         // removing collateral
@@ -117,113 +96,118 @@ void buck::run_requests(uint8_t max) {
           change_collateral = change;
         }
         
+        accrue_interest(cdp_itr);
+        
         // to-do check new ccr parameters
         // don't give debt if ccr < CR
         
-        // not removing collateral here, update immediately, also check maturity
-        if (!shouldWaitMaturity) {
-          asset change_accrued_debt = ZERO_BUCK;
-          
-          if (change_debt.amount > 0) {
-            add_balance(cdp_itr->account, change_debt, same_payer, true);
-          }
-          else if (change_debt.amount < 0) {
-            const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-            change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-            change_debt += change_accrued_debt; // add to negative
-            
-            add_savings_pool(change_accrued_debt);
-            update_supply(change_debt);
-          }
-          
-          if (change_collateral.amount > 0) {
-            // we already paid for it
-          }
-          else if (change_collateral.amount < 0) {
-            
-            add_funds(cdp_itr->account, change_collateral, same_payer);
-          }
-
-          // stop being an insurer
-          if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
-            withdraw_insurance_dividends(cdp_itr);
-            update_excess_collateral(-cdp_itr->collateral); // remove old amount
-          }
-          // become an insurer
-          else if (cdp_itr->debt.amount - change_debt.amount == 0) {
-            update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
-          }
-          
-          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral += change_collateral;
-            r.accrued_debt += change_accrued_debt;
-            r.debt += change_debt;
-          });
+        asset change_accrued_debt = ZERO_BUCK;
+        
+        if (change_debt.amount > 0) {
+          add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
+        else if (change_debt.amount < 0) {
+          const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+          change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
+          change_debt += change_accrued_debt; // add to negative
+          
+          add_savings_pool(change_accrued_debt);
+          update_supply(change_debt);
+        }
+        
+        if (change_collateral.amount > 0) {
+          // we already paid for it
+        }
+        else if (change_collateral.amount < 0) {
+          
+          add_funds(cdp_itr->account, change_collateral, same_payer);
+        }
+
+        // stop being an insurer
+        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
+          withdraw_insurance_dividends(cdp_itr);
+          update_excess_collateral(-cdp_itr->collateral); // remove old amount
+        }
+        // become an insurer
+        else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+          update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
+        }
+        
+        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+          r.collateral += change_collateral;
+          r.accrued_debt += change_accrued_debt;
+          r.debt += change_debt;
+        });
+      
+        PRINT("id", cdp_itr->id)
+        PRINT("debt", cdp_itr->debt)
+        PRINT("col", cdp_itr->collateral)
+        PRINT("new_debt", change_debt)
+        PRINT("new_collateral", change_collateral) 
+        PRINT_("--------")
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }
       
       // maturity requests (issue bucks, add/remove cdp debt, add collateral)
-      if (maturity_itr != maturity_index.end()) {
-        PRINT_("maturity req")
+      // look for a first valid request
+      while (maturity_itr != maturity_index.end() 
+              && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
+      
+      if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < oracle_timestamp) {
+        PRINT_("\nmaturity req")
         
-        // look for a first valid request
-        while (maturity_itr != maturity_index.end() && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
-        if (maturity_itr != maturity_index.end()) {
-          
-          // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
-          const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
-          
-          // calculate new debt and collateral
-          asset change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
-          const asset add_collateral = maturity_itr->add_collateral;
-          
-          if (maturity_itr->ccr > 0) {
-            // opening cdp
-            
-            // issue debt
-            const int64_t debt_amount = (convert_to_rex_usd(add_collateral.amount) / maturity_itr->ccr);
-            change_debt = asset(debt_amount, BUCK);
-          }
-          
-          asset change_accrued_debt = ZERO_BUCK;
-          if (change_debt.amount > 0) {
-            
-            add_balance(cdp_itr->account, change_debt, same_payer, true);
-          }
-          else {
-            
-            const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-            change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-            change_debt += change_accrued_debt;
-            
-            add_savings_pool(change_accrued_debt);
-            update_supply(-change_debt);
-          }
-          
-          // stop being an insurer
-          if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
-            withdraw_insurance_dividends(cdp_itr);
-            update_excess_collateral(-cdp_itr->collateral);
-          }
-          else if (cdp_itr->debt.amount - change_debt.amount == 0) {
-            update_excess_collateral(cdp_itr->collateral + add_collateral);
-          }
-          
-          _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-            r.collateral += add_collateral;
-            r.debt += change_debt;
-            r.accrued_debt += change_accrued_debt;
-            r.modified_round = _tax.begin()->current_round;
-          });
-          
-          // to-do if removing debt, send accrued to savings pool
-          
-          maturity_itr = maturity_index.erase(maturity_itr); // remove request
-          did_work = true;
+        // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
+        const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
+        
+        // calculate new debt and collateral
+        asset change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
+        const asset add_collateral = maturity_itr->add_collateral;
+        
+        // to-do validate new debt, new collateral, new ccr
+        
+        if (maturity_itr->ccr > 0) {
+          // opening cdp, issue debt
+          const int64_t debt_amount = (convert_to_rex_usd(add_collateral.amount) / maturity_itr->ccr);
+          change_debt = asset(debt_amount, BUCK);
         }
+        
+        asset change_accrued_debt = ZERO_BUCK;
+        if (change_debt.amount > 0) {
+          
+          add_balance(cdp_itr->account, change_debt, same_payer, true);
+        }
+        else {
+          
+          const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
+          change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
+          change_debt += change_accrued_debt;
+          
+          add_savings_pool(change_accrued_debt);
+          update_supply(-change_debt);
+        }
+        
+        // stop being an insurer
+        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
+          withdraw_insurance_dividends(cdp_itr);
+          update_excess_collateral(-cdp_itr->collateral);
+        }
+        else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+          update_excess_collateral(cdp_itr->collateral + add_collateral);
+        }
+        
+        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+          r.collateral += add_collateral;
+          r.debt += change_debt;
+          r.accrued_debt += change_accrued_debt;
+          r.modified_round = _tax.begin()->current_round;
+        });
+        
+        // to-do if removing debt, send accrued to savings pool
+        
+        maturity_itr = maturity_index.erase(maturity_itr); // remove request
+        did_work = true;
       }
       
       if (!did_work) {
@@ -302,16 +286,16 @@ void buck::run_requests(uint8_t max) {
   }
   
   auto accrual_index = _cdp.get_index<"accrued"_n>();
-  auto accrual_item = accrual_index.begin();
+  auto accrual_itr = accrual_index.begin();
   
   int i = 0;
   const time_point now = get_current_time_point();
-  while (i < max && accrual_item != accrual_index.end() &&
-        accrual_item->debt.amount > 0 &&
-        time_point_sec(time_point(now - accrual_item->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
+  while (i < max && accrual_itr != accrual_index.end() &&
+        accrual_itr->debt.amount > 0 &&
+        time_point_sec(time_point(now - accrual_itr->accrued_timestamp)).utc_seconds > ACCRUAL_PERIOD) {
     
-    accrue_interest(_cdp.require_find(accrual_item->id));
-    accrual_item = accrual_index.begin(); // take first element after index updated
+    accrue_interest(_cdp.require_find(accrual_itr->id));
+    accrual_itr = accrual_index.begin(); // take first element after index updated
     i++;
   }
 }
@@ -325,7 +309,7 @@ void buck::run_liquidation(uint8_t max) {
   auto debtor_itr = debtor_index.begin();
   
 
-  PRINT_("liquidation")
+  PRINT_("liquidation\n")
 
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
@@ -335,6 +319,7 @@ void buck::run_liquidation(uint8_t max) {
     
     int64_t debtor_ccr = CR;
     if (debt_amount > 0) {
+      PRINT("rex amount", convert_to_rex_usd(collateral_amount))
       debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
     }
     
@@ -352,6 +337,9 @@ void buck::run_liquidation(uint8_t max) {
       return;
     }
         
+    const auto cdp_itr = _cdp.require_find(debtor_itr->id);
+    accrue_interest(cdp_itr);
+  
     // loop through liquidators
     while (debtor_ccr < CR) {
       const auto liquidator_itr = liquidator_index.begin();
@@ -389,6 +377,9 @@ void buck::run_liquidation(uint8_t max) {
         return;
       }
       
+      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
+      accrue_interest(cdp_itr);
+      
       // to-do check if right
       
       if (liquidator_itr->debt.amount == 0) {
@@ -396,7 +387,6 @@ void buck::run_liquidation(uint8_t max) {
         withdraw_insurance_dividends(cdp_itr);
         update_excess_collateral(-cdp_itr->collateral);
       }
-      
       
       const int64_t bailable = (convert_to_rex_usd(liquidator_collateral) - liquidator_debt * liquidator_acr)
                                     * (100 - liquidation_fee)

@@ -62,6 +62,8 @@ void buck::add_savings_pool(const asset& value) {
 
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
+  PRINT("adding tax id", cdp_itr->id)
+  
   const auto& tax = *_tax.begin();
   
   const auto time_now = get_current_time_point();
@@ -69,14 +71,14 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   
   static const uint128_t DM = 1000000000000;
-  const uint128_t v = (exp(AR / 100 * double(now - last) / double(YEAR)) - 1) * DM;
+  const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
-  const int64_t accrued_collateral_amount = convert_to_usd_rex(accrued_amount * IR, 0);
   const int64_t accrued_debt_amount = accrued_amount * SR / 100;
+  const int64_t accrued_collateral_amount = convert_to_usd_rex(accrued_amount * IR, 0);
   
-  const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
+  const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;

@@ -27,10 +27,14 @@ def perm(contract, key):
 		Permission.OWNER, (contract, Permission.OWNER))
 
 def create_issue(contract, to, symbol):
-	contract.push_action(force_unique=True, action="create",
-		data={ "issuer": to, "maximum_supply": "1000000000000.0000 {}".format(symbol) }, permission=[(contract, Permission.ACTIVE)])
-	contract.push_action(force_unique=True, action="issue",
-		data={ "to": to, "quantity": "1000000000000.0000 {}".format(symbol), "memo": "" }, permission=[(to, Permission.ACTIVE)])
+	try:
+		contract.push_action(force_unique=True, action="create",
+			data={ "issuer": to, "maximum_supply": "1000000000000.0000 {}".format(symbol) }, permission=[(contract, Permission.ACTIVE)])
+	except: pass
+	try:
+		contract.push_action(force_unique=True, action="issue",
+			data={ "to": to, "quantity": "1000000000000.0000 {}".format(symbol), "memo": "" }, permission=[(to, Permission.ACTIVE)])
+	except: pass
 
 def destroy(contract):
 	contract.push_action(force_unique=True, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
@@ -59,7 +63,7 @@ def open(contract, user, ccr, acr, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def update(contract, eos=200):
-	contract.push_action(force_unique=True, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=30, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
 
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])

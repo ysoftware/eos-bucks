@@ -250,7 +250,7 @@ CONTRACT buck : public contract {
     // test time
     
     #if TEST_TIME
-    struct time_test {
+    TABLE time_test {
       time_point_sec now;
      
       uint64_t primary_key() const { return 0; }

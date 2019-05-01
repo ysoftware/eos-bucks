@@ -19,7 +19,8 @@ CONTRACT_WORKSPACE = "eos-buck"
 class Test(unittest.TestCase):
 
 	# setup
-	setup.is_raise_error = True
+	# setup.is_print_response = True
+	# setup.is_raise_error = True
 
 	@classmethod
 	def tearDownClass(cls):
@@ -56,12 +57,13 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		MATURE = 60 * 60 * 24 * 5 + 1
-
+		
 		##################################
 		COMMENT("Initialize")
 
-		# transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
+		try:
+			transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
+		except: pass
 
 		destroy(buck)
 		update(buck, 0)
@@ -70,7 +72,7 @@ class Test(unittest.TestCase):
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 		# mature rex
-		test.init(5)
+		test.init(2)
 		maketime(buck, test.get_time())
 		update(buck, test.get_price())
 
@@ -87,23 +89,22 @@ class Test(unittest.TestCase):
 		update(buck, test.get_price())
 		run(buck)
 
-		self.compare(buck, cdp_table)
+		# self.compare(buck, cdp_table)
 
-
-		##################################
-		COMMENT("Liquidation sorting")
+		# ##################################
+		# COMMENT("Liquidation sorting")
 		
-		top_debtors = get_debtors(buck, limit=20)
-		for i in range(0, len(top_debtors)):
-			debtor = top_debtors[i]
-			if amount(debtor["debt"]) == 0: break # unsorted end of the table
-			self.match(cdp_table[i * -1 - 1], debtor)
+		# top_debtors = get_debtors(buck, limit=20)
+		# for i in range(0, len(top_debtors)):
+		# 	debtor = top_debtors[i]
+		# 	if amount(debtor["debt"]) == 0: break # unsorted end of the table
+		# 	self.match(cdp_table[i * -1 - 1], debtor)
 
-		top_liquidators = get_liquidators(buck, limit=20)
-		for i in range(0, len(top_liquidators)):
-			liquidator = top_liquidators[i]
-			if liquidator["acr"] == 0: break # unsorted end of the table
-			self.match(cdp_table[i], liquidator)
+		# top_liquidators = get_liquidators(buck, limit=20)
+		# for i in range(0, len(top_liquidators)):
+		# 	liquidator = top_liquidators[i]
+		# 	if liquidator["acr"] == 0: break # unsorted end of the table
+		# 	self.match(cdp_table[i], liquidator)
 
 
 		##################################
@@ -125,6 +126,8 @@ class Test(unittest.TestCase):
 					col = asset(action[0][2], "REX")
 					debt = asset(action[0][3], "BUCK")
 
+					get_cdp(buck, cdp)
+
 					if action[1] == False:
 						assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
 					else: reparam(buck, user1, cdp, debt, col)
@@ -132,6 +135,8 @@ class Test(unittest.TestCase):
 				elif action[0][0] == "acr":
 					cdp = action[0][1]
 					acr = action[0][2]
+
+					# get_cdp(buck, cdp)
 
 					if action[1] == False:
 						assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
@@ -145,19 +150,13 @@ class Test(unittest.TestCase):
 					else: redeem(buck, user1, quantity)
 
 			maketime(buck, round_time)
-
-			table(buck, "testtime")
-			table(buck, "stat")
-			table(buck, "maturityreq")
-			table(buck, "reparamreq")
-			table(buck, "redeemreq")
-			print("new price", test.get_price())
-
 			update(buck, test.get_price())
 			run(buck)
 			run(buck)
 			run(buck)
 
+			table(buck, "maturityreq")
+			table(buck, "reparamreq")
 
 			self.compare(buck, cdp_table)
 
@@ -166,7 +165,7 @@ class Test(unittest.TestCase):
 	def match(self, cdp, row):
 		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertEqual(unpack(cdp.debt), amount(row["debt"]), "debts don't match")
+		self.assertEqual(unpack(cdp.debt), amount(row["debt"]) + amount(row["accrued_debt"]), "debts don't match")
 		self.assertEqual(unpack(cdp.collateral), amount(row["collateral"]), "collaterals don't match")
 		# self.assertEqual(unpack(cdp.time), amount(row["modified_round"]), "rounds modified don't match")
 

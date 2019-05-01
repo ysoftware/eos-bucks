@@ -18,6 +18,10 @@ commission = 20 # our commission
 time = 0 # initial time
 oracle_time = 0
 
+def update(price, t):
+	global time
+	time = t
+	update_round()
 
 def time_now(time_last):
 	global time
@@ -200,18 +204,16 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	v2 = (c*price-d*acr)*(100-l) // (acr*(100-l)-10000)
 	return min(v,v2, cdp.debt)
 	
-# Taxes
+# Taxes # 131495,5 / 31557600
 
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time, time
+	print("dt", oracle_time-cdp.time)
+
 	if cdp.debt > epsilon(cdp.debt):	
-		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1))
+		interest = ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
-		# if cdp.collateral <0 or cdp.debt <0:
-		# 	print(AEC, ceil(cdp.debt * (exp((r*(time-cdp.time))/(3.154*10**7))-1)))
-		# 	print("1")
-		# 	exit()
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(time)
@@ -221,32 +223,30 @@ def add_tax(cdp, price):
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
-			# if cdp.collateral <0 or cdp.debt <0:
-			# 	print(val, AEC, ec *(oracle_time-cdp.time))
-			# 	print("2")
-			# 	exit()
 			cdp.new_time(oracle_time)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
+			print("adding tax2", val)
 	return cdp
 	
 # Contract functions
 
-def liquidation(price, cr, lf):	
+def liquidation(price, cr, lf):
+		print("liquidation")	
 		global TEC, table
 		if table == []:
 			return
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
+			print("debtor", debtor.id)
+			print("total debt", debtor.debt)
+			print("col", debtor.collateral)
+			print("ccr", debtor.cd)
+
 			debtor = add_tax(debtor,price)
-			# if debtor.debt < 0 or debtor.collateral < 0:
-			# 	print("liq debtor problem")
-			# 	print(debtor.debt)
-			# 	print(debtor.collateral)
-			# 	exit()
 			if debtor.debt == 0:
-				return 
+				return
 			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 				table.append(debtor)
 				return 
@@ -263,27 +263,21 @@ def liquidation(price, cr, lf):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
+					print("liquidator", liquidator.id)
+
 					liquidator = add_tax(liquidator, price)
-					# if liquidator.debt < 0 or liquidator.collateral < 0:
-					# 	print("liq liquidator problem")
-					# 	print(liquidator.debt)
-					# 	print(liquidator.collateral)
-					# 	exit()
 					if liquidator.debt <= 100:
 						TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
+
+					print("val", val)
+					print("\n")
 					debtor.add_debt(-val)
 					liquidator.add_debt(val)
 					liquidator.add_collateral(c)
 					debtor.add_collateral(-c)
-					# if debtor.collateral <0 or debtor.debt <0:
-					# 	print("3")
-					# 	exit()
-					# if liquidator.collateral <0 or liquidator.debt <0:
-					# 	print("4")
-					# 	exit()
 					if debtor.debt <=  100:
 						debtor.new_cd(9999999)
 					else:
@@ -298,6 +292,7 @@ def liquidation(price, cr, lf):
 						cdp_insert(debtor)
 					if i == len(table):
 						return 
+		print("\n")
 		return 
 
 def redemption(amount, price, cr, rf):
@@ -350,9 +345,11 @@ def reparametrize(id, c, d, price, old_price):
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
 
+	print("time", time)
 	print("reparam")
 	print(cdp)
-	print(new_col, new_debt, new_ccr)
+	print("args", c, d)
+	#print("request time", new_col, new_debt, "ccr", new_ccr)
 
 	if (new_ccr < CR and new_debt != 0) or new_col < 5 or (new_debt < 50 and new_debt != 0):
 		print("should fail at request\n")
@@ -390,6 +387,7 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
+	print(cdp)
 	print("\n")
 	
 def change_acr(id, acr, price):
@@ -430,7 +428,7 @@ def run_round():
 	time = time_now(1556463885)
 	oracle_time = time
 	old_price = price
-	price = random.randint(100, 1000)
+	price  += 50 # = random.randint(100, 1000)  ## ONLY TEST REPARAM
 
 	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
@@ -442,19 +440,19 @@ def run_round():
 
 	if price < old_price:
 		liquidation(price, 150, 10)
-	k = 10
 
-	for i in range(0, random.randint(0, length - 1)):
-		if cdp_index(i) != False:
-			acr = random.randint(150,1000)
-			failed = change_acr(i, acr, price)
-			actions.append([["acr", i, acr], failed != False])
-			k -= 1
-		if k == 0:
-			break
-	k = 10
+	# k = 10
+	# for i in range(0, random.randint(0, length - 1)):
+	# 	if cdp_index(i) != False:
+	# 		acr = random.randint(150,1000)
+	# 		failed = change_acr(i, acr, price)
+	# 		actions.append([["acr", i, acr], failed != False])
+	# 		k -= 1
+	# 	if k == 0:
+	# 		break
 
-	for i in range(0, random.randint(0, length-1) ):
+	k = 10
+	for i in range(1, 2):# random.randint(0, length-1) ):  ## ONLY TEST 1 REPARAM
 		if cdp_index(i) != False:
 			v1 = random.randrange(-1000000,10000000,10000)
 			v2 = random.randrange(-1000000,10000000,10000)
@@ -485,7 +483,7 @@ def init(x=10):
 	price = random.randint(100, 1000)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
-	gen(d, l, price, time)
+	gen(1, 1, price, time)
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
 
 

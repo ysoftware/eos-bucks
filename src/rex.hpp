@@ -47,13 +47,14 @@ int64_t buck::convert_to_rex_usd(int64_t quantity) const {
 }
 
 int64_t buck::convert_to_usd_rex(int64_t quantity, int64_t tax) const {
+  const int64_t EU = get_eos_usd_price() + tax;
+  
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
-  if (pool_itr == _pool.end()) { return quantity * 100; } // test net case (1 rex = 1 eos)
+  if (pool_itr == _pool.end()) { return quantity / EU; } // test net case (1 rex = 1 eos)
   
   const int64_t S0 = pool_itr->total_lendable.amount;
   const int64_t R0 = pool_itr->total_rex.amount;
-  const int64_t EU = get_eos_usd_price() + tax;
   const int64_t p  = (uint128_t(quantity) * R0 * EU) / S0;
   return p;
 }
