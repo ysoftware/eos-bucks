@@ -148,7 +148,6 @@ CONTRACT buck : public contract {
       uint16_t    acr;
       name        account;
       asset       debt;
-      asset       accrued_debt;
       asset       collateral;
       time_point  accrued_timestamp;
       uint32_t    modified_round;
@@ -157,7 +156,7 @@ CONTRACT buck : public contract {
       uint64_t by_account() const { return account.value; }
       
       uint64_t by_accrued_time() const {
-        if (debt.amount + accrued_debt.amount == 0) return UINT64_MAX;
+        if (debt.amount == 0) return UINT64_MAX;
         return time_point_sec(accrued_timestamp).utc_seconds; 
       }
       
@@ -169,20 +168,18 @@ CONTRACT buck : public contract {
         
         if (acr == 0 || c == 0) return MAX * 3; // end of the table
         
-        const uint64_t td = (debt + accrued_debt).amount;
-        if (td == 0) return MAX - c / acr; // descending c/acr
+        if (debt.amount == 0) return MAX - c / acr; // descending c/acr
         
-        const uint64_t cd = c * 10'000'000 / td;
+        const uint64_t cd = c * 10'000'000 / debt.amount;
         return MAX * 2 - cd; // descending cd
       }
       
       // index to search for debtors with highest ccr
       uint64_t debtor() const {
         
-        const uint64_t td = (debt + accrued_debt).amount;
-        if (td == 0) return UINT64_MAX; // end of the table
+        if (debt.amount == 0) return UINT64_MAX; // end of the table
         
-        const uint64_t cd = collateral.amount * 10'000'000 / td;
+        const uint64_t cd = collateral.amount * 10'000'000 / debt.amount;
         return cd; // ascending cd
       }
     };

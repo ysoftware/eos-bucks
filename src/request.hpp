@@ -138,7 +138,7 @@ void buck::close(uint64_t cdp_id) {
 
   require_auth(cdp_itr->account);
   
-  sub_balance(cdp_itr->account, cdp_itr->debt + cdp_itr->accrued_debt, true);
+  sub_balance(cdp_itr->account, cdp_itr->debt, true);
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
     r.cdp_id = cdp_id;

@@ -100,7 +100,6 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     r.acr = acr;
     r.collateral = ZERO_REX;
     r.debt = ZERO_BUCK;
-    r.accrued_debt = ZERO_BUCK;
     r.modified_round = 0;
     r.accrued_timestamp = get_current_time_point();
   });

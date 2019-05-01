@@ -60,17 +60,16 @@ void buck::run_requests(uint8_t max) {
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
-        const int64_t total_debt_amount = cdp_itr->debt.amount + cdp_itr->accrued_debt.amount;
         
         int64_t ccr = CR; // used in to calculate relation with CR
-        if (total_debt_amount > 0) {
-          ccr = convert_to_rex_usd(cdp_itr->collateral.amount) / total_debt_amount;
+        if (cdp_itr->debt.amount > 0) {
+          ccr = convert_to_rex_usd(cdp_itr->collateral.amount) / cdp_itr->debt.amount;
         }
   
         // adding debt
         if (reparam_itr->change_debt.amount > 0) {
           
-          const int64_t max_debt = ((ccr * 100 / CR) - 100) * total_debt_amount / 100;
+          const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
           const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
 
           change_debt = asset(change_amount, BUCK);
@@ -101,18 +100,9 @@ void buck::run_requests(uint8_t max) {
         // to-do check new ccr parameters
         // don't give debt if ccr < CR
         
-        asset change_accrued_debt = ZERO_BUCK;
         
         if (change_debt.amount > 0) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);
-        }
-        else if (change_debt.amount < 0) {
-          const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-          change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-          change_debt += change_accrued_debt; // add to negative
-          
-          add_savings_pool(change_accrued_debt);
-          update_supply(change_debt);
         }
         
         if (change_collateral.amount > 0) {
@@ -135,7 +125,6 @@ void buck::run_requests(uint8_t max) {
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
-          r.accrued_debt += change_accrued_debt;
           r.debt += change_debt;
         });
       
@@ -173,18 +162,12 @@ void buck::run_requests(uint8_t max) {
           change_debt = asset(debt_amount, BUCK);
         }
         
-        asset change_accrued_debt = ZERO_BUCK;
         if (change_debt.amount > 0) {
           
           add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         else {
-          
-          const uint64_t change_accrued_debt_amount = std::max(change_debt.amount, -cdp_itr->accrued_debt.amount);
-          change_accrued_debt = asset(-change_accrued_debt_amount, BUCK); // positive
-          change_debt += change_accrued_debt;
-          
-          add_savings_pool(change_accrued_debt);
+          change_debt += change_debt;
           update_supply(-change_debt);
         }
         
@@ -200,11 +183,8 @@ void buck::run_requests(uint8_t max) {
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += add_collateral;
           r.debt += change_debt;
-          r.accrued_debt += change_accrued_debt;
           r.modified_round = _tax.begin()->current_round;
         });
-        
-        // to-do if removing debt, send accrued to savings pool
         
         maturity_itr = maturity_index.erase(maturity_itr); // remove request
         did_work = true;
@@ -230,7 +210,6 @@ void buck::run_requests(uint8_t max) {
         asset collateral_return = ZERO_REX;
         
         asset burned_debt = ZERO_BUCK; // used up
-        asset saved_debt = ZERO_BUCK; // to savings pool
         
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
@@ -240,25 +219,20 @@ void buck::run_requests(uint8_t max) {
           // skip to the next debtor
           if (ccr < 100 - RF) { continue; }
           
-          const int64_t total_debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
-          const int64_t using_debt_amount = std::min(redeem_quantity.amount, total_debt_amount);
+          const int64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
           const int64_t using_collateral_amount = convert_to_usd_rex(using_debt_amount, RF);
-          
-          const int64_t using_accrued_debt_amount = std::min(debtor_itr->accrued_debt.amount, using_debt_amount);
-          const asset using_accrued_debt = asset(using_accrued_debt_amount, BUCK);
-          const asset using_debt = asset(using_debt_amount, BUCK) - using_accrued_debt;
+        
+          const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          redeem_quantity -= using_debt + using_accrued_debt;
+          redeem_quantity -= using_debt;
           collateral_return += using_collateral;
           
           debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
             r.debt -= using_debt;
-            r.accrued_debt -= using_accrued_debt;
             r.collateral -= using_collateral;
           });
           
-          saved_debt += using_accrued_debt;
           burned_debt += using_debt;
           
           // next best debtor will be the first in table (after this one changed)
@@ -271,7 +245,6 @@ void buck::run_requests(uint8_t max) {
           add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
         }
       
-        add_savings_pool(saved_debt);
         update_supply(burned_debt);
         
         add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
@@ -314,7 +287,7 @@ void buck::run_liquidation(uint8_t max) {
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
-    int64_t debt_amount = debtor_itr->debt.amount + debtor_itr->accrued_debt.amount;
+    int64_t debt_amount = debtor_itr->debt.amount;
     int64_t collateral_amount = debtor_itr->collateral.amount;
     
     int64_t debtor_ccr = CR;
@@ -324,7 +297,7 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     PRINT("debtor id", debtor_itr->id)
-    PRINT("total debt", debt_amount) 
+    PRINT("debt", debt_amount) 
     PRINT("col", debtor_itr->collateral)
     PRINT("ccr", debtor_ccr)
     

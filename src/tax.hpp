@@ -52,14 +52,6 @@ void buck::process_taxes() {
   });
 }
 
-// add interest to savings pool
-void buck::add_savings_pool(const asset& value) {
-  if (value.amount <= 0) return;
-  _tax.modify(_tax.begin(), same_payer, [&](auto& r) {
-    r.collected_savings += value;
-  });
-}
-
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   PRINT("adding tax id", cdp_itr->id)
@@ -80,18 +72,16 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
-  PRINT("dt", now - last)
-  PRINT("accrued_debt", accrued_debt)
-  PRINT("accrued_collateral", accrued_collateral)
-  PRINT_("--")
+  update_supply(accrued_debt);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
-    r.accrued_debt += accrued_debt;
+    r.debt += accrued_debt;
     r.accrued_timestamp = time_now;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
+    r.collected_savings += accrued_debt;
     r.collected_insurance += accrued_collateral;
   });
   
