@@ -58,7 +58,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const auto& tax = *_tax.begin();
   
-  const auto time_now = get_current_time_point();
+  const auto time_now = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = time_point_sec(cdp_itr->accrued_timestamp).utc_seconds;
   

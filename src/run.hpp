@@ -89,7 +89,7 @@ void buck::run_requests(uint8_t max) {
         else if (reparam_itr->change_collateral.amount < 0) {
         
           const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
-          const int64_t change_amount = std::min(can_withdraw, -reparam_itr->change_collateral.amount);
+          const int64_t change_amount = std::max(-can_withdraw, reparam_itr->change_collateral.amount);
       
           const asset change = asset(change_amount, REX);
           change_collateral = change;
@@ -123,11 +123,6 @@ void buck::run_requests(uint8_t max) {
           update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
         }
         
-        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-          r.collateral += change_collateral;
-          r.debt += change_debt;
-        });
-      
         PRINT("id", cdp_itr->id)
         PRINT("debt", cdp_itr->debt)
         PRINT("col", cdp_itr->collateral)
@@ -135,6 +130,11 @@ void buck::run_requests(uint8_t max) {
         PRINT("change_collateral", change_collateral) 
         PRINT_("--------")
         
+        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+          r.collateral += change_collateral;
+          r.debt += change_debt;
+        });
+      
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }

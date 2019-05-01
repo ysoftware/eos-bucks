@@ -339,24 +339,19 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
-
+	cdp = add_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
 	new_col = cdp.collateral + c
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
 
-	print("time", time)
-	print("reparam")
 	print(cdp)
-	print("args", c, d)
-	#print("request time", new_col, new_debt, "ccr", new_ccr)
 
 	if (new_ccr < CR and new_debt != 0) or new_col < 5 or (new_debt < 50 and new_debt != 0):
 		print("should fail at request\n")
 		return False
 
-	cdp = add_tax(cdp, price)
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
