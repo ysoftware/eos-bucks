@@ -64,53 +64,53 @@ class Test(unittest.TestCase):
 			transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
 		except: pass
 
-		destroy(buck)
-		maketime(buck, 0)
-		update(buck, 100)
-
-		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
-
-		# mature rex
-		test.init(2)
-		maketime(buck, test.get_time())
-		update(buck, test.get_price())
-
-		##################################
-		COMMENT("Open CDP")
-
-		cdp_table = test.table
-		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
-			# print(cdp)
-			ccr = 0 if cdp.cd > 999999 else cdp.cd
-			open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
-
-		self.compare(buck, cdp_table)
-
-		##################################
-		COMMENT("Liquidation sorting")
-		
-		top_debtors = get_debtors(buck, limit=20)
-		for i in range(0, len(top_debtors)):
-			debtor = top_debtors[i]
-			if amount(debtor["debt"]) == 0: break # unsorted end of the table
-			self.match(cdp_table[i * -1 - 1], debtor)
-
-		top_liquidators = get_liquidators(buck, limit=20)
-		for i in range(0, len(top_liquidators)):
-			liquidator = top_liquidators[i]
-			if liquidator["acr"] == 0: break # unsorted end of the table
-			self.match(cdp_table[i], liquidator)
-
-
-		##################################
-		COMMENT("Start rounds")
-
 		while True:
+			destroy(buck)
+			maketime(buck, 0)
+			update(buck, 100)
+
+			transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
+
+			# mature rex
+			test.init(2)
+			maketime(buck, test.get_time())
+			update(buck, test.get_price())
+
+			##################################
+			COMMENT("Open CDP")
+
+			cdp_table = test.table
+			for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
+				# print(cdp)
+				ccr = 0 if cdp.cd > 999999 else cdp.cd
+				open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
+
+			self.compare(buck, cdp_table)
+
+			##################################
+			COMMENT("Liquidation sorting")
+			
+			top_debtors = get_debtors(buck, limit=20)
+			for i in range(0, len(top_debtors)):
+				debtor = top_debtors[i]
+				if amount(debtor["debt"]) == 0: break # unsorted end of the table
+				self.match(cdp_table[i * -1 - 1], debtor)
+
+			top_liquidators = get_liquidators(buck, limit=20)
+			for i in range(0, len(top_liquidators)):
+				liquidator = top_liquidators[i]
+				if liquidator["acr"] == 0: break # unsorted end of the table
+				self.match(cdp_table[i], liquidator)
+
+
+			##################################
+			COMMENT("Start rounds")
+
 			for i in range(0, 20):
 				COMMENT(f"Round {i+1}")
 
 				# actions
-				result = test.run_round()
+				result = test.run_round(balance(buck, user1) * 10000)
 				round_time = result[0]
 				actions = result[1]
 
@@ -142,6 +142,7 @@ class Test(unittest.TestCase):
 						quantity = asset(action[0][1], "BUCK")
 
 						if action[1] == False:
+							balance(buck, user1)
 							assertRaises(self, lambda: redeem(buck, user1, quantity))
 						else: redeem(buck, user1, quantity)
 
@@ -149,17 +150,15 @@ class Test(unittest.TestCase):
 				update(buck, test.get_price())
 				run(buck)
 
-				table(buck, "cdp")
-
 				self.compare(buck, cdp_table)
 
 
 
 	def match(self, cdp, row):
-		print(cdp)
+		# print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 

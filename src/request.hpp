@@ -56,7 +56,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   PRINT_("request reparam")
   PRINT("new_debt", new_debt)
-  PRINT("min_collateral", min_collateral)
+  PRINT("min_collateral", asset(min_collateral, REX))
   PRINT("new_collateral", new_collateral)
   
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");

@@ -186,6 +186,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
+        PRINT_("redeem")
         
         // to-do sorting
         // to-do verify timestamp
@@ -210,6 +211,12 @@ void buck::run_requests(uint8_t max) {
         
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
+          
+          // PRINT("redeem_quantity", redeem_quantity)
+          // PRINT("from cdp", debtor_itr->id)
+          // PRINT("available debt", debtor_itr->debt)
+          // PRINT("using_debt", using_debt)
+          // PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;

@@ -207,24 +207,31 @@ def calc_val(cdp, cdp2, price, cr, lf):
 
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time, time
-	print("tax time", oracle_time, "dt", oracle_time-cdp.time)
 
+	if time-cdp.time == 0: return cdp
+
+	print("tax", cdp)
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
+
+		print("dt", time-cdp.time)
+		print("id", cdp.id, "d", interest * SR // 100, "c", interest * IR // price)
+
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-		cdp.new_time(time)
 	elif AEC > 0:
 		ec = cdp.collateral * 100 // cdp.acr 
 		if oracle_time != cdp.time:
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
-			cdp.new_time(oracle_time)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
+
+	cdp.new_time(oracle_time)
+	print(cdp, "\n")
 	return cdp
 	
 # Contract functions
@@ -297,39 +304,30 @@ def redemption(amount, price, cr, rf):
 	global time, table
 	i = len(table)-1
 	while amount > epsilon(amount) and i != -1:
-			cdp = table.pop(i)
-			cdp = add_tax(cdp, price)
-			# if cdp.debt < 0 or cdp.collateral < 0:
-			# 	print("redemption problem")
-			# 	print(cdp)
-			# 	exit()
-			if cdp.debt <= 50:
-				cdp_insert(cdp)
-				return ERR
-			else:
-				if cdp.collateral * price // cdp.debt >= 100 - rf:
-					if cdp.debt <= epsilon(cdp.debt):
-						cdp_insert(cdp)
-						return ERR
-					elif amount < cdp.debt:
-						cdp.add_debt(-amount)
-						cdp.add_collateral((amount*100)//(price+rf))
-						# if cdp.collateral <0 or cdp.debt <0:
-						# 	print("5")
-						# 	exit()
-						amount = 0
-						cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-						cdp_insert(cdp)
-						return 
-					else:
-						d = cdp. debt
-						cdp.new_debt(0)
-						cdp.add_collateral((d*100) // (price+rf))
-						# if cdp.collateral <0 or cdp.debt <0:
-						# 	print("6")
-						# 	exit()
-						amount -= d
-						i -= 1
+		cdp = table.pop(i)
+		cdp = add_tax(cdp, price)
+
+		if cdp.debt <= 50:
+			cdp_insert(cdp)
+			return
+		else:
+			if cdp.collateral * price // cdp.debt >= 100 - rf:
+				if cdp.debt <= epsilon(cdp.debt):
+					cdp_insert(cdp)
+					return
+				elif amount < cdp.debt:
+					cdp.add_debt(-amount)
+					cdp.add_collateral((amount*100) //(price+rf))
+					amount = 0
+					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
+					cdp_insert(cdp)
+				else:
+					d = cdp. debt
+					cdp.new_debt(0)
+					cdp.add_collateral((d*100) // (price+rf))
+					amount -= d
+					i -= 1
+		print(cdp)
 	return 
 	
 def reparametrize(id, c, d, price, old_price):
@@ -339,15 +337,11 @@ def reparametrize(id, c, d, price, old_price):
 	cdp = add_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
-	new_col = cdp.collateral + c
+	new_col = (cdp.collateral + c)
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
-
-	print("doing reparam\n", cdp)
-
-	min_col = 5 * old_price // 100 # request time check
-	if (new_ccr < CR and new_debt != 0) or new_col < min_col or (new_debt < 50 and new_debt != 0):
-		print("should fail at request\n")
+	min_col = 5 * old_price * 10_000 
+	if new_ccr < CR and new_debt != 0 or new_col < min_col or new_debt < 50_0000 and new_debt != 0: 
 		return False
 
 	if cdp.acr != 0 and cdp.debt == 0:
@@ -417,7 +411,7 @@ def update_round():
 
 
 # returns [time, [{action, failed?}], table]
-def run_round():
+def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
 
 	actions = []
@@ -437,6 +431,7 @@ def run_round():
 
 	if price < old_price:
 		liquidation(price, 150, 10)
+		length = len(table)
 
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
@@ -459,12 +454,10 @@ def run_round():
 		if k == 0:
 			break
 
-	balance = 0
-	for cdp in table:
-		balance += cdp.debt
-
 	v1 = random.randrange(0,100000000)
 	failed = redemption(v1, price, 150, 101)
+	print("balance", balance)
+	print("redeem amount", v1)
 	actions.append([["redeem", v1], v1 <= balance])
 
 	return [time, actions]
