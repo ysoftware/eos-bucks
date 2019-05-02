@@ -41,7 +41,7 @@ void buck::run_requests(uint8_t max) {
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         
         if (cdp_itr->debt.amount == 0) {
-          withdraw_insurance_dividends(cdp_itr);
+          // withdraw_insurance_dividends(cdp_itr);
           update_excess_collateral(-cdp_itr->collateral);
         }
         
@@ -108,7 +108,7 @@ void buck::run_requests(uint8_t max) {
         }
 
         if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) { // stop being an insurer
-          withdraw_insurance_dividends(cdp_itr);
+          // withdraw_insurance_dividends(cdp_itr);
           update_excess_collateral(-cdp_itr->collateral); // remove old amount
         }
         else if (cdp_itr->debt.amount - change_debt.amount == 0) { // removing debt
@@ -158,7 +158,7 @@ void buck::run_requests(uint8_t max) {
         
         // stop being an insurer
         if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
-          withdraw_insurance_dividends(cdp_itr);
+          // withdraw_insurance_dividends(cdp_itr);
           update_excess_collateral(-cdp_itr->collateral);
         }
         else if (cdp_itr->debt.amount - change_debt.amount == 0) {
@@ -347,7 +347,7 @@ void buck::run_liquidation(uint8_t max) {
       
       if (liquidator_itr->debt.amount == 0) {
         const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
-        withdraw_insurance_dividends(cdp_itr);
+        // withdraw_insurance_dividends(cdp_itr);
         update_excess_collateral(-cdp_itr->collateral);
       }
       

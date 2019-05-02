@@ -153,10 +153,10 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		# print(cdp)
+		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 1, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 1, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 

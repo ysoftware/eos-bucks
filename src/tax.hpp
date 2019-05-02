@@ -56,9 +56,16 @@ void buck::process_taxes() {
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
+  if (cdp_itr->debt.amount == 0) {
+    withdraw_insurance_dividends(cdp_itr);
+    return;
+  }
+  
   const auto time_now = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
+  
+  if (now == last) return;
   
   static const uint128_t DM = 1000000000000;
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
@@ -72,11 +79,14 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  PRINT("tax", cdp_itr->id)
-  PRINT("dt", now - last)
-  PRINT("d", accrued_debt)
-  PRINT("c", accrued_collateral)
-  PRINT_("---")
+  // if (accrued_debt.amount > 0) {
+  //   PRINT("tax", cdp_itr->id)
+  //   PRINT("dt", now - last)
+  //   PRINT("interest", accrued_amount)
+  //   PRINT("d", accrued_debt)
+  //   PRINT("c", accrued_collateral)
+  //   PRINT_("---")
+  // }
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -102,14 +112,16 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   const int64_t ipa = tax.insurance_pool.amount;
   const int64_t aea = tax.aggregated_excess.amount;
   
-  if (aea == 0) {
-    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-      r.modified_round = tax.current_round;
-    });
-    return;
-  }
+  const auto time_now = _stat.begin()->oracle_timestamp;
+  static const uint32_t now = time_point_sec(time_now).utc_seconds;
+   
+  if (now == cdp_itr->modified_round) return;
   
-  accrue_interest(cdp_itr);
+  _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+    r.modified_round = now;
+  });
+  
+  if (aea == 0) return;
   
   const int64_t delta_round = tax.current_round - cdp_itr->modified_round;
   const int64_t user_aggregated_amount = (uint128_t) ca * delta_round / BASE_ROUND_DURATION;
@@ -120,9 +132,8 @@ void buck::withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr) {
   
   add_funds(cdp_itr->account, dividends, same_payer);
   
-  _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-    r.modified_round = tax.current_round;
-  });
+  PRINT("dividends for", cdp_itr->id)
+  PRINT("amount", dividends)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.insurance_pool -= dividends;

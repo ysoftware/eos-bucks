@@ -208,23 +208,29 @@ def calc_val(cdp, cdp2, price, cr, lf):
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time, time
 
-	if time-cdp.time == 0: return cdp
-
 	if cdp.debt > epsilon(cdp.debt):	
-		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
+		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
+		
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 	elif AEC > 0:
 		ec = cdp.collateral * 100 // cdp.acr 
+			
+		# print("add tax")
+		# print(cdp)
+
 		if oracle_time != cdp.time:
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
+			# print("dividends for", cdp.id, "amount", val)
+			# print("AEC", AEC)
 	cdp.new_time(oracle_time)
+	# print(cdp)
 	return cdp
 	
 # Contract functions
@@ -237,12 +243,7 @@ def liquidation(price, cr, lf):
 		i = 0
 		while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 			debtor = table.pop(len(table)-1)
-			print("debtor", debtor.id)
-			print("total debt", debtor.debt)
-			print("col", debtor.collateral)
-			print("ccr", debtor.cd)
-
-			debtor = add_tax(debtor,price)
+			debtor = add_tax(debtor, price)
 			if debtor.debt == 0:
 				return
 			if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
@@ -261,17 +262,12 @@ def liquidation(price, cr, lf):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
-					print("liquidator", liquidator.id)
-
 					liquidator = add_tax(liquidator, price)
 					if liquidator.debt <= 100:
 						TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
-
-					print("val", val)
-					print("\n")
 					debtor.add_debt(-val)
 					liquidator.add_debt(val)
 					liquidator.add_collateral(c)
@@ -290,7 +286,6 @@ def liquidation(price, cr, lf):
 						cdp_insert(debtor)
 					if i == len(table):
 						return 
-		print("\n")
 		return 
 
 def redemption(amount, price, cr, rf):
@@ -301,7 +296,6 @@ def redemption(amount, price, cr, rf):
 	while amount > epsilon(amount) and i != -1:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
-
 		print(cdp)
 
 		if cdp.debt <= 50:
@@ -315,7 +309,6 @@ def redemption(amount, price, cr, rf):
 				elif amount < cdp.debt:
 					cdp.add_debt(-amount)
 					cdp.add_collateral((amount*100) //(price+rf))
-					print("using debt", amount, "col", (amount*100) //(price+rf))
 					amount = 0
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
@@ -325,9 +318,8 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
 					i -= 1
-		print(cdp, "\n")
-	print("-----\n")
-	return 
+	print(cdp, "\n")
+	return
 	
 def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
@@ -390,9 +382,9 @@ def change_acr(id, acr, price):
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-			
+		
 def update_round():
-	global AEC, IDP, CIT, oracle_time, time, TEC
+	global AEC, IDP, CIT, oracle_time, time, TEC, price
 	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
@@ -400,7 +392,7 @@ def update_round():
 	
 	for cdp in table:
 		if oracle_time - cdp.time > 2629800: # auto interest collection every month
-			add_tax(cdp, oracle_time)
+			add_tax(cdp, price)
 	
 #random testing
 
@@ -412,11 +404,12 @@ def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
 
 	actions = []
+	# TEC = 1
 
 	time = time_now()
 	oracle_time = time
 	old_price = price
-	price  += random.randint(100, 1000)
+	price  += random.randint(10000, 100000)
 
 	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
@@ -476,8 +469,3 @@ def init(x=10):
 	gen(1, 1, price, time)
 	time_now()
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
-
-
-
-# init()
-# run_round()
