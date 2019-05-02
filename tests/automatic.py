@@ -73,9 +73,11 @@ class Test(unittest.TestCase):
 		# mature rex
 		test.init(2)
 		maketime(buck, test.get_time())
+		update(buck, test.get_price())
 
 		##################################
 		COMMENT("Open CDP")
+
 		cdp_table = test.table
 		for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
 			# print(cdp)
@@ -105,6 +107,7 @@ class Test(unittest.TestCase):
 
 		# rounds
 		for i in range(0, 20):
+			COMMENT(f"Round {i+1}")
 
 			# actions
 			result = test.run_round()
