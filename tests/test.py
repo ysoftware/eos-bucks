@@ -210,14 +210,15 @@ def add_tax(cdp, price):
 
 	if time-cdp.time == 0: return cdp
 
-	print("tax", cdp)
+	# print("dt", time-cdp.time)
+	# print("tax", cdp)
+
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 
-		print("dt", time-cdp.time)
-		print("id", cdp.id, "d", interest * SR // 100, "c", interest * IR // price)
+		# print("id", cdp.id, "d", interest * SR // 100, "c", interest * IR // price)
 
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
@@ -229,6 +230,9 @@ def add_tax(cdp, price):
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
+
+			# print("id", cdp.id, "collateral", val)
+
 
 	cdp.new_time(oracle_time)
 	print(cdp, "\n")
@@ -307,6 +311,8 @@ def redemption(amount, price, cr, rf):
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
+		print("redeem", cdp)
+
 		if cdp.debt <= 50:
 			cdp_insert(cdp)
 			return
@@ -318,6 +324,7 @@ def redemption(amount, price, cr, rf):
 				elif amount < cdp.debt:
 					cdp.add_debt(-amount)
 					cdp.add_collateral((amount*100) //(price+rf))
+					print("using debt", amount, "col", (amount*100) //(price+rf))
 					amount = 0
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
@@ -327,7 +334,8 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
 					i -= 1
-		print(cdp)
+		print(cdp, "\n")
+	print("-----\n")
 	return 
 	
 def reparametrize(id, c, d, price, old_price):
@@ -375,8 +383,6 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-
-	print("result:\n", cdp, "\n")
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
@@ -446,19 +452,19 @@ def run_round(balance):
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
 		if cdp_index(i) != False:
-			v1 = random.randrange(-1000000, 10000000)
-			v2 = random.randrange(-1000000, 10000000)
+			v1 = random.randrange(-100_0000, 1_000_0000)
+			v2 = random.randrange(-100_0000, 1_000_0000)
 			failed = reparametrize(i, v1, v2, price, old_price)
 			actions.append([["reparam", i, v1, v2], failed != False])
 			k -= 1
 		if k == 0:
 			break
 
-	v1 = random.randrange(0,100000000)
-	failed = redemption(v1, price, 150, 101)
-	print("balance", balance)
-	print("redeem amount", v1)
-	actions.append([["redeem", v1], v1 <= balance])
+	v1 = random.randrange(0, 10_000_0000)
+	failed = v1 <= balance
+	if not failed:
+		redemption(v1, price, 150, 101)
+	actions.append([["redeem", v1], failed])
 
 	return [time, actions]
 

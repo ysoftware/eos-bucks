@@ -54,10 +54,10 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   static const auto min_collateral = convert_to_rex_usd(MIN_COLLATERAL.amount);
   
-  PRINT_("request reparam")
-  PRINT("new_debt", new_debt)
-  PRINT("min_collateral", asset(min_collateral, REX))
-  PRINT("new_collateral", new_collateral)
+  // PRINT_("request reparam")
+  // PRINT("new_debt", new_debt)
+  // PRINT("min_collateral", asset(min_collateral, REX))
+  // PRINT("new_collateral", new_collateral)
   
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
   check(new_collateral.amount >= min_collateral, "can not reparametrize collateral below the limit");
@@ -77,7 +77,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   // if rex is not matured, create maturity request
   if (get_amount_maturity(cdp_itr->account, change_collateral) > get_current_time_point()) {
     
-    PRINT("adding maturity request, until", time_point_sec(get_amount_maturity(cdp_itr->account, change_collateral)).utc_seconds)
+    // PRINT("adding maturity request, until", time_point_sec(get_amount_maturity(cdp_itr->account, change_collateral)).utc_seconds)
     
     _maturityreq.emplace(account, [&](auto& r) {
       r.maturity_timestamp = get_amount_maturity(cdp_itr->account, change_collateral);
@@ -88,7 +88,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     });
   }
   else {
-     PRINT_("adding reparam request")
+    // PRINT_("adding reparam request")
   
     _reparamreq.emplace(account, [&](auto& r) {
       r.cdp_id = cdp_id;

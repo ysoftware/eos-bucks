@@ -212,11 +212,11 @@ void buck::run_requests(uint8_t max) {
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          // PRINT("redeem_quantity", redeem_quantity)
-          // PRINT("from cdp", debtor_itr->id)
-          // PRINT("available debt", debtor_itr->debt)
-          // PRINT("using_debt", using_debt)
-          // PRINT("using_collateral", using_collateral)
+          PRINT("redeem_quantity", redeem_quantity)
+          PRINT("from cdp", debtor_itr->id)
+          PRINT("available debt", debtor_itr->debt)
+          PRINT("using_debt", using_debt)
+          PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
@@ -285,10 +285,10 @@ void buck::run_liquidation(uint8_t max) {
       debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
     }
     
-    PRINT("debtor id", debtor_itr->id)
-    PRINT("debt", debt_amount) 
-    PRINT("col", debtor_itr->collateral)
-    PRINT("ccr", debtor_ccr)
+    // PRINT("debtor id", debtor_itr->id)
+    // PRINT("debt", debt_amount) 
+    // PRINT("col", debtor_itr->collateral)
+    // PRINT("ccr", debtor_ccr)
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
