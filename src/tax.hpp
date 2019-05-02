@@ -54,8 +54,6 @@ void buck::process_taxes() {
 
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
-  PRINT("adding tax id", cdp_itr->id)
-  
   const auto& tax = *_tax.begin();
   
   const auto time_now = _stat.begin()->oracle_timestamp;
@@ -71,8 +69,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
-  
-  PRINT("tax dt", now - last)
   
   update_supply(accrued_debt);
   

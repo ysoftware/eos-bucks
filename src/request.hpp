@@ -52,8 +52,9 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     check(ccr > CR, "can not reparametrize below 150% CCR");
   }
   
-  check(new_debt > MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
-  check(new_collateral > MIN_COLLATERAL, "can not reparametrize collateral below the limit");
+  static const auto min_collateral = convert_to_rex_usd(MIN_COLLATERAL.amount);
+  check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
+  check(new_collateral.amount >= min_collateral, "can not reparametrize collateral below the limit");
   // to-do check min collateral in EOS
   
   // take away debt if negative change

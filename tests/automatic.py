@@ -114,6 +114,9 @@ class Test(unittest.TestCase):
 			round_time = result[0]
 			actions = result[1]
 
+			if len(actions) == 0:
+				break
+
 			for action in actions:
 				print(action)
 

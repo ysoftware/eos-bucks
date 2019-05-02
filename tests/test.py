@@ -430,7 +430,7 @@ def run_round():
 	update_round()
 
 	length = len(table)
-	if length == 0: return # empty 
+	if length == 0: return [time, actions]
 
 	if price < old_price:
 		liquidation(price, 150, 10)
@@ -446,19 +446,23 @@ def run_round():
 			break
 
 	k = 10
-	for i in range(1, 2): # random.randint(0, length-1)):  ## ONLY TEST 1 REPARAM
+	for i in random.randint(0, length-1):
 		if cdp_index(i) != False:
-			v1 = random.randrange(-1000000, 10000000, 10000)
-			v2 = random.randrange(-1000000, 10000000, 10000)
+			v1 = random.randrange(-1000000, 10000000)
+			v2 = random.randrange(-1000000, 10000000)
 			failed = reparametrize(i, v1, v2, price, old_price)
 			actions.append([["reparam", i, v1, v2], failed != False])
 			k -= 1
 		if k == 0:
 			break
 
-	v1 = random.randrange(1000000,100000000,10000)
+	balance = 0
+	for cdp in table:
+		balance += cdp.debt 
+
+	v1 = random.randrange(0,100000000)
 	failed = redemption(v1, price, 150, 101)
-	actions.append([["redeem", v1], failed != False])
+	actions.append([["redeem", v1], v1 <= balance])
 
 	return [time, actions]
 

@@ -34,27 +34,27 @@ time_point_sec buck::get_maturity() const {
 }
 
 int64_t buck::convert_to_rex_usd(int64_t quantity) const {
-  const int64_t EU = get_eos_usd_price();
+  static const int64_t EU = get_eos_usd_price();
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
   if (pool_itr == _pool.end()) { return quantity * EU; } // test net case (1 rex = 1 eos)
   
-  const int64_t S0 = pool_itr->total_lendable.amount;
-  const int64_t R0 = pool_itr->total_rex.amount;
+  static const int64_t S0 = pool_itr->total_lendable.amount;
+  static const int64_t R0 = pool_itr->total_rex.amount;
   const int64_t p  = (uint128_t(quantity) * S0) / R0 / EU;
   return p;
 }
 
 int64_t buck::convert_to_usd_rex(int64_t quantity, int64_t tax) const {
-  const int64_t EU = get_eos_usd_price() + tax;
+  static const int64_t EU = get_eos_usd_price() + tax;
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
   if (pool_itr == _pool.end()) { return quantity / EU; } // test net case (1 rex = 1 eos)
   
-  const int64_t S0 = pool_itr->total_lendable.amount;
-  const int64_t R0 = pool_itr->total_rex.amount;
+  static const int64_t S0 = pool_itr->total_lendable.amount;
+  static const int64_t R0 = pool_itr->total_rex.amount;
   const int64_t p  = (uint128_t(quantity) * R0 * EU) / S0;
   return p;
 }

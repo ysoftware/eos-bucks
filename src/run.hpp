@@ -5,7 +5,7 @@
 void buck::run(uint8_t max) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  const uint8_t value = std::min(max, (uint8_t) 50);
+  const uint8_t value = std::min(max, (uint8_t) 250);
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
     run_liquidation(value);
   }
@@ -15,6 +15,7 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
+  PRINT("run req", max)
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   uint8_t status = get_processing_status();
   
@@ -53,6 +54,7 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
+        PRINT_("reparam")
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
@@ -113,19 +115,11 @@ void buck::run_requests(uint8_t max) {
           update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
         }
         
-        PRINT_("\nreparam req")
-        PRINT("id", cdp_itr->id)
-        PRINT("debt", cdp_itr->debt)
-        PRINT("col", cdp_itr->collateral)
-        
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
       
-        PRINT("new debt", cdp_itr->debt)
-        PRINT("new col", cdp_itr->collateral)
-        
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }
@@ -134,7 +128,7 @@ void buck::run_requests(uint8_t max) {
       // look for a first valid request
       while (maturity_itr != maturity_index.end() 
               && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
-      
+
       if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < oracle_timestamp) {
         PRINT_("\nmaturity req")
         
@@ -192,7 +186,6 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT_("redeem req")
         
         // to-do sorting
         // to-do verify timestamp
@@ -270,9 +263,6 @@ void buck::run_liquidation(uint8_t max) {
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   
   auto debtor_itr = debtor_index.begin();
-  
-
-  PRINT_("liquidation\n")
 
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
@@ -282,7 +272,6 @@ void buck::run_liquidation(uint8_t max) {
     
     int64_t debtor_ccr = CR;
     if (debt_amount > 0) {
-      PRINT("rex amount", convert_to_rex_usd(collateral_amount))
       debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
     }
     
@@ -331,7 +320,8 @@ void buck::run_liquidation(uint8_t max) {
       PRINT("ccr", liquidator_ccr)
       
       // this and all further liquidators can not bail out anymore bad debt
-      if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end()) {
+      if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end()
+          || liquidator_itr->id == debtor_itr->id) {
         
         // to-do bailout pool?
         PRINT_("FAILED")
