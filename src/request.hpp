@@ -22,7 +22,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   check(is_mature(cdp_id), "can not reparametrize this debt position yet");
   
   // revert previous request to replace it with the new one
-    
+  
   const auto reparam_itr = _reparamreq.find(cdp_id);
   if (reparam_itr != _reparamreq.end()) {
     
@@ -53,6 +53,12 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   }
   
   static const auto min_collateral = convert_to_rex_usd(MIN_COLLATERAL.amount);
+  
+  PRINT_("request reparam")
+  PRINT("new_debt", new_debt)
+  PRINT("min_collateral", min_collateral)
+  PRINT("new_collateral", new_collateral)
+  
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
   check(new_collateral.amount >= min_collateral, "can not reparametrize collateral below the limit");
   // to-do check min collateral in EOS
@@ -92,7 +98,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     });
   }
   
-  run_requests(2);
+  run_requests(10);
 }
 
 void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
@@ -117,6 +123,8 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.acr = acr;
   });
+  
+  run_requests(10);
 }
 
 void buck::close(uint64_t cdp_id) {
@@ -137,6 +145,8 @@ void buck::close(uint64_t cdp_id) {
 
   require_auth(cdp_itr->account);
   
+  accrue_interest(cdp_itr);
+  
   sub_balance(cdp_itr->account, cdp_itr->debt, true);
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
@@ -144,7 +154,7 @@ void buck::close(uint64_t cdp_id) {
     r.timestamp = get_current_time_point();
   });
   
-  run_requests(2);
+  run_requests(10);
 }
 
 void buck::redeem(const name& account, const asset& quantity) {
@@ -173,5 +183,5 @@ void buck::redeem(const name& account, const asset& quantity) {
   
   sub_balance(account, quantity, false);
   
-  run(3);
+  run(10);
 }

@@ -21,7 +21,7 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   sub_balance(from, quantity, false);
   add_balance(to, quantity, payer, false);
 	
-  run(1);
+  run(3);
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {
@@ -38,7 +38,7 @@ void buck::withdraw(const name& from, const asset& quantity) {
   
   sell_rex(from, quantity);
   
-  run(3);
+  run(5);
 }
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
@@ -127,5 +127,5 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     add_balance(account, issue_debt, account, true);
   }
   
-  run(3);
+  run(5);
 }

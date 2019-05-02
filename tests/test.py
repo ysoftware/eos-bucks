@@ -24,7 +24,7 @@ def update(price, t):
 
 def time_now():
 	global time
-	time = random.randint(time + 435000, time + 7884 * 10 ** 3) # adding 3 months
+	time += 3000000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
 def epsilon(value): return value // 500
@@ -207,7 +207,7 @@ def calc_val(cdp, cdp2, price, cr, lf):
 
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time, time
-	print("tax dt", oracle_time-cdp.time)
+	print("tax time", oracle_time, "dt", oracle_time-cdp.time)
 
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
@@ -216,7 +216,7 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(time)
-	else:
+	elif AEC > 0:
 		ec = cdp.collateral * 100 // cdp.acr 
 		if oracle_time != cdp.time:
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
@@ -345,7 +345,8 @@ def reparametrize(id, c, d, price, old_price):
 
 	print("doing reparam\n", cdp)
 
-	if (new_ccr < CR and new_debt != 0) or new_col < 5 or (new_debt < 50 and new_debt != 0):
+	min_col = 5 * old_price // 100 # request time check
+	if (new_ccr < CR and new_debt != 0) or new_col < min_col or (new_debt < 50 and new_debt != 0):
 		print("should fail at request\n")
 		return False
 
@@ -382,7 +383,6 @@ def reparametrize(id, c, d, price, old_price):
 	cdp_insert(cdp)
 
 	print("result:\n", cdp, "\n")
-
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
@@ -407,6 +407,9 @@ def update_round():
 	CIT = 0
 	oracle_time = time
 	
+	for cdp in table:
+		if oracle_time - cdp.time > 2629800: # auto interest collection every month
+			add_tax(cdp, oracle_time)
 	
 #random testing
 
@@ -422,7 +425,7 @@ def run_round():
 	time = time_now()
 	oracle_time = time
 	old_price = price
-	price  += 50 # = random.randint(100, 1000)  ## ONLY TEST REPARAM
+	price  += random.randint(100, 1000)
 
 	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
@@ -436,7 +439,7 @@ def run_round():
 		liquidation(price, 150, 10)
 
 	k = 10
-	for i in range(0, random.randint(0, length - 1)):
+	for i in range(0, random.randint(0, length-1)):
 		if cdp_index(i) != False:
 			acr = random.randint(150,1000)
 			failed = change_acr(i, acr, price)
@@ -446,7 +449,7 @@ def run_round():
 			break
 
 	k = 10
-	for i in random.randint(0, length-1):
+	for i in range(0, random.randint(0, length-1)):
 		if cdp_index(i) != False:
 			v1 = random.randrange(-1000000, 10000000)
 			v2 = random.randrange(-1000000, 10000000)
@@ -458,7 +461,7 @@ def run_round():
 
 	balance = 0
 	for cdp in table:
-		balance += cdp.debt 
+		balance += cdp.debt
 
 	v1 = random.randrange(0,100000000)
 	failed = redemption(v1, price, 150, 101)

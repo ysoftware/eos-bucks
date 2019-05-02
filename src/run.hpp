@@ -198,6 +198,8 @@ void buck::run_requests(uint8_t max) {
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
           
+          accrue_interest(_cdp.require_find(debtor_itr->id));
+          
           const int32_t ccr = convert_to_rex_usd(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
           // skip to the next debtor
@@ -230,8 +232,9 @@ void buck::run_requests(uint8_t max) {
         }
       
         update_supply(burned_debt);
-        
         add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
+        
+        redeem_itr = _redeemreq.erase(redeem_itr);
       }
       else {
         // no more redemption requests
@@ -247,9 +250,9 @@ void buck::run_requests(uint8_t max) {
   
   int i = 0;
   const uint32_t now = _tax.begin()->current_round;
-  while (i < max && accrual_itr != accrual_index.end() &&
-        accrual_itr->debt.amount > 0 && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
-    
+  while (i < max && accrual_itr != accrual_index.end()
+          && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
+  
     accrue_interest(_cdp.require_find(accrual_itr->id));
     accrual_itr = accrual_index.begin(); // take first element after index updated
     i++;

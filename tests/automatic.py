@@ -105,54 +105,53 @@ class Test(unittest.TestCase):
 		##################################
 		COMMENT("Start rounds")
 
-		# rounds
-		for i in range(0, 20):
-			COMMENT(f"Round {i+1}")
+		while True:
+			for i in range(0, 20):
+				COMMENT(f"Round {i+1}")
 
-			# actions
-			result = test.run_round()
-			round_time = result[0]
-			actions = result[1]
+				# actions
+				result = test.run_round()
+				round_time = result[0]
+				actions = result[1]
 
-			if len(actions) == 0:
-				break
+				if len(actions) == 0:
+					COMMENT("No actions were performed")
+					break
 
-			for action in actions:
-				print(action)
+				for action in actions:
+					print(action)
 
-				if action[0][0] == "reparam":
-					cdp = action[0][1]
-					col = asset(action[0][2], "REX")
-					debt = asset(action[0][3], "BUCK")
+					if action[0][0] == "reparam":
+						cdp = action[0][1]
+						col = asset(action[0][2], "REX")
+						debt = asset(action[0][3], "BUCK")
 
-					if action[1] == False:
-						assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
-					else: reparam(buck, user1, cdp, debt, col)
+						if action[1] == False:
+							assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
+						else: reparam(buck, user1, cdp, debt, col)
 
-				elif action[0][0] == "acr":
-					cdp = action[0][1]
-					acr = action[0][2]
+					elif action[0][0] == "acr":
+						cdp = action[0][1]
+						acr = action[0][2]
 
-					if action[1] == False:
-						assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
-					else: changeacr(buck, user1, cdp, acr)
+						if action[1] == False:
+							assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
+						else: changeacr(buck, user1, cdp, acr)
 
-				elif action[0][0] == "redeem":
-					quantity = asset(action[0][1], "BUCK")
+					elif action[0][0] == "redeem":
+						quantity = asset(action[0][1], "BUCK")
 
-					if action[1] == False:
-						assertRaises(self, lambda: redeem(buck, user1, quantity))
-					else: redeem(buck, user1, quantity)
+						if action[1] == False:
+							assertRaises(self, lambda: redeem(buck, user1, quantity))
+						else: redeem(buck, user1, quantity)
 
-			maketime(buck, round_time)
-			update(buck, test.get_price())
-			run(buck)
-			run(buck)
-			run(buck)
+				maketime(buck, round_time)
+				update(buck, test.get_price())
+				run(buck)
 
-			table(buck, "cdp")
+				table(buck, "cdp")
 
-			self.compare(buck, cdp_table)
+				self.compare(buck, cdp_table)
 
 
 
