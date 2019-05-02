@@ -210,16 +210,10 @@ def add_tax(cdp, price):
 
 	if time-cdp.time == 0: return cdp
 
-	# print("dt", time-cdp.time)
-	# print("tax", cdp)
-
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
-
-		# print("id", cdp.id, "d", interest * SR // 100, "c", interest * IR // price)
-
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 	elif AEC > 0:
@@ -230,12 +224,7 @@ def add_tax(cdp, price):
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-
-			# print("id", cdp.id, "collateral", val)
-
-
 	cdp.new_time(oracle_time)
-	print(cdp, "\n")
 	return cdp
 	
 # Contract functions
@@ -307,11 +296,13 @@ def liquidation(price, cr, lf):
 def redemption(amount, price, cr, rf):
 	global time, table
 	i = len(table)-1
+
+	print("redeem")
 	while amount > epsilon(amount) and i != -1:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		print("redeem", cdp)
+		print(cdp)
 
 		if cdp.debt <= 50:
 			cdp_insert(cdp)
@@ -461,10 +452,9 @@ def run_round(balance):
 			break
 
 	v1 = random.randrange(0, 10_000_0000)
-	failed = v1 <= balance
-	if not failed:
-		redemption(v1, price, 150, 101)
-	actions.append([["redeem", v1], failed])
+	success = v1 <= balance
+	if success: redemption(v1, price, 150, 101)
+	actions.append([["redeem", v1], success])
 
 	return [time, actions]
 

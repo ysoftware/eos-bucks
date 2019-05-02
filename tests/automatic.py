@@ -119,8 +119,6 @@ class Test(unittest.TestCase):
 					break
 
 				for action in actions:
-					print(action)
-
 					if action[0][0] == "reparam":
 						cdp = action[0][1]
 						col = asset(action[0][2], "REX")
