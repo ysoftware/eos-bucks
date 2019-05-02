@@ -382,7 +382,7 @@ def reparametrize(id, c, d, price, old_price):
 	cdp_insert(cdp)
 
 	print("result:\n", cdp, "\n")
-	
+
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
@@ -435,30 +435,30 @@ def run_round():
 	if price < old_price:
 		liquidation(price, 150, 10)
 
-	# k = 10
-	# for i in range(0, random.randint(0, length - 1)):
-	# 	if cdp_index(i) != False:
-	# 		acr = random.randint(150,1000)
-	# 		failed = change_acr(i, acr, price)
-	# 		actions.append([["acr", i, acr], failed != False])
-	# 		k -= 1
-	# 	if k == 0:
-	# 		break
+	k = 10
+	for i in range(0, random.randint(0, length - 1)):
+		if cdp_index(i) != False:
+			acr = random.randint(150,1000)
+			failed = change_acr(i, acr, price)
+			actions.append([["acr", i, acr], failed != False])
+			k -= 1
+		if k == 0:
+			break
 
 	k = 10
-	for i in range(1, 2):# random.randint(0, length-1) ):  ## ONLY TEST 1 REPARAM
+	for i in range(1, 2): # random.randint(0, length-1)):  ## ONLY TEST 1 REPARAM
 		if cdp_index(i) != False:
-			v1 = random.randrange(-1000000,10000000,10000)
-			v2 = random.randrange(-1000000,10000000,10000)
+			v1 = random.randrange(-1000000, 10000000, 10000)
+			v2 = random.randrange(-1000000, 10000000, 10000)
 			failed = reparametrize(i, v1, v2, price, old_price)
 			actions.append([["reparam", i, v1, v2], failed != False])
 			k -= 1
 		if k == 0:
 			break
 
-	# v1 = random.randrange(1000000,100000000,10000)
-	# failed = redemption(v1, price, 150, 101)
-	# actions.append([["redeem", v1], failed != False])
+	v1 = random.randrange(1000000,100000000,10000)
+	failed = redemption(v1, price, 150, 101)
+	actions.append([["redeem", v1], failed != False])
 
 	return [time, actions]
 

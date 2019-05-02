@@ -53,7 +53,6 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
-        PRINT_("\nreparam req")
       
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
@@ -114,18 +113,19 @@ void buck::run_requests(uint8_t max) {
           update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
         }
         
+        PRINT_("\nreparam req")
         PRINT("id", cdp_itr->id)
         PRINT("debt", cdp_itr->debt)
         PRINT("col", cdp_itr->collateral)
-        PRINT("change_debt", change_debt)
-        PRINT("change_collateral", change_collateral) 
-        PRINT_("--------")
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
       
+        PRINT("new debt", cdp_itr->debt)
+        PRINT("new col", cdp_itr->collateral)
+        
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }
