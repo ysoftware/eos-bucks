@@ -60,33 +60,19 @@ void buck::run_requests(uint8_t max) {
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
-        
-        int64_t ccr = CR; // used in to calculate relation with CR
-        if (cdp_itr->debt.amount > 0) {
-          ccr = convert_to_rex_usd(cdp_itr->collateral.amount) / cdp_itr->debt.amount;
-        }
   
-        // adding debt
-        if (reparam_itr->change_debt.amount > 0) {
-          
-          const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
-          const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
-
-          change_debt = asset(change_amount, BUCK);
-        }
         
-        // removing debt
-        else if (reparam_itr->change_debt.amount < 0) {
-          change_debt = reparam_itr->change_debt; // add negative value
-        }
-        
-        // adding collateral
-        if (reparam_itr->change_collateral.amount > 0) {
+        if (reparam_itr->change_collateral.amount > 0) { // adding collateral
           change_collateral = reparam_itr->change_collateral;
         }
-        
-        // removing collateral
-        else if (reparam_itr->change_collateral.amount < 0) {
+        else if (reparam_itr->change_collateral.amount < 0) { // removing collateral
+          
+          // check ccr with new collateral
+          int32_t ccr = CR;
+          if (cdp_itr->debt.amount > 0) {
+            const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
+            ccr = convert_to_rex_usd(new_collateral.amount) / cdp_itr->debt.amount;
+          }
         
           const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
           const int64_t change_amount = std::max(-can_withdraw, reparam_itr->change_collateral.amount);
@@ -95,28 +81,36 @@ void buck::run_requests(uint8_t max) {
           change_collateral = change;
         }
         
+        if (reparam_itr->change_debt.amount > 0) { // adding debt
+          
+          // calculate with new collateral and issuing debt
+          const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
+          const auto new_debt = cdp_itr->debt + reparam_itr->change_debt;
+          int32_t ccr = convert_to_rex_usd(new_collateral.amount) / new_debt.amount;
+          
+          const int64_t max_debt = ((ccr * 100 / CR) - 100) * new_debt.amount / 100;
+          const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
+          change_debt = asset(change_amount, BUCK);
+        }
+        else if (reparam_itr->change_debt.amount < 0) { // removing debt
+          change_debt = reparam_itr->change_debt; // add negative value
+        }
+        
         accrue_interest(cdp_itr);
-        
-        // to-do check new ccr parameters
-        // don't give debt if ccr < CR
-        
         
         if (change_debt.amount > 0) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         
         if (change_collateral.amount < 0) {
-          
           sub_funds(cdp_itr->account, -change_collateral);
         }
 
-        // stop being an insurer
-        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
+        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) { // stop being an insurer
           withdraw_insurance_dividends(cdp_itr);
           update_excess_collateral(-cdp_itr->collateral); // remove old amount
         }
-        // become an insurer
-        else if (cdp_itr->debt.amount - change_debt.amount == 0) {
+        else if (cdp_itr->debt.amount - change_debt.amount == 0) { // removing debt
           update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
         }
         
