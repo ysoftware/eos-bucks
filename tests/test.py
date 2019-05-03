@@ -470,3 +470,60 @@ def init(x=10):
 	gen(1, 1, price, time)
 	time_now()
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
+
+
+
+
+def random_test(k, n, round):
+	# globals, check at the top their mission
+	global time
+	global CR
+	global LF
+	global IR
+	global r
+	global SR
+	global IDP
+	global TEC
+	global AEC
+	global CIT
+	global comission
+	global time
+	global oracle_time
+	time = time_now(1556463885) # generating random time between now and 3 months after
+	price = random.randint(100, 1000)
+	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
+	length = len(table)
+	oracle_time = time
+	print("\n")
+	print_table(table)
+	print("\n")
+	for i in range(0, round): # round is the number of rounds for the random walk
+		old_price = price
+		price = random.randint(100, 1000)
+		time = time_now(time)
+		update_round()
+		if price < old_price:
+			table = liquidation(table, price, 150, 10)
+		k = 10
+		for i in range(0, random.randint(0,length-1) ):
+			if cdp_index(table, i) != False:
+				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
+				k -= 1
+			if k == 0:
+				break
+		k = 10
+		for i in range(0, random.randint(0, length - 1)):
+			if cdp_index(table, i) != False:
+				table = change_acr(table, i, random.randint(150,1000), price)
+				k -= 1
+			if k == 0:
+				break
+		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
+	print("\n")
+	print_table(table)
+	print("\n")
+	# can add checks to ensure that insurance dividend pool is calculated rightly
+		
+for i in range(0, 10):
+	random_test(5,10,2)		
+		
