@@ -43,7 +43,6 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset     balance;
-      asset     savings;
       uint64_t  e_balance;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
@@ -74,12 +73,12 @@ CONTRACT buck : public contract {
       // insurance
       uint64_t r_supply;
       uint64_t r_price;
-      uint64_t r_collected; // BUCK
+      uint64_t r_collected; // BUCK this round
       
       // savings 
       uint64_t e_supply;
       uint64_t e_price;
-      uint64_t e_collected; // REX
+      uint64_t e_collected; // REX this round
       
       uint64_t primary_key() const { return 0; }
     };
@@ -146,7 +145,13 @@ CONTRACT buck : public contract {
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
-      uint64_t by_accrued_time() const { return modified_round; }
+      
+      uint64_t by_accrued_time() const { 
+        
+        if (debt.amount == 0) return UINT64_MAX;
+        
+        return modified_round; 
+      }
       
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {

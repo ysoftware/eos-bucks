@@ -64,6 +64,7 @@ def open(contract, user, ccr, acr, quantity):
 
 def update(contract, eos=200):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
+	run(contract, 250)
 
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])

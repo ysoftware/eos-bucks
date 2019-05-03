@@ -24,8 +24,6 @@ void buck::update(uint32_t eos_price) {
   else {
     set_processing_status(ProcessingStatus::processing_cdp_requests);
   }
-  
-  run(50); // to-do probably better to remove this
 }
 
 uint32_t buck::get_eos_usd_price() const {

@@ -1,8 +1,6 @@
 import random
 from math import exp
 
-ERR = "error"
-
 table = []
 CR = 150 # collateral ratio
 LF = 10 # Liquidation Fee
@@ -24,7 +22,7 @@ def update(price, t):
 
 def time_now():
 	global time
-	time += 3000000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
+	time += 10_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
 def epsilon(value): return value // 500
@@ -208,15 +206,14 @@ def add_tax(cdp, price):
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
-		
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
-		print("after tax", cdp)
 	return cdp
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
+	print(cdp)
 	global IDP, AEC, CIT, TEC, oracle_time, time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
@@ -226,9 +223,8 @@ def update_tax(cdp, price):
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			cdp.new_time(oracle_time)
-			print(IDP, AEC)
-			print("insurer tax update", cdp.id, val)
+			print("added col", val)
+			print("id", cdp.id)
 	return cdp
 
 # Contract functions
@@ -259,6 +255,7 @@ def liquidation(price, cr, lf):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
+					print("liq...")
 					liquidator = update_tax(liquidator, price)
 					if liquidator.debt <= 100:
 						TEC -= liquidator.collateral * 100 // liquidator.acr
@@ -282,21 +279,18 @@ def liquidation(price, cr, lf):
 					if debtor.debt >= 10:
 						cdp_insert(debtor)
 
-					print("after liq (liq)", liquidator)
 					if i == len(table):
-						return 
-			print("after liq (deb)", debtor)
+						return
 		return 
 
 def redemption(amount, price, cr, rf):
 	global time, table
 	i = len(table)-1
 
-	print("redeem")
 	while amount > epsilon(amount) and i != -1:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
-		print(cdp)
+		print("redeem", cdp)
 
 		if cdp.debt <= 50:
 			cdp_insert(cdp)
@@ -325,6 +319,7 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
+	print("reparam...")
 	cdp = update_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
@@ -370,10 +365,11 @@ def reparametrize(id, c, d, price, old_price):
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
-		return ERR
+		return False
 
 	global TEC, table
 	cdp = table.pop(cdp_index(id))
+	print("acr...")
 	cdp = update_tax(cdp, price)
 
 	if cdp.acr != 0 and cdp.debt < 500:
@@ -447,7 +443,7 @@ def run_round(balance):
 
 	v1 = random.randrange(0, 10_000_0000)
 	success = v1 <= balance
-	if success: redemption(v1, price, 150, 101)
+	if success: redemption(v1 * 100, price, 150, 101) # special case
 	actions.append([["redeem", v1], success])
 
 	return [time, actions]

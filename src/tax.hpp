@@ -44,12 +44,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint32_t last = cdp_itr->modified_round;
   
   if (now == last) return;
-  
-  // to-do handle the case when debt is 0
-  if (cdp_itr->debt.amount == 0) {
-    
-    return;
-  }
+  if (cdp_itr->debt.amount == 0) return;
   
   static const uint128_t DM = 1000000000000;
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
@@ -63,14 +58,13 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-
-  PRINT("tax", cdp_itr->id)
+  // PRINT("tax", cdp_itr->id)
   // PRINT("dt", now - last)
   // PRINT("interest", accrued_amount)
-  PRINT("d", accrued_debt)
-  PRINT("c", accrued_collateral)
-  PRINT_("---")
-  
+  // PRINT("d", accrued_debt)
+  // PRINT("c", accrued_collateral)
+  // PRINT_("---")
+
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
     r.debt += accrued_debt;
@@ -107,17 +101,26 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
 }
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
+  
+  /// time 
+  
   const auto& tax = *_tax.begin();
   
   const int64_t pool_part = cdp_itr->r_balance * tax.r_price;
   const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
   const asset received_rex = asset(received_rex_amount, REX);
   
-  if (received_rex_amount == 0) return;
+  const auto oracle_time = _stat.begin()->oracle_timestamp;
+  static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
+  
+  PRINT("insurer, added coll", received_rex)
+  PRINT("id", cdp_itr->id)
+  PRINT("time", now)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance = 0;
     r.collateral += received_rex;
+    r.modified_round = now; 
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
@@ -145,7 +148,6 @@ void buck::save(const name& account, const asset& value) {
   check(received_e > 0, "to-do remove. this is probably wrong (save)");
   
   _accounts.modify(account_itr, account, [&](auto& r) {
-    r.savings += value;
     r.e_balance += received_e;
   });
   
@@ -167,17 +169,16 @@ void buck::take(const name& account, const asset& value) {
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
-  
-  check(account_itr->savings >= value, "overdrawn savings balance");
 
   // sell E
-  const uint64_t selling_e = ((uint128_t) value.amount * account_itr->e_balance) / account_itr->savings.amount;
+  const uint64_t selling_e = ((uint128_t) value.amount * PO) / tax.e_price;
+  check(account_itr->e_balance >= selling_e, "overdrawn savings balance");
+  
   const int64_t pool_part = selling_e * tax.e_price / PO;
   const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
   _accounts.modify(account_itr, account, [&](auto& r) {
-    r.savings -= value;
     r.e_balance -= selling_e;
   });
   

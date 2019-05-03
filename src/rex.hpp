@@ -158,5 +158,4 @@ void buck::sell_rex(const name& account, const asset& quantity) {
     _self, "processrex"_n, 
     std::make_tuple()
   ).send();
-
 }

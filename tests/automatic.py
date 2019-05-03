@@ -114,8 +114,6 @@ class Test(unittest.TestCase):
 				round_time = result[0]
 				actions = result[1]
 
-				table(buck, "cdp")
-
 				if len(actions) == 0:
 					COMMENT("No actions were performed")
 					break
@@ -146,11 +144,8 @@ class Test(unittest.TestCase):
 							assertRaises(self, lambda: redeem(buck, user1, quantity))
 						else: redeem(buck, user1, quantity)
 
-				table(buck, "cdp")
-
 				maketime(buck, round_time)
 				update(buck, test.get_price())
-				run(buck)
 
 				self.compare(buck, cdp_table)
 
@@ -158,10 +153,10 @@ class Test(unittest.TestCase):
 
 	def match(self, cdp, row):
 		print(cdp)
-		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
+		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
 	def compare(self, buck, cdp_table):

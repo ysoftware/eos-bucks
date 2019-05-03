@@ -118,8 +118,6 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   require_auth(cdp_itr->account);
   
-  // to-do update excess collateral
-  
   sell_r(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -150,6 +148,9 @@ void buck::close(uint64_t cdp_id) {
   require_auth(cdp_itr->account);
   
   accrue_interest(cdp_itr);
+  
+  
+  // check oracle??
   
   sub_balance(cdp_itr->account, cdp_itr->debt, true);
   

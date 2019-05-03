@@ -15,7 +15,6 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
-  PRINT("run req", max)
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
@@ -37,7 +36,6 @@ void buck::run_requests(uint8_t max) {
 
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
-        PRINT_("close req")
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         
@@ -104,18 +102,14 @@ void buck::run_requests(uint8_t max) {
           sub_funds(cdp_itr->account, -change_collateral);
         }
 
-        if (change_collateral.amount < 0 || change_debt.amount > 0) {
-          sell_r(cdp_itr);
-        }
+        sell_r(cdp_itr);
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
       
-        if (change_collateral.amount > 0) {
-          buy_r(cdp_itr, change_collateral);
-        }
+        buy_r(cdp_itr, change_collateral);
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
@@ -152,9 +146,7 @@ void buck::run_requests(uint8_t max) {
           update_supply(-change_debt);
         }
         
-        if (add_collateral.amount < 0 || change_debt.amount > 0) {
-          sell_r(cdp_itr);
-        }
+        sell_r(cdp_itr);
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += add_collateral;
@@ -162,9 +154,7 @@ void buck::run_requests(uint8_t max) {
           r.modified_round = now;
         });
         
-        if (add_collateral.amount > 0) {
-          buy_r(cdp_itr, add_collateral);
-        }
+        buy_r(cdp_itr, add_collateral);
         
         maturity_itr = maturity_index.erase(maturity_itr); // remove request
         did_work = true;
@@ -249,7 +239,7 @@ void buck::run_requests(uint8_t max) {
   
   auto accrual_index = _cdp.get_index<"accrued"_n>();
   auto accrual_itr = accrual_index.begin();
-  
+
   int i = 0;
   while (i < max && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
