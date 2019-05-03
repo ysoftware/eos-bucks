@@ -23,11 +23,15 @@ void buck::process_taxes() {
     r.insurance_pool += asset(r.r_collected - scruge_insurance_amount, REX);
     r.savings_pool += asset(r.e_collected - scruge_savings_amount, BUCK);
     
-    r.r_price += (r.r_collected - scruge_insurance_amount) / r.r_supply;
-    r.e_price += (r.e_collected - scruge_savings_amount) / r.e_supply;
+    if (r.r_supply > 0) {
+      r.r_price += (r.r_collected - scruge_insurance_amount) / r.r_supply;
+      r.r_collected = 0;
+    }
     
-    r.e_collected = 0;
-    r.r_collected = 0;
+    if (r.e_supply > 0) {
+      r.e_price += (r.e_collected - scruge_savings_amount) / r.e_supply;
+      r.e_collected = 0;
+    }
   });
 }
 
@@ -35,18 +39,20 @@ void buck::process_taxes() {
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
-  // to-do handle the case when debt is 0
-  if (cdp_itr->debt.amount == 0) {
-    
-    
-    return;
-  }
-  
-  const auto time_now = _stat.begin()->oracle_timestamp;
-  static const uint32_t now = time_point_sec(time_now).utc_seconds;
+  const auto oracle_time = _stat.begin()->oracle_timestamp;
+  static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
   
   if (now == last) return;
+  
+  // to-do handle the case when debt is 0
+  if (cdp_itr->debt.amount == 0) {
+    
+    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
+      r.modified_round = now;
+    });
+    return;
+  }
   
   static const uint128_t DM = 1000000000000;
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
