@@ -90,10 +90,10 @@ def generate_debtors(k, n, price, t):
 		debtors.insert(0, debtor)
 	return debtors
 
-def gen(k, n, price, t):
-	global table
-	liquidators = generate_liquidators(k, t)
-	debtors = generate_debtors(k, n, price, t)
+def gen(k, n):
+	global table, time, price
+	liquidators = generate_liquidators(k, time)
+	debtors = generate_debtors(k, n, price, time)
 	table = liquidators + debtors
 
 # Function for inserting CDP into the table
@@ -196,11 +196,11 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	v = calc_bad_debt(cdp, price, cr, l)
 	v2 = (c*price-d*acr)*(100-l) // (acr*(100-l)-10000)
 	return min(v,v2, cdp.debt)
-	
-# Taxes # 131495,5 / 31557600
+
+# Taxes
 
 def add_tax(cdp, price):
-	global IDP, AEC, CIT, TEC, oracle_time, time
+	global IDP, AEC, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
@@ -209,22 +209,37 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
+		print("time", oracle_time)
 	return cdp
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
 	print(cdp)
-	global IDP, AEC, CIT, TEC, oracle_time, time
+	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
+
+
+			if val < 0:
+				print("FUUCK")
+				print(oracle_time, cdp.time)
+				print("insurer, added coll:", -val)
+				print("time", oracle_time, "dt", oracle_time-cdp.time)
+				print(cdp)
+
 			cdp.add_collateral(val)
+
+			if val < 0:
+				print(cdp)
+				exit()
+
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			print("added col", val)
-			print("id", cdp.id)
+		cdp.new_time(oracle_time)
+
 	return cdp
 
 # Contract functions
@@ -326,7 +341,7 @@ def reparametrize(id, c, d, price, old_price):
 	new_col = (cdp.collateral + c)
 	new_debt = cdp.debt + d
 	new_ccr = new_col * old_price / new_debt
-	min_col = 5 * old_price * 10_000 
+	min_col = 5 * old_price * 10_000
 	if new_ccr < CR and new_debt != 0 or new_col < min_col or new_debt < 50_0000 and new_debt != 0: 
 		return False
 
@@ -363,13 +378,13 @@ def reparametrize(id, c, d, price, old_price):
 	cdp_insert(cdp)
 	print("after reparam", cdp)
 	
-def change_acr(id, acr, price):
+def change_acr(id, acr):
+	global TEC, table, oracle_time, price
 	if acr < CR or acr > 100000:
 		return False
 
-	global TEC, table
 	cdp = table.pop(cdp_index(id))
-	print("acr...")
+	print("acr...", oracle_time)
 	cdp = update_tax(cdp, price)
 
 	if cdp.acr != 0 and cdp.debt < 500:
@@ -386,49 +401,49 @@ def update_round():
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
 	oracle_time = time
+	print("updating round...")
 	
 	for cdp in table:
 		if oracle_time - cdp.time > 2629800: # auto interest collection every month
 			add_tax(cdp, price)
-	
-#random testing
-
-# liq, reparam, redeem, change_acr
-
 
 # returns [time, [{action, failed?}], table]
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
 
 	actions = []
-	# TEC = 1
 
-	time = time_now()
-	oracle_time = time
 	old_price = price
-	price  += random.randint(10000, 100000)
+	price += random.randint(100, 10000)
 
-	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
-
-	time = time_now()
-	update_round()
+	# acr requests get processed immediately
 
 	length = len(table)
 	if length == 0: return [time, actions]
 
-	if price < old_price:
-		liquidation(price, 150, 10)
-		length = len(table)
+	print(f"time: {time}")
 
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
 		if cdp_index(i) != False:
 			acr = random.randint(150,1000)
-			failed = change_acr(i, acr, price)
+			failed = change_acr(i, acr)
 			actions.append([["acr", i, acr], failed != False])
 			k -= 1
+			print("run acr")
 		if k == 0:
 			break
+
+	time_now()
+	update_round()
+
+	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
+
+	# other requests get processed after oracle update
+
+	if price < old_price:
+		liquidation(price, 150, 10)
+		length = len(table)
 
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
@@ -448,82 +463,26 @@ def run_round(balance):
 
 	return [time, actions]
 
-
-def get_time():
-	global time
-	return time 
-
-def get_price():
-	global price
-	return price
-
 def init(x=10):
-	global time, price
-	time = 0
+	global time, price, oracle_time
+	
+	table = []
+	CR = 150 # collateral ratio
+	LF = 10 # Liquidation Fee
+	IR = 20 # insurance ratio
+	SR = 100 - IR # savings ratio
+	r = 0.05 # interest rate
 	IDP = 0 # insurance dividend pool
 	TEC = 0 # total excess collateral
 	AEC = 0 # aggregated excess collateral
 	CIT = 0 # collected insurance tax
+	commission = 20 # our commission
+	time = 0 # initial time
+	oracle_time = 0
+
 	price = random.randint(100, 1000)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
-	gen(1, 1, price, time)
+	gen(1, 1)
 	time_now()
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
-
-
-
-
-def random_test(k, n, round):
-	# globals, check at the top their mission
-	global time
-	global CR
-	global LF
-	global IR
-	global r
-	global SR
-	global IDP
-	global TEC
-	global AEC
-	global CIT
-	global comission
-	global time
-	global oracle_time
-	time = time_now(1556463885) # generating random time between now and 3 months after
-	price = random.randint(100, 1000)
-	table = gen(k,n, price, time) # generating a table of cdps, where k is number of liquidators, and n-k is number of debtors
-	length = len(table)
-	oracle_time = time
-	print("\n")
-	print_table(table)
-	print("\n")
-	for i in range(0, round): # round is the number of rounds for the random walk
-		old_price = price
-		price = random.randint(100, 1000)
-		time = time_now(time)
-		update_round()
-		if price < old_price:
-			table = liquidation(table, price, 150, 10)
-		k = 10
-		for i in range(0, random.randint(0,length-1) ):
-			if cdp_index(table, i) != False:
-				table = reparametrize(table, i, random.randrange(1000000,10000000,10000), random.randrange(1000000,10000000,10000), random.randint(150,1000), price)
-				k -= 1
-			if k == 0:
-				break
-		k = 10
-		for i in range(0, random.randint(0, length - 1)):
-			if cdp_index(table, i) != False:
-				table = change_acr(table, i, random.randint(150,1000), price)
-				k -= 1
-			if k == 0:
-				break
-		table = redemption(table, random.randrange(1000000,100000000,10000), price, 150, 101)
-	print("\n")
-	print_table(table)
-	print("\n")
-	# can add checks to ensure that insurance dividend pool is calculated rightly
-		
-for i in range(0, 10):
-	random_test(5,10,2)		
-		

@@ -72,9 +72,9 @@ class Test(unittest.TestCase):
 			transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 			# mature rex
-			test.init(2)
-			maketime(buck, test.get_time())
-			update(buck, test.get_price())
+			test.init(10)
+			maketime(buck, test.time)
+			update(buck, test.price)
 
 			##################################
 			COMMENT("Open CDP")
@@ -145,7 +145,7 @@ class Test(unittest.TestCase):
 						else: redeem(buck, user1, quantity)
 
 				maketime(buck, round_time)
-				update(buck, test.get_price())
+				update(buck, test.price)
 
 				self.compare(buck, cdp_table)
 
@@ -154,9 +154,9 @@ class Test(unittest.TestCase):
 	def match(self, cdp, row):
 		print(cdp)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
-		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
 	def compare(self, buck, cdp_table):
