@@ -149,7 +149,11 @@ class Test(unittest.TestCase):
 				maketime(buck, round_time)
 				update(buck, test.price)
 
+				# match cdps
 				self.compare(buck, cdp_table)
+
+				# match supplies and taxes
+				
 
 
 
@@ -163,9 +167,9 @@ class Test(unittest.TestCase):
 
 	def compare(self, buck, cdp_table):
 		for cdp in cdp_table:
-				row = get_cdp(buck, cdp.id)
-				if cdp.time == 0: cdp.time = int(row["modified_round"]) # update round time
-				self.match(cdp, row)
+			row = get_cdp(buck, cdp.id)
+			if cdp.time == 0: cdp.time = int(row["modified_round"]) # update round time
+			self.match(cdp, row)
 
 # main
 

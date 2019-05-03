@@ -15,13 +15,9 @@ commission = 20 # our commission
 time = 0 # initial time
 oracle_time = 0
 
-def update(price, t):
-	global time
-	time = t
-	update_round()
-
 def time_now():
 	global time
+	print("time now...")
 	time += 10_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
@@ -38,7 +34,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time/1_000_000)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time/10_000)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -202,6 +198,7 @@ def calc_val(cdp, cdp2, price, cr, lf):
 
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time
+	print("add tax")
 
 	if cdp.debt > epsilon(cdp.debt):	
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
@@ -210,37 +207,22 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
-		print("time", oracle_time)
 	return cdp
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
+	print("update tax")
 	print(cdp)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
-			AEC -= ec *(oracle_time - cdp.time) 
-
-
-			if val < 0:
-				print("FUUCK")
-				print(oracle_time, cdp.time)
-				print("insurer, added coll:", -val)
-				print("time", oracle_time, "dt", (oracle_time-cdp.time)/1_000_000)
-				print(cdp)
-
+			AEC -= ec * (oracle_time - cdp.time) 
 			cdp.add_collateral(val)
-
-			if val < 0:
-				print(cdp)
-				exit()
-
 			TEC += val * 100 // cdp.acr
 			IDP -= val
 		cdp.new_time(oracle_time)
-
 	return cdp
 
 # Contract functions
@@ -385,7 +367,7 @@ def change_acr(id, acr):
 		return False
 
 	cdp = table.pop(cdp_index(id))
-	print("acr...", oracle_time)
+	print("acr...")
 	cdp = update_tax(cdp, price)
 
 	if cdp.acr != 0 and cdp.debt < 500:
@@ -398,6 +380,7 @@ def change_acr(id, acr):
 		
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
+	print("prev IDP", IDP)
 	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
@@ -410,7 +393,7 @@ def update_round():
 
 # returns [time, [{action, failed?}], table]
 def run_round(balance):
-	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, comission, time, oracle_time, price, table
+	global time, CR, LF, IR, r, SR, IDP, TEC, AEC, CIT, time, oracle_time, price, table
 
 	actions = []
 
@@ -445,6 +428,7 @@ def run_round(balance):
 	if price < old_price:
 		liquidation(price, 150, 10)
 		length = len(table)
+		if length == 0: return [time, actions]
 
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
@@ -473,13 +457,14 @@ def init():
 	AEC = 0 # aggregated excess collateral
 	CIT = 0 # collected insurance tax
 	time = 0 # initial time
-	oracle_time = 0
 
 	price = random.randint(100, 1000)
 
-	x = random.randint(5, 50)
+	x = 2 # random.randint(5, 50)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
 	gen(d, l)
+
 	time_now()
+	oracle_time = time
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
