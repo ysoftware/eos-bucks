@@ -29,7 +29,6 @@ def time_now():
 
 def epsilon(value): return value // 500
 
-
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
 		self.collateral = collateral
@@ -55,9 +54,7 @@ class CDP:
 	def new_collateral(self, collateral_new):
 		self.collateral = collateral_new
 	def new_time(self, time_new):
-		self.time = time_new
-
-		
+		self.time = time_new		
 	
 # Functions for generation of sorted CDPs with random values
 
@@ -94,7 +91,6 @@ def generate_debtors(k, n, price, t):
 		debtor.new_cd(debtor.collateral * price // debtor.debt)
 		debtors.insert(0, debtor)
 	return debtors
-
 
 def gen(k, n, price, t):
 	global table
@@ -223,14 +219,14 @@ def add_tax(cdp, price):
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
+			print("insurer tax", val)
 	cdp.new_time(oracle_time)
-	# print(cdp)
+	print("after tax", cdp)
 	return cdp
 	
 # Contract functions
 
-def liquidation(price, cr, lf):
-		print("liquidation")	
+def liquidation(price, cr, lf):	
 		global TEC, table
 		if table == []:
 			return
@@ -278,8 +274,11 @@ def liquidation(price, cr, lf):
 					cdp_insert(liquidator)
 					if debtor.debt >= 10:
 						cdp_insert(debtor)
+
+					print("after liq (liq)", liquidator)
 					if i == len(table):
 						return 
+			print("after liq (deb)", debtor)
 		return 
 
 def redemption(amount, price, cr, rf):
@@ -312,7 +311,7 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
 					i -= 1
-	print(cdp, "\n")
+	print("after redemption", cdp)
 	return
 	
 def reparametrize(id, c, d, price, old_price):
@@ -360,6 +359,7 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
+	print("after reparam", cdp)
 	
 def change_acr(id, acr, price):
 	if acr < CR or acr > 100000:
@@ -457,6 +457,10 @@ def get_price():
 def init(x=10):
 	global time, price
 	time = 0
+	IDP = 0 # insurance dividend pool
+	TEC = 0 # total excess collateral
+	AEC = 0 # aggregated excess collateral
+	CIT = 0 # collected insurance tax
 	price = random.randint(100, 1000)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
