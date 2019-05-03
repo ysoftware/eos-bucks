@@ -120,9 +120,13 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   // to-do update excess collateral
   
+  sell_r(cdp_itr);
+  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.acr = acr;
   });
+  
+  buy_r(cdp_itr, cdp_itr->collateral);
   
   run_requests(10);
 }

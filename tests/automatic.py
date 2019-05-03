@@ -114,6 +114,8 @@ class Test(unittest.TestCase):
 				round_time = result[0]
 				actions = result[1]
 
+				table(buck, "cdp")
+
 				if len(actions) == 0:
 					COMMENT("No actions were performed")
 					break

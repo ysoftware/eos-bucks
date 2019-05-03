@@ -48,9 +48,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   // to-do handle the case when debt is 0
   if (cdp_itr->debt.amount == 0) {
     
-    _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-      r.modified_round = now;
-    });
     return;
   }
   
@@ -66,14 +63,13 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  // if (accrued_debt.amount > 0) {
-  //   PRINT("tax", cdp_itr->id)
-  //   PRINT("dt", now - last)
-  //   PRINT("interest", accrued_amount)
-  //   PRINT("d", accrued_debt)
-  //   PRINT("c", accrued_collateral)
-  //   PRINT_("---")
-  // }
+
+  PRINT("tax", cdp_itr->id)
+  // PRINT("dt", now - last)
+  // PRINT("interest", accrued_amount)
+  PRINT("d", accrued_debt)
+  PRINT("c", accrued_collateral)
+  PRINT_("---")
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -113,7 +109,8 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
-  const int64_t received_rex_amount = cdp_itr->r_balance * tax.r_price;
+  const int64_t pool_part = cdp_itr->r_balance * tax.r_price;
+  const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
   const asset received_rex = asset(received_rex_amount, REX);
   
   if (received_rex_amount == 0) return;
@@ -175,7 +172,8 @@ void buck::take(const name& account, const asset& value) {
 
   // sell E
   const uint64_t selling_e = ((uint128_t) value.amount * account_itr->e_balance) / account_itr->savings.amount;
-  const int64_t received_bucks_amount = selling_e * tax.e_price;
+  const int64_t pool_part = selling_e * tax.e_price / PO;
+  const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
   _accounts.modify(account_itr, account, [&](auto& r) {

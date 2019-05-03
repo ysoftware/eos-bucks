@@ -211,19 +211,26 @@ def add_tax(cdp, price):
 		
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
-	elif AEC > 0:
-		ec = cdp.collateral * 100 // cdp.acr 
+		cdp.new_time(oracle_time)
+		print("after tax", cdp)
+	return cdp
+	
+def update_tax(cdp, price):
+	cdp = add_tax(cdp, price)
+	global IDP, AEC, CIT, TEC, oracle_time, time
+	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
+			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			print("insurer tax", val)
-	cdp.new_time(oracle_time)
-	print("after tax", cdp)
+			cdp.new_time(oracle_time)
+			print(IDP, AEC)
+			print("insurer tax update", cdp.id, val)
 	return cdp
-	
+
 # Contract functions
 
 def liquidation(price, cr, lf):	
@@ -252,7 +259,7 @@ def liquidation(price, cr, lf):
 					table.append(debtor)
 				else:
 					liquidator = table.pop(i)
-					liquidator = add_tax(liquidator, price)
+					liquidator = update_tax(liquidator, price)
 					if liquidator.debt <= 100:
 						TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
@@ -318,7 +325,7 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
-	cdp = add_tax(cdp, price)
+	cdp = update_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
 	new_col = (cdp.collateral + c)
@@ -367,7 +374,7 @@ def change_acr(id, acr, price):
 
 	global TEC, table
 	cdp = table.pop(cdp_index(id))
-	cdp = add_tax(cdp, price)
+	cdp = update_tax(cdp, price)
 
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
