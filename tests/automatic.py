@@ -4,6 +4,7 @@
 # Created by Yaroslav Erohin.
 
 import unittest
+import random
 from eosfactory.eosf import *
 import eosfactory.core.setup as setup 
 from methods import *
@@ -57,22 +58,23 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		##################################
-		COMMENT("Initialize")
-
-		try:
-			transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
-		except: pass
-
 		while True:
+
+			##################################
+			COMMENT("Initialize")
+
+			try:
+				transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
+			except: pass
+
 			destroy(buck)
 			maketime(buck, 0)
-			update(buck, 100)
+			update(buck, 1)
 
 			transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 			# mature rex
-			test.init(10)
+			test.init()
 			maketime(buck, test.time)
 			update(buck, test.price)
 
@@ -106,7 +108,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for i in range(0, 20):
+			for i in range(0, random.randint(10, 50)):
 				COMMENT(f"Round {i+1}")
 
 				# actions

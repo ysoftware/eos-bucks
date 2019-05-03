@@ -38,7 +38,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time/1_000_000)
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -56,26 +56,27 @@ class CDP:
 	
 # Functions for generation of sorted CDPs with random values
 
-def generate_liquidators(k, t):
-	global TEC
+def generate_liquidators(k):
+	global TEC, time
 	rand = random.randrange(1000000,10000000,10000)
 	rand2 = random.randint(150,155)
-	liquidator = CDP(rand, 0, 9999999, rand2, 0, t)
+	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
 	for i in range (0,k):
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
-		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, t))
+		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
 		liquidator = liquidators[len(liquidators)-1]
 		TEC += liquidator.collateral * 100 // liquidator.acr
 	return liquidators
 
-def generate_debtors(k, n, price, t):
+def generate_debtors(k, n):
+	global time, price
 	rand = random.randrange(1000000,10000000,10000) # collateral
 	rand2 = random.randint(150,155) # cd
 	ccr = rand2
-	debtor = CDP(rand, 0, rand2, 0, k+1, t)
+	debtor = CDP(rand, 0, rand2, 0, k+1, time)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
 	debtor.new_cd(debtor.collateral * price // debtor.debt)
 	debtors = [debtor]
@@ -84,7 +85,7 @@ def generate_debtors(k, n, price, t):
 		helper = ccr
 		rand2 = random.randint(helper+1, helper + 2)
 		ccr = rand2
-		debtor = CDP(rand, 0, rand2, 0, i+1, t)
+		debtor = CDP(rand, 0, rand2, 0, i+1, time)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
 		debtor.new_cd(debtor.collateral * price // debtor.debt)
 		debtors.insert(0, debtor)
@@ -92,8 +93,8 @@ def generate_debtors(k, n, price, t):
 
 def gen(k, n):
 	global table, time, price
-	liquidators = generate_liquidators(k, time)
-	debtors = generate_debtors(k, n, price, time)
+	liquidators = generate_liquidators(k)
+	debtors = generate_debtors(k, n)
 	table = liquidators + debtors
 
 # Function for inserting CDP into the table
@@ -227,7 +228,7 @@ def update_tax(cdp, price):
 				print("FUUCK")
 				print(oracle_time, cdp.time)
 				print("insurer, added coll:", -val)
-				print("time", oracle_time, "dt", oracle_time-cdp.time)
+				print("time", oracle_time, "dt", (oracle_time-cdp.time)/1_000_000)
 				print(cdp)
 
 			cdp.add_collateral(val)
@@ -414,7 +415,7 @@ def run_round(balance):
 	actions = []
 
 	old_price = price
-	price += random.randint(100, 10000)
+	price = random.randint(100, 10000)
 
 	# acr requests get processed immediately
 
@@ -463,26 +464,22 @@ def run_round(balance):
 
 	return [time, actions]
 
-def init(x=10):
-	global time, price, oracle_time
+def init():
+	global table, IDP, TEC, AEC, CIT, time, oracle_time, price
 	
 	table = []
-	CR = 150 # collateral ratio
-	LF = 10 # Liquidation Fee
-	IR = 20 # insurance ratio
-	SR = 100 - IR # savings ratio
-	r = 0.05 # interest rate
 	IDP = 0 # insurance dividend pool
 	TEC = 0 # total excess collateral
 	AEC = 0 # aggregated excess collateral
 	CIT = 0 # collected insurance tax
-	commission = 20 # our commission
 	time = 0 # initial time
 	oracle_time = 0
 
 	price = random.randint(100, 1000)
+
+	x = random.randint(5, 50)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 4))
-	gen(1, 1)
+	gen(d, l)
 	time_now()
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
