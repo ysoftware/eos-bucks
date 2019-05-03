@@ -53,17 +53,14 @@ bool buck::init() {
   _tax.emplace(_self, [&](auto& r) {
     r.current_round = 0;
     
-    r.insurance_pool = ZERO_REX;
-    r.collected_insurance = ZERO_REX;
-    r.total_excess = ZERO_REX;
-    r.aggregated_excess = ZERO_REX;
-    r.changed_excess = ZERO_REX;
-    
-    r.savings_pool = ZERO_BUCK;
-    r.collected_savings = ZERO_BUCK;
-    r.total_bucks = ZERO_BUCK;
-    r.aggregated_bucks = ZERO_BUCK;
-    r.changed_bucks = ZERO_BUCK;
+      r.r_supply = 0;
+      r.r_price = PO;
+      r.r_collected = 0;
+      
+      // savings 
+      r.e_supply = 0;
+      r.e_price = PO;
+      r.e_collected = 0;
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self, false);

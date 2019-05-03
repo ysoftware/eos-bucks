@@ -43,9 +43,8 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset     balance;
-      
       asset     savings;
-      uint32_t  withdrawn_round;
+      uint64_t  e_amount;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -73,21 +72,15 @@ CONTRACT buck : public contract {
       asset     insurance_pool;
       asset     savings_pool;
       
-      // taxes added in this round
-      asset     collected_insurance;     
-      asset     collected_savings;  
+      // insurance
+      uint64_t r_supply;
+      uint64_t r_price;
+      uint64_t r_collected; // BUCK
       
-      // current amount of money in the system
-      asset     total_excess;
-      asset     total_bucks;
-      
-      // aggregated amount of money
-      asset     aggregated_excess;
-      asset     aggregated_bucks;
-      
-      // money added in this round
-      asset     changed_excess;
-      asset     changed_bucks;
+      // savings 
+      uint64_t e_supply;
+      uint64_t e_price;
+      uint64_t e_collected; // REX
       
       uint64_t primary_key() const { return 0; }
     };
@@ -144,12 +137,13 @@ CONTRACT buck : public contract {
     };
     
     TABLE cdp {
-      uint64_t    id;
-      uint16_t    acr;
-      name        account;
-      asset       debt;
-      asset       collateral;
-      uint32_t    modified_round;
+      uint64_t  id;
+      uint16_t  acr;
+      name      account;
+      asset     debt;
+      asset     collateral;
+      uint32_t  modified_round; // accrual round
+      uint64_t  r_amount;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }

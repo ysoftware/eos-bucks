@@ -18,15 +18,14 @@ void buck::update(uint32_t eos_price) {
     r.oracle_eos_price = eos_price;
   });
   
-  set_processing_status(ProcessingStatus::processing_cdp_requests);
-  
   if (eos_price < previous_price) {
     set_liquidation_status(LiquidationStatus::processing_liquidation);
-    run_liquidation(50);
   }
   else {
-    run_requests(50);
+    set_processing_status(ProcessingStatus::processing_cdp_requests);
   }
+  
+  run(50); // to-do probably better to remove this
 }
 
 uint32_t buck::get_eos_usd_price() const {
