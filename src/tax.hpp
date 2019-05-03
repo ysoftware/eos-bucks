@@ -36,6 +36,11 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   // to-do handle the case when debt is 0
+  if (cdp_itr->debt.amount == 0) {
+    
+    
+    return;
+  }
   
   const auto time_now = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(time_now).utc_seconds;
@@ -87,6 +92,7 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
   const int64_t new_excess = added_collateral.amount / cdp_itr->acr;
   const uint64_t received_r = ((uint128_t) new_excess * PO) / tax.r_price;
   
+  check(added_collateral.symbol == REX, "to-do incorrect symbol");
   check(received_r > 0, "to-do remove. this is probably wrong (buy_r)");
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
