@@ -17,6 +17,7 @@ void buck::run(uint8_t max) {
 void buck::run_requests(uint8_t max) {
   PRINT("run req", max)
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
+  const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
   
   auto maturity_index = _maturityreq.get_index<"bytimestamp"_n>();
@@ -40,10 +41,7 @@ void buck::run_requests(uint8_t max) {
         
         const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
         
-        if (cdp_itr->debt.amount == 0) {
-          // withdraw_insurance_dividends(cdp_itr);
-          update_excess_collateral(-cdp_itr->collateral);
-        }
+        sell_r(cdp_itr);
         
         _cdp.erase(cdp_itr);
         add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
@@ -61,7 +59,6 @@ void buck::run_requests(uint8_t max) {
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
-  
         
         if (reparam_itr->change_collateral.amount > 0) { // adding collateral
           change_collateral = reparam_itr->change_collateral;
@@ -107,12 +104,8 @@ void buck::run_requests(uint8_t max) {
           sub_funds(cdp_itr->account, -change_collateral);
         }
 
-        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) { // stop being an insurer
-          // withdraw_insurance_dividends(cdp_itr);
-          update_excess_collateral(-cdp_itr->collateral); // remove old amount
-        }
-        else if (cdp_itr->debt.amount - change_debt.amount == 0) { // removing debt
-          update_excess_collateral(cdp_itr->collateral + change_collateral); // add new amount
+        if (change_collateral.amount < 0 || change_debt.amount > 0) {
+          sell_r(cdp_itr);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -120,6 +113,10 @@ void buck::run_requests(uint8_t max) {
           r.debt += change_debt;
         });
       
+        if (change_collateral.amount > 0) {
+          buy_r(cdp_itr, change_collateral);
+        }
+        
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
       }
@@ -148,7 +145,6 @@ void buck::run_requests(uint8_t max) {
         }
         
         if (change_debt.amount > 0) {
-          
           add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         else {
@@ -156,20 +152,19 @@ void buck::run_requests(uint8_t max) {
           update_supply(-change_debt);
         }
         
-        // stop being an insurer
-        if (cdp_itr->debt.amount == 0 && change_debt.amount > 0) {
-          // withdraw_insurance_dividends(cdp_itr);
-          update_excess_collateral(-cdp_itr->collateral);
-        }
-        else if (cdp_itr->debt.amount - change_debt.amount == 0) {
-          update_excess_collateral(cdp_itr->collateral + add_collateral);
+        if (add_collateral.amount < 0 || change_debt.amount > 0) {
+          sell_r(cdp_itr);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += add_collateral;
           r.debt += change_debt;
-          r.modified_round = _tax.begin()->current_round;
+          r.modified_round = now;
         });
+        
+        if (add_collateral.amount > 0) {
+          buy_r(cdp_itr, add_collateral);
+        }
         
         maturity_itr = maturity_index.erase(maturity_itr); // remove request
         did_work = true;
@@ -212,11 +207,11 @@ void buck::run_requests(uint8_t max) {
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          PRINT("redeem_quantity", redeem_quantity)
-          PRINT("from cdp", debtor_itr->id)
-          PRINT("available debt", debtor_itr->debt)
-          PRINT("using_debt", using_debt)
-          PRINT("using_collateral", using_collateral)
+          // PRINT("redeem_quantity", redeem_quantity)
+          // PRINT("from cdp", debtor_itr->id)
+          // PRINT("available debt", debtor_itr->debt)
+          // PRINT("using_debt", using_debt)
+          // PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
@@ -256,7 +251,6 @@ void buck::run_requests(uint8_t max) {
   auto accrual_itr = accrual_index.begin();
   
   int i = 0;
-  const uint32_t now = _tax.begin()->current_round;
   while (i < max && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
   
@@ -343,13 +337,7 @@ void buck::run_liquidation(uint8_t max) {
       const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
       accrue_interest(cdp_itr);
       
-      // to-do check if right
-      
-      if (liquidator_itr->debt.amount == 0) {
-        const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
-        // withdraw_insurance_dividends(cdp_itr);
-        update_excess_collateral(-cdp_itr->collateral);
-      }
+      sell_r(_cdp.require_find(liquidator_itr->id));
       
       const int64_t bailable = (convert_to_rex_usd(liquidator_collateral) - liquidator_debt * liquidator_acr)
                                     * (100 - liquidation_fee)
@@ -359,7 +347,6 @@ void buck::run_liquidation(uint8_t max) {
       const int64_t value2 = used_debt_amount * 10000 / (convert_to_rex_usd(100 - liquidation_fee));
       const int64_t used_collateral_amount = std::min(collateral_amount, value2);
       
-      // to-do check rounding
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, REX);
       

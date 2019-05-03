@@ -65,7 +65,11 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
   
-  // check values
+  // to-do validate
+  
+  check(quantity.amount > 0, "can not use negative value");
+  check(quantity.symbol == REX, "can not use asset with different symbol");
+  
   check(ccr >= CR || ccr == 0, "ccr value is too small");
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr != 0 || ccr != 0, "acr and ccr can not be both 0");
@@ -75,6 +79,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   
   sub_funds(account, quantity);
   
+  const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
+  const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   auto issue_debt = ZERO_BUCK;
   
   if (ccr > 0) {
@@ -100,7 +106,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
       r.acr = acr;
       r.collateral = ZERO_REX;
       r.debt = ZERO_BUCK;
-      r.modified_round = _tax.begin()->current_round;
+      r.modified_round = now;
     });
     
     // open maturity request to add collateral and issue debt
@@ -121,10 +127,15 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
       r.acr = acr;
       r.collateral = quantity;
       r.debt = issue_debt;
-      r.modified_round = _tax.begin()->current_round;
+      r.modified_round = now;
     });
     
-    add_balance(account, issue_debt, account, true);
+    if (issue_debt.amount == 0) {
+      buy_r(_cdp.require_find(id), quantity);
+    }
+    else {
+      add_balance(account, issue_debt, account, true);
+    }
   }
   
   run(5);

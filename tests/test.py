@@ -217,18 +217,12 @@ def add_tax(cdp, price):
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 	elif AEC > 0:
 		ec = cdp.collateral * 100 // cdp.acr 
-			
-		# print("add tax")
-		# print(cdp)
-
 		if oracle_time != cdp.time:
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 			AEC -= ec *(oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			# print("dividends for", cdp.id, "amount", val)
-			# print("AEC", AEC)
 	cdp.new_time(oracle_time)
 	# print(cdp)
 	return cdp

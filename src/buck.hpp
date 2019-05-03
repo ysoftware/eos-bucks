@@ -44,7 +44,7 @@ CONTRACT buck : public contract {
     TABLE account {
       asset     balance;
       asset     savings;
-      uint64_t  e_amount;
+      uint64_t  e_balance;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -66,7 +66,6 @@ CONTRACT buck : public contract {
     };
     
     TABLE taxation_stats {
-      uint32_t  current_round;
       
       // actual processed taxes
       asset     insurance_pool;
@@ -143,7 +142,7 @@ CONTRACT buck : public contract {
       asset     debt;
       asset     collateral;
       uint32_t  modified_round; // accrual round
-      uint64_t  r_amount;
+      uint64_t  r_balance;
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
@@ -256,9 +255,8 @@ CONTRACT buck : public contract {
     void process_taxes();
     void add_savings_pool(const asset& value);
     void accrue_interest(const cdp_i::const_iterator& cdp_itr);
-    void update_excess_collateral(const asset& value);
-    void withdraw_insurance_dividends(const cdp_i::const_iterator& cdp_itr);
-    asset withdraw_savings_dividends(const name& account);
+    void buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collateral);
+    void sell_r(const cdp_i::const_iterator& cdp_itr);
     void update_supply(const asset& quantity);
     
     void run_requests(uint8_t max);

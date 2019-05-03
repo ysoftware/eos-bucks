@@ -51,13 +51,11 @@ bool buck::init() {
   });
   
   _tax.emplace(_self, [&](auto& r) {
-    r.current_round = 0;
     
       r.r_supply = 0;
       r.r_price = PO;
       r.r_collected = 0;
       
-      // savings 
       r.e_supply = 0;
       r.e_price = PO;
       r.e_collected = 0;
