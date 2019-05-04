@@ -47,7 +47,7 @@ int64_t buck::convert_to_rex_usd(int64_t quantity) const {
 }
 
 int64_t buck::convert_to_usd_rex(int64_t quantity, int64_t tax) const {
-  static const int64_t EU = get_eos_usd_price() + tax;
+  static const int64_t EU = get_eos_usd_price();
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
