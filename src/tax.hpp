@@ -142,14 +142,16 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.modified_round = now;
   });
   
-  // cdp_itr->p();
+  cdp_itr->p();
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_supply -= cdp_itr->r_balance;
     r.insurance_pool -= received_rex;
   });
   
-  if (received_rex_amount > 0) PRINT("left over pool", tax.insurance_pool)
+  if (received_rex_amount > 0) { 
+    PRINT("left over pool", tax.insurance_pool)
+  }
 }
 
 void buck::save(const name& account, const asset& value) {

@@ -171,7 +171,13 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT_("redeem")
+        PRINT_("redeem\n")
+        
+        
+        for (auto& s: debtor_index) {
+          s.p();
+        }
+        PRINT_("\n")
         
         // to-do sorting
         // to-do verify timestamp

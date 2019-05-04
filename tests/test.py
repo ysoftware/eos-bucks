@@ -286,11 +286,9 @@ def redemption(amount, price, cr, rf):
 	i = len(table)-1
 
 	print("\n\nredeem", amount)
-	print_table()
 
 	while amount > epsilon(amount) and i != -1:
 		cdp = table.pop(i)
-		print("before taxing", cdp)
 		cdp = add_tax(cdp, price)
 
 		if cdp.debt <= 50:
@@ -302,10 +300,8 @@ def redemption(amount, price, cr, rf):
 					cdp_insert(cdp)
 					return
 				elif amount < cdp.debt:
-					print("redeem quantity", amount)
-					print("from cdp", cdp)
-					print("using debt", amount)
-					print("using col", (amount*100) //(price+rf))
+					print("redeem quantity", amount, cdp)
+					print("using debt", amount, "col", (amount*100) //(price+rf))
 					cdp.add_debt(-amount)
 					cdp.add_collateral((amount*100) //(price+rf))
 					amount = 0
@@ -313,22 +309,19 @@ def redemption(amount, price, cr, rf):
 					cdp_insert(cdp)
 				else:
 					d = cdp.debt
-					print("redeem quantity", amount)
-					print("from cdp", cdp)
-					print("using debt", cdp.debt)
-					print("using col", (d*100) //(price+rf))
+					print("redeem quantity", amount, cdp)
+					print("using debt", cdp.debt, "col", (d*100) //(price+rf))
 					cdp.new_debt(0)
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
 
 					i -= 1
-					if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
-						cdp_insert(cdp)
-						print("keeping cdp")
 
-	print("redeem done!")
-	print_table()
-	print("\n\n")
+					# if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
+					# 	cdp_insert(cdp)
+					# 	print("keeping cdp")
+			else:
+				cdp_insert(cdp)
 	return
 	
 def reparametrize(id, c, d, price, old_price):
@@ -344,6 +337,7 @@ def reparametrize(id, c, d, price, old_price):
 	new_ccr = new_col * old_price / new_debt
 	min_col = 5 * old_price * 10_000
 	if new_ccr < CR and new_debt != 0 or new_col < min_col or new_debt < 50_0000 and new_debt != 0: 
+		cdp_insert(cdp)
 		return False
 
 	if cdp.acr != 0 and cdp.debt == 0:
@@ -377,6 +371,7 @@ def reparametrize(id, c, d, price, old_price):
 	if cdp.acr != 0 and cdp.debt == 0:
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
+	print(cdp)
 	
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
@@ -388,6 +383,7 @@ def change_acr(id, acr):
 	# print("change acr...", cdp)
 
 	if cdp.acr == acr:
+		cdp_insert(cdp)
 		return False
 
 	if cdp.acr != 0 and cdp.debt < 500:
@@ -411,13 +407,6 @@ def update_round():
 	
 	print(oracle_time)
 	print("collecting taxes")
-
-	for i in range(0, len(table)):
-		print("collect?", table[i])
-		if table[i].debt > epsilon(table[i].debt):
-			cdp = table[i]
-			if oracle_time - cdp.time > 2629800: # auto interest collection every month
-				table[i] = add_tax(cdp, price)
 
 
 # returns [time, [{action, failed?}], table]
@@ -472,6 +461,13 @@ def run_round(balance):
 	success = v1 <= balance
 	if success: redemption(v1, price, 150, 101)
 	actions.append([["redeem", v1], success])
+
+	# accrue taxes
+	for i in range(0, len(table)):
+		if table[i].debt > epsilon(table[i].debt):
+			cdp = table[i]
+			if oracle_time - cdp.time > 2629800: # auto interest collection every month
+				table[i] = add_tax(cdp, price)
 
 	return [time, actions]
 

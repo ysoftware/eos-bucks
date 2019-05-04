@@ -81,27 +81,10 @@ class Test(unittest.TestCase):
 
 			cdp_table = test.table
 			for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
-				# print(cdp)
 				ccr = 0 if cdp.cd > 999999 else cdp.cd
 				open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
 			self.compare(buck, cdp_table)
-
-			##################################
-			COMMENT("Liquidation sorting")
-			
-			top_debtors = get_debtors(buck, limit=20)
-			for i in range(0, len(top_debtors)):
-				debtor = top_debtors[i]
-				if amount(debtor["debt"]) == 0: break # unsorted end of the table
-				self.match(cdp_table[i * -1 - 1], debtor)
-
-			top_liquidators = get_liquidators(buck, limit=20)
-			for i in range(0, len(top_liquidators)):
-				liquidator = top_liquidators[i]
-				if liquidator["acr"] == 0: break # unsorted end of the table
-				self.match(cdp_table[i], liquidator)
-
 
 			##################################
 			COMMENT("Start rounds")
@@ -109,6 +92,21 @@ class Test(unittest.TestCase):
 			for i in range(0, random.randint(10, 50)):
 				print("\n\n\n\n\n\n\n\n")
 				COMMENT(f"Round {i+1}")
+
+				##################################
+				COMMENT("Liquidation sorting")
+				
+				top_debtors = get_debtors(buck, limit=20)
+				for i in range(0, len(top_debtors)):
+					debtor = top_debtors[i]
+					if amount(debtor["debt"]) == 0: break # unsorted end of the table
+					self.match(cdp_table[i * -1 - 1], debtor)
+
+				top_liquidators = get_liquidators(buck, limit=20)
+				for i in range(0, len(top_liquidators)):
+					liquidator = top_liquidators[i]
+					if liquidator["acr"] == 0: break # unsorted end of the table
+					self.match(cdp_table[i], liquidator)
 
 				# actions
 				result = test.run_round(balance(buck, user1) * 10000)
@@ -138,14 +136,15 @@ class Test(unittest.TestCase):
 						else: changeacr(buck, user1, cdp, acr)
 
 					elif action[0][0] == "redeem":
+
+						test.print_table()
+
 						quantity = asset(action[0][1], "BUCK")
 
 						if action[1] == False:
 							balance(buck, user1)
 							assertRaises(self, lambda: redeem(buck, user1, quantity))
 						else: redeem(buck, user1, quantity)
-
-				test.print_table()
 
 				maketime(buck, round_time)
 				update(buck, test.price)
@@ -170,6 +169,7 @@ class Test(unittest.TestCase):
 
 	def match(self, cdp, row):
 		print(cdp)
+		print(row)
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
