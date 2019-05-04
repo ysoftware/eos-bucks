@@ -101,7 +101,7 @@ void buck::run_requests(uint8_t max) {
         if (change_collateral.amount < 0) {
           sub_funds(cdp_itr->account, -change_collateral);
         }
-
+        
         sell_r(cdp_itr);
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -244,9 +244,13 @@ void buck::run_requests(uint8_t max) {
   while (i < max && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
   
+    // PRINT("i", i)
     accrue_interest(_cdp.require_find(accrual_itr->id));
     accrual_itr = accrual_index.begin(); // take first element after index updated
     i++;
+    
+    // PRINT("running accrual?", accrual_itr->id)
+    // PRINT("modified", accrual_itr->modified_round)
   }
 }
 
@@ -269,10 +273,10 @@ void buck::run_liquidation(uint8_t max) {
       debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
     }
     
-    // PRINT("debtor id", debtor_itr->id)
-    // PRINT("debt", debt_amount) 
-    // PRINT("col", debtor_itr->collateral)
-    // PRINT("ccr", debtor_ccr)
+    PRINT("debtor id", debtor_itr->id)
+    PRINT("debt", debt_amount) 
+    PRINT("col", debtor_itr->collateral)
+    PRINT("ccr", debtor_ccr)
     
     // this and all further debtors don't have any bad debt
     if (debtor_ccr >= CR && max > processed) {
@@ -314,8 +318,7 @@ void buck::run_liquidation(uint8_t max) {
       PRINT("ccr", liquidator_ccr)
       
       // this and all further liquidators can not bail out anymore bad debt
-      if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end()
-          || liquidator_itr->id == debtor_itr->id) {
+      if (liquidator_ccr < CR || liquidator_itr->id == debtor_itr->id) {
         
         // to-do bailout pool?
         PRINT_("FAILED")
@@ -344,6 +347,14 @@ void buck::run_liquidation(uint8_t max) {
       PRINT("bailable", bailable)
       PRINT("used_debt", used_debt)
       PRINT_("\n")
+      
+      if (bailable == 0) {
+        
+        PRINT_("FAILED 2")
+        set_liquidation_status(LiquidationStatus::failed);
+        run_requests(max - processed);
+        return;
+      }
       
       debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
         r.collateral -= used_collateral;

@@ -143,6 +143,15 @@ CONTRACT buck : public contract {
       uint32_t  modified_round; // accrual round
       uint64_t  r_balance;
       
+      void p() const {
+        eosio::print("#");eosio::print(id);
+        eosio::print(" debt: ");eosio::print(debt);
+        eosio::print(" col: ");eosio::print(collateral);
+        eosio::print(" time: ");eosio::print(modified_round);
+        eosio::print(" r_balance: ");eosio::print(r_balance);
+        eosio::print("\n");
+      }
+      
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
       

@@ -83,7 +83,7 @@ class Test(unittest.TestCase):
 
 			cdp_table = test.table
 			for cdp in sorted(cdp_table, key=lambda x:int(x.id)):
-				print(cdp)
+				# print(cdp)
 				ccr = 0 if cdp.cd > 999999 else cdp.cd
 				open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
@@ -110,6 +110,8 @@ class Test(unittest.TestCase):
 
 			for i in range(0, random.randint(10, 50)):
 				COMMENT(f"Round {i+1}")
+
+				table(buck, "taxation")
 
 				# actions
 				result = test.run_round(balance(buck, user1) * 10000)
@@ -145,6 +147,8 @@ class Test(unittest.TestCase):
 							balance(buck, user1)
 							assertRaises(self, lambda: redeem(buck, user1, quantity))
 						else: redeem(buck, user1, quantity)
+
+				test.print_table()
 
 				maketime(buck, round_time)
 				update(buck, test.price)

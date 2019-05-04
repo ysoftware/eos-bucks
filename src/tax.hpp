@@ -23,16 +23,23 @@ void buck::process_taxes() {
     r.insurance_pool += asset(r.r_collected - scruge_insurance_amount, REX);
     r.savings_pool += asset(r.e_collected - scruge_savings_amount, BUCK);
     
+    r.r_supply += r.r_collected - scruge_insurance_amount;
+    r.e_supply += r.e_collected - scruge_savings_amount;
+    
     if (r.r_supply > 0) {
-      r.r_price += (r.r_collected - scruge_insurance_amount) / r.r_supply;
+      r.r_price += (r.r_collected - scruge_insurance_amount) * PO / r.r_supply;
       r.r_collected = 0;
     }
     
     if (r.e_supply > 0) {
-      r.e_price += (r.e_collected - scruge_savings_amount) / r.e_supply;
+      r.e_price += (r.e_collected - scruge_savings_amount) * PO / r.e_supply;
       r.e_collected = 0;
     }
   });
+  
+  PRINT("processing taxes", tax.r_price)
+  PRINT("supply", tax.r_supply)
+  PRINT("processing scruge_insurance_amount", scruge_insurance_amount)
 }
 
 // collect interest to insurance pool from this cdp
@@ -60,9 +67,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   // PRINT("tax", cdp_itr->id)
   // PRINT("dt", now - last)
-  // PRINT("interest", accrued_amount)
-  // PRINT("d", accrued_debt)
-  // PRINT("c", accrued_collateral)
+  PRINT("d", accrued_debt)
+  PRINT("c", accrued_collateral)
   // PRINT_("---")
 
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -75,6 +81,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.e_collected += accrued_debt_amount;
     r.r_collected += accrued_collateral_amount;
   });
+  
+  PRINT("col", tax.r_collected)
   
   // to-do check ccr for liquidation
 }
@@ -101,27 +109,33 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
 }
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
-  
-  /// time 
-  
   const auto& tax = *_tax.begin();
-  
-  const int64_t pool_part = cdp_itr->r_balance * tax.r_price;
+   
+  const int64_t pool_part = cdp_itr->r_balance * tax.r_price / PO;
   const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
   const asset received_rex = asset(received_rex_amount, REX);
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   
-  PRINT("insurer, added coll", received_rex)
-  PRINT("id", cdp_itr->id)
-  PRINT("time", now)
+  
+  if (received_rex_amount > 0) {
+    cdp_itr->p();
+    PRINT("insurer, added col", received_rex)
+    PRINT_("HERE")
+    PRINT("r price", tax.r_price)
+    PRINT("r supply", tax.r_supply)
+    PRINT("pool", tax.insurance_pool)
+    PRINT("time", now)
+  }
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance = 0;
     r.collateral += received_rex;
-    r.modified_round = now; 
+    r.modified_round = now;
   });
+  
+  cdp_itr->p();
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_supply -= cdp_itr->r_balance;
