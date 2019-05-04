@@ -155,7 +155,7 @@ class Test(unittest.TestCase):
 				# match supplies and taxes
 				taxation = table(buck, "taxation")
 				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 2, "insurance pools don't match")
-				self.assertAlmostEqual(unpack(test.CIT), amount(taxation["r_collected"]), 2, "collected insurances don't match")
+				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps

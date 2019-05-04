@@ -315,7 +315,7 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
-	print("reparam...", cdp)
+	# print("reparam...", cdp)
 	cdp = update_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
@@ -365,7 +365,7 @@ def change_acr(id, acr):
 
 	cdp = table.pop(cdp_index(id))
 	cdp = update_tax(cdp, price)
-	print("change acr..., cdp")
+	# print("change acr...", cdp)
 
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -386,9 +386,12 @@ def update_round():
 
 	oracle_time = time
 	
-	for cdp in table:
+	for i in range(0, len(table)):
+		cdp = table.pop(i)
 		if oracle_time - cdp.time > 2629800: # auto interest collection every month
-			update_tax(cdp, price)
+			cdp = add_tax(cdp, price)
+		cdp_insert(cdp)
+
 
 # returns [time, [{action, failed?}], table]
 def run_round(balance):
