@@ -193,7 +193,7 @@ void buck::run_requests(uint8_t max) {
           if (ccr < 100 - RF) { continue; }
           
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
-          const int64_t using_collateral_amount = convert_to_usd_rex(using_debt_amount, RF);
+          const int64_t using_collateral_amount = convert_to_usd_rex(using_debt_amount * 100, RF);
         
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);

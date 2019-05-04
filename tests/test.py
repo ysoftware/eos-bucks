@@ -317,15 +317,16 @@ def redemption(amount, price, cr, rf):
 					print("from cdp", cdp)
 					print("using debt", cdp.debt)
 					print("using col", (d*100) //(price+rf))
-					print("removing cdp")
 					cdp.new_debt(0)
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
-					i -= 1
-					if cdp.collateral > 0:
-						cdp_insert(cdp)
 
-	print("reparam done!")
+					i -= 1
+					if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
+						cdp_insert(cdp)
+						print("keeping cdp")
+
+	print("redeem done!")
 	print_table()
 	print("\n\n")
 	return
@@ -385,6 +386,9 @@ def change_acr(id, acr):
 	cdp = table.pop(cdp_index(id))
 	cdp = update_tax(cdp, price)
 	# print("change acr...", cdp)
+
+	if cdp.acr == acr:
+		return False
 
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
