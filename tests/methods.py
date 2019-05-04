@@ -65,11 +65,13 @@ def open(contract, user, ccr, acr, quantity):
 def update(contract, eos=200):
 	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
 	run(contract)
+	run(contract)
+	run(contract)
 
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, max_cpu_usage=20, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
-def run(contract, max=30):
+def run(contract, max=50):
 	contract.push_action(force_unique=True, max_cpu_usage=20, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):

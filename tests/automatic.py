@@ -3,13 +3,11 @@
 # This file is part of ScrugeX.
 # Created by Yaroslav Erohin.
 
-import unittest
-import random
+import unittest, random, string
 from eosfactory.eosf import *
 import eosfactory.core.setup as setup 
 from methods import *
 import test
-import string
 
 verbosity([Verbosity.INFO, Verbosity.OUT, Verbosity.TRACE, Verbosity.DEBUG])
 
@@ -111,8 +109,6 @@ class Test(unittest.TestCase):
 			for i in range(0, random.randint(10, 50)):
 				COMMENT(f"Round {i+1}")
 
-				table(buck, "taxation")
-
 				# actions
 				result = test.run_round(balance(buck, user1) * 10000)
 				round_time = result[0]
@@ -152,12 +148,19 @@ class Test(unittest.TestCase):
 
 				maketime(buck, round_time)
 				update(buck, test.price)
+				
+				##################################
+				COMMENT("Matching")
+
+				# match supplies and taxes
+				taxation = table(buck, "taxation")
+				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 2, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.CIT), amount(taxation["r_collected"]), 2, "collected insurances don't match")
+				print("+ Matched insurance pools")
 
 				# match cdps
 				self.compare(buck, cdp_table)
 
-				# match supplies and taxes
-				
 
 
 
@@ -170,6 +173,7 @@ class Test(unittest.TestCase):
 		print(f"+ Matched cdp #{cdp.id}")
 
 	def compare(self, buck, cdp_table):
+		# to-do optimize blockchain calls
 		for cdp in cdp_table:
 			row = get_cdp(buck, cdp.id)
 			if cdp.time == 0: cdp.time = int(row["modified_round"]) # update round time

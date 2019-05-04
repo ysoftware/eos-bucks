@@ -17,7 +17,6 @@ oracle_time = 0
 
 def time_now():
 	global time
-	print("time now...")
 	time += 10_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
@@ -206,15 +205,17 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
-		print("add debt", interest * SR // 100)
-		print("remove col", interest * IR // price)
+
+		if interest > 0:
+			print("tax", cdp.id)
+			print("new collected", CIT)
+			print("---")
 	return cdp
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
-		print("update tax", cdp)
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
@@ -222,11 +223,6 @@ def update_tax(cdp, price):
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-
-			print("ec", ec)
-			print("aec", AEC)
-			print("idp", IDP)
-			print("add col", val)
 		cdp.new_time(oracle_time)
 	return cdp
 
@@ -319,6 +315,7 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
+	print("reparam...", cdp)
 	cdp = update_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
@@ -368,6 +365,7 @@ def change_acr(id, acr):
 
 	cdp = table.pop(cdp_index(id))
 	cdp = update_tax(cdp, price)
+	print("change acr..., cdp")
 
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -381,12 +379,16 @@ def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
 	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
+	print("processing, collected", CIT)
+	print("add to pool", CIT * (100 - commission) // 100)
+	print(IDP)
 	CIT = 0
+
 	oracle_time = time
 	
 	for cdp in table:
 		if oracle_time - cdp.time > 2629800: # auto interest collection every month
-			add_tax(cdp, price)
+			update_tax(cdp, price)
 
 # returns [time, [{action, failed?}], table]
 def run_round(balance):
@@ -395,7 +397,7 @@ def run_round(balance):
 	actions = []
 
 	old_price = price
-	price += random.randint(100, 10000)
+	price += 1 # = random.randint(100, 10000)
 
 	# acr requests get processed immediately
 
@@ -456,7 +458,7 @@ def init():
 
 	price = random.randint(100, 1000)
 
-	x = random.randint(5, 20)
+	x = random.randint(3, 3)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 5))
 	gen(d, l)
