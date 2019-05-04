@@ -180,6 +180,7 @@ void buck::run_requests(uint8_t max) {
         asset collateral_return = ZERO_REX;
         
         asset burned_debt = ZERO_BUCK; // used up
+        debtor_itr = debtor_index.begin();
         
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
@@ -197,19 +198,25 @@ void buck::run_requests(uint8_t max) {
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          // PRINT("redeem_quantity", redeem_quantity)
-          // PRINT("from cdp", debtor_itr->id)
-          // PRINT("available debt", debtor_itr->debt)
-          // PRINT("using_debt", using_debt)
-          // PRINT("using_collateral", using_collateral)
+          PRINT("redeem_quantity", redeem_quantity)
+          PRINT_("from cdp") debtor_itr->p();
+          PRINT("available debt", debtor_itr->debt)
+          PRINT("using_debt", using_debt)
+          PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
           
-          debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
-            r.debt -= using_debt;
-            r.collateral -= using_collateral;
-          });
+          if (debtor_itr->debt == using_debt && debtor_itr->collateral == using_collateral) {
+            debtor_index.erase(debtor_itr); 
+            PRINT_("removing cdp")
+          }
+          else {
+            debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
+              r.debt -= using_debt;
+              r.collateral -= using_collateral;
+            });
+          }
           
           burned_debt += using_debt;
           
@@ -239,7 +246,8 @@ void buck::run_requests(uint8_t max) {
   
   auto accrual_index = _cdp.get_index<"accrued"_n>();
   auto accrual_itr = accrual_index.begin();
-
+  
+  PRINT("collecting taxes", now)
   int i = 0;
   while (i < max && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {

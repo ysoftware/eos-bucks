@@ -107,6 +107,7 @@ class Test(unittest.TestCase):
 			COMMENT("Start rounds")
 
 			for i in range(0, random.randint(10, 50)):
+				print("\n\n\n\n\n\n\n\n")
 				COMMENT(f"Round {i+1}")
 
 				# actions
@@ -152,14 +153,17 @@ class Test(unittest.TestCase):
 				##################################
 				COMMENT("Matching")
 
-				# match supplies and taxes
+				# match taxes
 				taxation = table(buck, "taxation")
+				print("cit", test.CIT, "idp", test.IDP)
 				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 2, "insurance pools don't match")
 				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
 				self.compare(buck, cdp_table)
+
+				# match supply
 
 
 

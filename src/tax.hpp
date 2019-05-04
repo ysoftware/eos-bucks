@@ -71,6 +71,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   update_supply(accrued_debt);
   
   if (accrued_amount > 0) {
+    cdp_itr->p();
     PRINT("tax", cdp_itr->id)
     // PRINT("dt", now - last)
     // PRINT("d", accrued_debt)
@@ -116,6 +117,8 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
+  
+  // to-do check supply not 0
    
   const int64_t pool_part = cdp_itr->r_balance * tax.r_price / PO;
   const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
@@ -194,6 +197,8 @@ void buck::take(const name& account, const asset& value) {
   // sell E
   const uint64_t selling_e = ((uint128_t) value.amount * PO) / tax.e_price;
   check(account_itr->e_balance >= selling_e, "overdrawn savings balance");
+  
+  // to-do check supply not 0
   
   const int64_t pool_part = selling_e * tax.e_price / PO;
   const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;

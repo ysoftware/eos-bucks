@@ -51,7 +51,7 @@ int64_t buck::convert_to_usd_rex(int64_t quantity, int64_t tax) const {
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
-  if (pool_itr == _pool.end()) { return quantity / EU; } // test net case (1 rex = 1 eos)
+  if (pool_itr == _pool.end()) { return quantity / (EU + tax); } // test net case (1 rex = 1 eos)
   
   static const int64_t S0 = pool_itr->total_lendable.amount;
   static const int64_t R0 = pool_itr->total_rex.amount;

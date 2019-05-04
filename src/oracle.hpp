@@ -8,7 +8,6 @@ void buck::update(uint32_t eos_price) {
   #endif
   
   init();
-  process_taxes();
   
   const auto& stats = *_stat.begin();
   const uint32_t previous_price = stats.oracle_eos_price;
@@ -17,6 +16,8 @@ void buck::update(uint32_t eos_price) {
     r.oracle_timestamp = get_current_time_point();
     r.oracle_eos_price = eos_price;
   });
+  
+  process_taxes();
   
   if (eos_price < previous_price) {
     set_liquidation_status(LiquidationStatus::processing_liquidation);
