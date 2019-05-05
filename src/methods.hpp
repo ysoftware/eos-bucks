@@ -68,7 +68,8 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
     });
   }
   else {
-    accounts.modify(account_itr, same_payer, [&](auto& r) {
+    const auto payer = has_auth(owner) ? owner : ram_payer;
+    accounts.modify(account_itr, payer, [&](auto& r) {
       r.balance += value;
     });
   }
@@ -89,8 +90,10 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   const auto account_itr = accounts.require_find(value.symbol.code().raw(), "no balance object found");
   check(account_itr->balance.amount >= value.amount, "overdrawn buck balance");
 
+  const auto payer = has_auth(owner) ? owner : same_payer;
+
   // to-do ram payer should always be replaced by owner when possible
-  accounts.modify(account_itr, same_payer, [&](auto& r) {
+  accounts.modify(account_itr, payer, [&](auto& r) {
     r.balance -= value;
   });
   

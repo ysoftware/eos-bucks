@@ -86,7 +86,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   if (ccr > 0) {
     
     // check if debt amount is above the limit (actual amount is calculated at maturity)
-    const auto debt_amount = convert_to_rex_usd(quantity.amount) / ccr;
+    const auto debt_amount = to_buck(quantity.amount) / ccr;
     issue_debt = asset(debt_amount, BUCK);
     check(issue_debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }

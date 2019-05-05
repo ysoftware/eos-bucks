@@ -48,11 +48,11 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   // to-do what if wants to become insurer (0 debt)?
   
   if (new_debt.amount > 0) {
-    const auto ccr = convert_to_rex_usd(new_collateral.amount) / new_debt.amount;
+    const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
     check(ccr > CR, "can not reparametrize below 150% CCR");
   }
   
-  static const auto min_collateral = convert_to_rex_usd(MIN_COLLATERAL.amount);
+  static const auto min_collateral = to_buck(MIN_COLLATERAL.amount);
   
   // PRINT_("request reparam")
   // PRINT("new_debt", new_debt)
@@ -169,10 +169,16 @@ void buck::redeem(const name& account, const asset& quantity) {
   // validate
   check(quantity.symbol == BUCK, "symbol mismatch");
   
+  // open account if doesn't exist
+  add_funds(account, ZERO_REX, account);
+  
   // find previous request
   const auto redeem_itr = _redeemreq.find(account.value);
   
   if (redeem_itr != _redeemreq.end()) {
+    // return previous request
+    add_balance(account, redeem_itr->quantity, account, false);
+    
     _redeemreq.modify(redeem_itr, same_payer, [&](auto& r) {
       r.quantity += quantity;
       r.timestamp = get_current_time_point();

@@ -296,31 +296,32 @@ def redemption(amount, price, cr, rf):
 			return
 		else:
 			if cdp.collateral * price // cdp.debt >= 100 - rf:
-				if cdp.debt <= epsilon(cdp.debt):
-					cdp_insert(cdp)
-					return
-				elif amount < cdp.debt:
+				# if cdp.debt <= epsilon(cdp.debt): # duplicate check
+				# 	cdp_insert(cdp)
+				# 	return
+				if amount < cdp.debt:
 					print("redeem quantity", amount, cdp)
-					print("using debt", amount, "col", (amount*100) //(price+rf))
+					print("using debt", amount, "col", (amount*100) // (price+rf))
 					cdp.add_debt(-amount)
 					cdp.add_collateral((amount*100) //(price+rf))
 					amount = 0
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
+					return
 				else:
 					d = cdp.debt
 					print("redeem quantity", amount, cdp)
-					print("using debt", cdp.debt, "col", (d*100) //(price+rf))
+					print("using debt", cdp.debt, "col", (d*100) // (price+rf))
 					cdp.new_debt(0)
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
 
 					i -= 1
 
-					# if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
-					# 	cdp_insert(cdp)
-					# 	print("keeping cdp")
-			else:
+					if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
+						cdp_insert(cdp)
+						print("keeping cdp")
+			else: 
 				cdp_insert(cdp)
 	return
 	

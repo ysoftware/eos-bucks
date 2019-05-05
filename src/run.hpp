@@ -67,7 +67,7 @@ void buck::run_requests(uint8_t max) {
           int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
             const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
-            ccr = convert_to_rex_usd(new_collateral.amount) / cdp_itr->debt.amount;
+            ccr = to_buck(new_collateral.amount) / cdp_itr->debt.amount;
           }
         
           const int64_t can_withdraw = (CR - 100) * cdp_itr->collateral.amount / ccr;
@@ -82,7 +82,7 @@ void buck::run_requests(uint8_t max) {
           // calculate with new collateral and issuing debt
           const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
           const auto new_debt = cdp_itr->debt + reparam_itr->change_debt;
-          int32_t ccr = convert_to_rex_usd(new_collateral.amount) / new_debt.amount;
+          int32_t ccr = to_buck(new_collateral.amount) / new_debt.amount;
           
           const int64_t max_debt = ((ccr * 100 / CR) - 100) * new_debt.amount / 100;
           const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
@@ -134,7 +134,7 @@ void buck::run_requests(uint8_t max) {
         
         if (maturity_itr->ccr > 0) {
           // opening cdp, issue debt
-          const int64_t debt_amount = (convert_to_rex_usd(add_collateral.amount) / maturity_itr->ccr);
+          const int64_t debt_amount = (to_buck(add_collateral.amount) / maturity_itr->ccr);
           change_debt = asset(debt_amount, BUCK);
         }
         
@@ -183,17 +183,19 @@ void buck::run_requests(uint8_t max) {
         debtor_itr = debtor_index.begin();
         
         // loop through available debtors until all amount is redeemed or our of debtors
-        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtor_itr->debt.amount > 0) {
+        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end()) {
           
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
-          const int32_t ccr = convert_to_rex_usd(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
+          if (debtor_itr->debt > MIN_DEBT) { continue; }
+          
+          const int32_t ccr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
           // skip to the next debtor
           if (ccr < 100 - RF) { continue; }
           
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
-          const int64_t using_collateral_amount = convert_to_usd_rex(using_debt_amount * 100, RF);
+          const int64_t using_collateral_amount = to_rex(using_debt_amount * 100, RF);
         
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
@@ -229,10 +231,9 @@ void buck::run_requests(uint8_t max) {
           // return unredeemed amount
           add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
         }
-      
-        update_supply(burned_debt);
-        add_funds(redeem_itr->account, collateral_return, same_payer); // to-do receipt
         
+        update_supply(burned_debt);
+        add_funds(redeem_itr->account, collateral_return, same_payer);
         redeem_itr = _redeemreq.erase(redeem_itr);
       }
       else {
@@ -278,7 +279,7 @@ void buck::run_liquidation(uint8_t max) {
     
     int64_t debtor_ccr = CR;
     if (debt_amount > 0) {
-      debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
+      debtor_ccr = to_buck(collateral_amount) / debt_amount;
     }
     
     PRINT("debtor id", debtor_itr->id)
@@ -308,7 +309,7 @@ void buck::run_liquidation(uint8_t max) {
       else { liquidation_fee = debtor_ccr - 100; }
       
       const int64_t x = (100 + liquidation_fee) 
-                          * (750 * debt_amount - convert_to_rex_usd(5 * collateral_amount))
+                          * (750 * debt_amount - to_buck(5 * collateral_amount))
                           / (50000 - 1500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
@@ -319,7 +320,7 @@ void buck::run_liquidation(uint8_t max) {
       
       int64_t liquidator_ccr = CR;
       if (liquidator_debt > 0) {
-        liquidator_ccr = convert_to_rex_usd(liquidator_collateral) / liquidator_debt;
+        liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
       }
       
       PRINT("liquidator", liquidator_itr->id)
@@ -340,12 +341,12 @@ void buck::run_liquidation(uint8_t max) {
       
       sell_r(_cdp.require_find(liquidator_itr->id));
       
-      const int64_t bailable = (convert_to_rex_usd(liquidator_collateral) - liquidator_debt * liquidator_acr)
+      const int64_t bailable = (to_buck(liquidator_collateral) - liquidator_debt * liquidator_acr)
                                     * (100 - liquidation_fee)
                                   / (liquidator_acr * (100 - liquidation_fee) - 10000);
       
       const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
-      const int64_t value2 = used_debt_amount * 10000 / (convert_to_rex_usd(100 - liquidation_fee));
+      const int64_t value2 = used_debt_amount * 10000 / (to_buck(100 - liquidation_fee));
       const int64_t used_collateral_amount = std::min(collateral_amount, value2);
       
       const asset used_debt = asset(used_debt_amount, BUCK);
@@ -380,7 +381,7 @@ void buck::run_liquidation(uint8_t max) {
       
       debtor_ccr = CR;
       if (debt_amount > 0) {
-        debtor_ccr = convert_to_rex_usd(collateral_amount) / debt_amount;
+        debtor_ccr = to_buck(collateral_amount) / debt_amount;
       }
     }
     

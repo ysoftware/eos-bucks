@@ -63,22 +63,20 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
   const int64_t accrued_debt_amount = accrued_amount * SR / 100;
-  const int64_t accrued_collateral_amount = convert_to_usd_rex(accrued_amount * IR, 0);
+  const int64_t accrued_collateral_amount = to_rex(accrued_amount * IR, 0);
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
   update_supply(accrued_debt);
   
-  if (accrued_amount > 0) {
-    cdp_itr->p();
-    PRINT("tax", cdp_itr->id)
-    // PRINT("dt", now - last)
-    // PRINT("d", accrued_debt)
-    // PRINT("c", accrued_collateral)
-    PRINT("new collected", tax.r_collected + accrued_collateral_amount)
-    PRINT_("---")
-  }
+  // cdp_itr->p();
+  // PRINT("tax", cdp_itr->id)
+  // PRINT("dt", now - last)
+  // PRINT("d", accrued_debt)
+  // PRINT("c", accrued_collateral)
+  // PRINT("new collected", tax.r_collected + accrued_collateral_amount)
+  // PRINT_("---")
 
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -106,8 +104,12 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
   check(added_collateral.symbol == REX, "to-do incorrect symbol");
   check(received_r > 0, "to-do remove. this is probably wrong (buy_r)");
   
+  const auto oracle_time = _stat.begin()->oracle_timestamp;
+  static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
+  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance += received_r;
+    r.modified_round = now;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
@@ -127,14 +129,12 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   
-  if (received_rex_amount > 0) {
-    cdp_itr->p();
-    PRINT("insurer, added col", received_rex)
-    PRINT("r price", tax.r_price)
-    PRINT("r supply", tax.r_supply)
-    PRINT("pool", tax.insurance_pool)
-    PRINT("time", now)
-  }
+    // cdp_itr->p();
+    // PRINT("insurer, added col", received_rex)
+    // PRINT("r price", tax.r_price)
+    // PRINT("r supply", tax.r_supply)
+    // PRINT("pool", tax.insurance_pool)
+    // PRINT("time", now)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance = 0;
@@ -142,16 +142,12 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.modified_round = now;
   });
   
-  cdp_itr->p();
+  // cdp_itr->p();
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_supply -= cdp_itr->r_balance;
     r.insurance_pool -= received_rex;
   });
-  
-  if (received_rex_amount > 0) { 
-    PRINT("left over pool", tax.insurance_pool)
-  }
 }
 
 void buck::save(const name& account, const asset& value) {

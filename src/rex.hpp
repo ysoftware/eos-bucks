@@ -33,7 +33,7 @@ time_point_sec buck::get_maturity() const {
   return rms;
 }
 
-int64_t buck::convert_to_rex_usd(int64_t quantity) const {
+int64_t buck::to_buck(int64_t quantity) const {
   static const int64_t EU = get_eos_usd_price();
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
@@ -46,7 +46,7 @@ int64_t buck::convert_to_rex_usd(int64_t quantity) const {
   return p;
 }
 
-int64_t buck::convert_to_usd_rex(int64_t quantity, int64_t tax) const {
+int64_t buck::to_rex(int64_t quantity, int64_t tax) const {
   static const int64_t EU = get_eos_usd_price();
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
