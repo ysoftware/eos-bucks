@@ -187,12 +187,13 @@ void buck::run_requests(uint8_t max) {
           
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
-          if (debtor_itr->debt > MIN_DEBT) { continue; }
-          
           const int32_t ccr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
           // skip to the next debtor
-          if (ccr < 100 - RF) { continue; }
+          if (ccr < 100 - RF || debtor_itr->debt > MIN_DEBT) { 
+            debtor_itr++;
+            continue; 
+          }
           
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
           const int64_t using_collateral_amount = to_rex(using_debt_amount * 100, RF);
