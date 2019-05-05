@@ -33,7 +33,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(self.collateral // 10000) + "."  + str(self.collateral % 10000)
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(self.debt // 10000) + "." + str(self.debt % 10000)))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + " time: " + str(self.time//1_000_000) + "M"
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(int(self.cd)))) + "\t" + " time: " + str(self.time//1_000_000) + "M"
 	def add_debt(self,new_debt):
 		self.debt = self.debt + new_debt
 	def add_collateral(self, new_collateral):
@@ -54,9 +54,10 @@ class CDP:
 def generate_liquidators(k):
 	global TEC, time
 	rand = random.randrange(1000000,10000000,10000)
-	rand2 = random.randint(150,155)
+	rand2 = random.randint(150,200)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
+	print("update tec+", liquidator.collateral * 100 // liquidator.acr)
 	liquidators = [liquidator]
 	for i in range (0,k):
 		helper = liquidators[i].acr
@@ -64,6 +65,7 @@ def generate_liquidators(k):
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
 		liquidator = liquidators[len(liquidators)-1]
 		TEC += liquidator.collateral * 100 // liquidator.acr
+		print("update tec+", liquidator.collateral * 100 // liquidator.acr)
 	return liquidators
 
 def generate_debtors(k, n):
@@ -138,7 +140,7 @@ def cdp_insert(cdp):
 			c2 = cdp2.collateral
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
-			if c * 10000000 // d < cdp2.collateral * 10000000 // cdp2.debt:
+			if cd < cd2:
 				table.insert(i+1, cdp)
 				return 
 		table.insert(0,cdp)
@@ -233,13 +235,15 @@ def update_tax(cdp, price):
 				print(cdp)
 				print("AEC", AEC)
 				print("IDP was", IDP)
-				print("insurer, added col", val)
+				print("insurer, added col", val, "\n")
 
 			AEC -= ec * (oracle_time - cdp.time) 
-			cdp.add_collateral(val)
-			TEC += val * 100 // cdp.acr
 			IDP -= val
+			cdp.add_collateral(val)
 
+			TEC -= ec
+			TEC += cdp.collateral * 100 // cdp.acr
+			print("update tec, -", ec, "+", cdp.collateral * 100 // cdp.acr)
 
 			if IDP < 0:
 				exit()
@@ -275,8 +279,9 @@ def liquidation(price, cr, lf):
 				else:
 					liquidator = table.pop(i)
 					liquidator = update_tax(liquidator, price)
-					if liquidator.debt <= 100:
-						TEC -= liquidator.collateral * 100 // liquidator.acr
+					# if liquidator.debt <= epsilon(liquidator.debt):
+					# 	print("tec-")
+					# 	TEC -= liquidator.collateral * 100 // liquidator.acr
 					l = calc_lf(debtor, price, cr, lf)
 					val = calc_val(debtor, liquidator, price, cr,l) 
 					c = min(val * 10000 // (price*(100-l)),debtor.collateral)
@@ -288,9 +293,10 @@ def liquidation(price, cr, lf):
 						debtor.new_cd(9999999)
 					else:
 						debtor.new_cd(debtor.collateral * 100 // debtor.debt)
-					if liquidator.debt <= 100:
-						TEC += liquidator.collateral * 100 // liquidator.acr
-						liquidator.new_cd(9999999)
+					if liquidator.debt <= epsilon(liquidator.debt):
+						# print("tec+")
+						# TEC += liquidator.collateral * 100 // liquidator.acr
+						liquidator.new_cd()
 					else:
 						liquidator.new_cd(liquidator.collateral * 100 // liquidator.debt)
 					cdp_insert(liquidator)
@@ -358,8 +364,9 @@ def reparametrize(id, c, d, price, old_price):
 		cdp_insert(cdp)
 		return False
 
-	if cdp.acr != 0 and cdp.debt == 0:
-		TEC -= cdp.collateral * 100 // cdp.acr
+	# if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
+	# 	print("tec-")
+	# 	TEC -= cdp.collateral * 100 // cdp.acr
 	if d < 0:
 		if cdp.debt + d > 50000 + epsilon(50000):
 			cdp.add_debt(d)
@@ -386,8 +393,9 @@ def reparametrize(id, c, d, price, old_price):
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 	else:
 		cdp.new_cd(9999999)
-	if cdp.acr != 0 and cdp.debt == 0:
-		TEC += cdp.collateral * 100 // cdp.acr
+	# if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
+	# 	print("tec+")
+	# 	TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
 	print(cdp)
 
@@ -404,28 +412,28 @@ def change_acr(id, acr):
 		cdp_insert(cdp)
 		return False
 
-	if cdp.acr != 0 and cdp.debt < 500:
-		TEC -= cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
+	# if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
+	# 	print("tec-")
+	# 	TEC -= cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
 	cdp.new_acr(acr)
 
-	if cdp.acr != 0 and cdp.debt < 500:
-		TEC += cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
+	# if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
+	# 	print("tec+")
+	# 	TEC += cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
 	cdp_insert(cdp)
 		
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
 	AEC += TEC * (time - oracle_time) 
 	IDP += CIT * (100 - commission) // 100
+	print("AEC", AEC)
+	print("TEC", TEC)
 	print("processing, collected", CIT)
 	print("add to pool", CIT * (100 - commission) // 100)
 	print(IDP)
+
 	CIT = 0
-
 	oracle_time = time
-	
-	print(oracle_time)
-	print("collecting taxes")
-
 
 # returns [time, [{action, failed?}], table]
 def run_round(balance):
@@ -445,7 +453,7 @@ def run_round(balance):
 	k = 10
 	for i in range(0, random.randint(0, length-1)):
 		if cdp_index(i) != False:
-			acr = random.randint(150,1000)
+			acr = random.randint(148, 300)
 			failed = change_acr(i, acr)
 			actions.append([["acr", i, acr], failed != False])
 			k -= 1
@@ -508,5 +516,6 @@ def init():
 	oracle_time = time
 
 	gen(2, 4)
+	print_table()
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

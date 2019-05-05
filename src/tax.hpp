@@ -101,11 +101,16 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collat
   const int64_t new_excess = added_collateral.amount / cdp_itr->acr;
   const uint64_t received_r = ((uint128_t) new_excess * PO) / tax.r_price;
   
+  
   check(added_collateral.symbol == REX, "to-do incorrect symbol");
   check(received_r > 0, "to-do remove. this is probably wrong (buy_r)");
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
+  
+  PRINT_("buy r")
+  PRINT("excess collateral", new_excess)
+  PRINT("received r", received_r)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance += received_r;
@@ -121,6 +126,8 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   // to-do check supply not 0
+  
+  PRINT_("sell r")
    
   const int64_t pool_part = cdp_itr->r_balance * tax.r_price / PO;
   const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;

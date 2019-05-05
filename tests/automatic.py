@@ -80,9 +80,12 @@ class Test(unittest.TestCase):
 			COMMENT("Open CDP")
 
 			for cdp in sorted(test.table, key=lambda x:int(x.id)):
-				ccr = 0 if cdp.cd > 999999 else cdp.cd
+				ccr = int(0 if cdp.cd > 999999 else cdp.cd)
 				open(buck, user1, ccr, cdp.acr, asset(cdp.collateral, "REX"))
 
+			##################################
+			COMMENT("Initial matching")
+			
 			self.compare(buck, test.table)
 
 			##################################
@@ -91,23 +94,6 @@ class Test(unittest.TestCase):
 			for round_i in range(0, random.randint(10, 50)):
 				print("\n\n\n\n\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
-
-				##################################
-				COMMENT("Liquidation sorting")
-				
-				test.print_table()
-				
-				top_debtors = get_debtors(buck, limit=20)
-				for i in range(0, len(top_debtors)):
-					debtor = top_debtors[i]
-					if amount(debtor["debt"]) == 0: break # unsorted end of the table
-					self.match(test.table[i * -1 - 1], debtor)
-
-				top_liquidators = get_liquidators(buck, limit=20)
-				for i in range(0, len(top_liquidators)):
-					liquidator = top_liquidators[i]
-					if amount(liquidator["debt"]) > 0: break # unsorted end of the table
-					self.match(test.table[i], liquidator)
 
 				##################################
 				COMMENT(f"Actions for round {round_i+1}")
@@ -156,12 +142,14 @@ class Test(unittest.TestCase):
 				##################################
 				COMMENT(f"Matching after round {round_i+1}")
 
+				test.print_table()
+
 				# match taxes
 				taxation = table(buck, "taxation")
 
 				print("idp", test.IDP, "cit", test.CIT)
-				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 2, "insurance pools don't match")
-				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
+				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 3, "insurance pools don't match")
+				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 3, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
@@ -172,19 +160,19 @@ class Test(unittest.TestCase):
 
 
 	def compare(self, buck, cdp_table):
-		rows = get_debtors(buck, limit=1000)
-		i = 0
-		table = sorted(cdp_table, key=lambda x: x.id)
-		for row in sorted(rows, key=lambda x: x["id"]):
-			cdp = table[i]
-			if cdp is None:
-				assert("CDP does not exist in test")
-			self.match(cdp, row)
-			i += 1
-		if len(cdp_table) > i + 1:
-			print("i", i)
-			test.print_table()
-			assert("CDP doesn't exist in contract")
+
+		top_debtors = get_debtors(buck, limit=100)
+		for i in range(0, len(top_debtors)):
+			debtor = top_debtors[i]
+			if amount(debtor["debt"]) == 0: break # unsorted end of the table
+			self.match(test.table[i * -1 - 1], debtor)
+
+		top_liquidators = get_liquidators(buck, limit=100)
+		for i in range(0, len(top_liquidators)):
+			liquidator = top_liquidators[i]
+			if amount(liquidator["debt"]) > 0: break # unsorted end of the table
+			self.match(test.table[i], liquidator)
+
 
 
 	def match(self, cdp, row):
