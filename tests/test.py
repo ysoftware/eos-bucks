@@ -110,6 +110,7 @@ def cdp_insert(cdp):
 		# liquidators
 		for i in range(0, len_table):
 			cdp2 = table[i]
+			c2 = cdp2.collateral
 			d2 = cdp2.debt
 			if d2 >= epsilon(d):
 				table.insert(i,cdp)
@@ -120,7 +121,7 @@ def cdp_insert(cdp):
 				table.insert(i, cdp)
 				return
 			else:
-				if cd > cd2:
+				if c * 100 // acr  > c2 * 100 // acr2:
 					table.insert(i,cdp)
 					return
 		table.append(cdp)
