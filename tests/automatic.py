@@ -193,8 +193,8 @@ class Test(unittest.TestCase):
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
 		# self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 

@@ -97,10 +97,6 @@ def gen(k, n):
 def cdp_insert(cdp):
 	global table
 
-	print("insert", cdp)
-	print_table()
-	print("\n")
-
 	if table == []:
 		return [cdp]
 	c = cdp.collateral
@@ -138,15 +134,12 @@ def cdp_insert(cdp):
 			d2 = cdp2.debt
 			if d2 <= epsilon(d2): # debt 0
 				table.insert(i+1, cdp)
-				print("insert23 at ", i+1)
 				return 
 			c2 = cdp2.collateral
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
-
 			if c * 10000000 // d < cdp2.collateral * 10000000 // cdp2.debt:
 				table.insert(i+1, cdp)
-				print("insert4 at ", i+1)
 				return 
 		table.insert(0,cdp)
 		return 
@@ -348,7 +341,7 @@ def redemption(amount, price, cr, rf):
 				cdp_insert(cdp)
 	print("redeem done 2")
 	return
-	
+
 def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
@@ -397,7 +390,7 @@ def reparametrize(id, c, d, price, old_price):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
 	print(cdp)
-	
+
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
 	if acr < CR or acr > 100000:
@@ -418,10 +411,6 @@ def change_acr(id, acr):
 	if cdp.acr != 0 and cdp.debt < 500:
 		TEC += cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
 	cdp_insert(cdp)
-
-	print("\n")
-	print_table()
-	print("\n")
 		
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
