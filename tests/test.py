@@ -97,6 +97,10 @@ def gen(k, n):
 def cdp_insert(cdp):
 	global table
 
+	print("insert", cdp)
+	print_table()
+	print("\n")
+
 	if table == []:
 		return [cdp]
 	c = cdp.collateral
@@ -112,8 +116,8 @@ def cdp_insert(cdp):
 			cdp2 = table[i]
 			c2 = cdp2.collateral
 			d2 = cdp2.debt
-			if d2 >= epsilon(d):
-				table.insert(i,cdp)
+			if d2 > epsilon(d2):
+				table.insert(i, cdp)
 				return
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
@@ -121,23 +125,28 @@ def cdp_insert(cdp):
 				table.insert(i, cdp)
 				return
 			else:
-				if c * 100 // acr  > c2 * 100 // acr2:
-					table.insert(i,cdp)
+				if c * 100 // acr > c2 * 100 // acr2:
+					table.insert(i, cdp)
 					return
 		table.append(cdp)
-		return 
+		return
 	else:
+		# debtors
 		for i in range(len(table)-1, -1, -1):
 			cdp2 = table[i]
+			print(cdp2)
 			d2 = cdp2.debt
-			if d2 <= epsilon(d2):
-				table.insert(i+1,cdp)
+			if d2 <= epsilon(d2): # debt 0
+				table.insert(i+1, cdp)
+				print("insert23 at ", i+1)
 				return 
 			c2 = cdp2.collateral
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
-			if cd < cd2:
+
+			if c * 10000000 // d < cdp2.collateral * 10000000 // cdp2.debt:
 				table.insert(i+1, cdp)
+				print("insert4 at ", i+1)
 				return 
 		table.insert(0,cdp)
 		return 
@@ -221,7 +230,6 @@ def add_tax(cdp, price):
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
-	print(cdp)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
@@ -229,6 +237,7 @@ def update_tax(cdp, price):
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
 
 			if val > 0:
+				print(cdp)
 				print("AEC", AEC)
 				print("IDP was", IDP)
 				print("insurer, added col", val)
@@ -395,7 +404,7 @@ def change_acr(id, acr):
 		return False
 
 	cdp = table.pop(cdp_index(id))
-	print("change acr...", cdp)
+	print("change acr... to", acr, cdp)
 	cdp = update_tax(cdp, price)
 
 	if cdp.acr == acr:
@@ -403,12 +412,16 @@ def change_acr(id, acr):
 		return False
 
 	if cdp.acr != 0 and cdp.debt < 500:
-		TEC -= cdp.collateral * 100 // cdp.acr
+		TEC -= cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
 	cdp.new_acr(acr)
 
 	if cdp.acr != 0 and cdp.debt < 500:
-		TEC += cdp.collateral * 100 // cdp.acr
+		TEC += cdp.collateral * 100 // cdp.acr # DEAL WITH THESE
 	cdp_insert(cdp)
+
+	print("\n")
+	print_table()
+	print("\n")
 		
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price

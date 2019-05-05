@@ -106,7 +106,7 @@ class Test(unittest.TestCase):
 				top_liquidators = get_liquidators(buck, limit=20)
 				for i in range(0, len(top_liquidators)):
 					liquidator = top_liquidators[i]
-					if liquidator["acr"] == 0: break # unsorted end of the table
+					if amount(liquidator["debt"]) > 0: break # unsorted end of the table
 					self.match(test.table[i], liquidator)
 
 				##################################
