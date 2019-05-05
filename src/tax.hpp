@@ -70,13 +70,13 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  // cdp_itr->p();
-  // PRINT("tax", cdp_itr->id)
-  // PRINT("dt", now - last)
-  // PRINT("d", accrued_debt)
-  // PRINT("c", accrued_collateral)
-  // PRINT("new collected", tax.r_collected + accrued_collateral_amount)
-  // PRINT_("---")
+  cdp_itr->p();
+  PRINT("tax", cdp_itr->id)
+  PRINT("dt", now - last)
+  PRINT("d", accrued_debt)
+  PRINT("c", accrued_collateral)
+  PRINT("new collected", tax.r_collected + accrued_collateral_amount)
+  PRINT_("---")
 
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -129,12 +129,14 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   
-    // cdp_itr->p();
-    // PRINT("insurer, added col", received_rex)
-    // PRINT("r price", tax.r_price)
-    // PRINT("r supply", tax.r_supply)
-    // PRINT("pool", tax.insurance_pool)
-    // PRINT("time", now)
+  if (received_rex_amount > 0) {
+    cdp_itr->p();
+    PRINT("insurer, added col", received_rex)
+    PRINT("r price", tax.r_price)
+    PRINT("r supply", tax.r_supply)
+    PRINT("pool", tax.insurance_pool)
+    PRINT("time", now)
+  }
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance = 0;
@@ -142,7 +144,10 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.modified_round = now;
   });
   
-  // cdp_itr->p();
+  if (received_rex_amount > 0) {
+    cdp_itr->p();
+    PRINT_("---\n")
+  }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_supply -= cdp_itr->r_balance;

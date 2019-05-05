@@ -107,19 +107,20 @@ def cdp_insert(cdp):
 	if (d <= epsilon(d)) and acr == 0:
 		return 
 	elif (d <= epsilon(d)) and acr != 0:
-		for i in range(0,len_table):
+		# liquidators
+		for i in range(0, len_table):
 			cdp2 = table[i]
 			d2 = cdp2.debt
 			if d2 >= epsilon(d):
 				table.insert(i,cdp)
-				return 
+				return
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
 			if acr2 == 0:
 				table.insert(i, cdp)
-				return 
+				return
 			else:
-				if cd  > cd2:
+				if cd > cd2:
 					table.insert(i,cdp)
 					return
 		table.append(cdp)
@@ -197,15 +198,22 @@ def calc_val(cdp, cdp2, price, cr, lf):
 def add_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time
 
-	if cdp.debt > epsilon(cdp.debt):	
+	if cdp.debt > epsilon(cdp.debt):
+
+		print("tax", cdp.id)
+
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
+		print("c", interest * IR // price)
+		print("dt", oracle_time-cdp.time)
+		print("time", oracle_time)
+
+		
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
 
-		print("tax", cdp.id)
 		print("new collected", CIT)
 		print("---")
 	return cdp
@@ -218,16 +226,21 @@ def update_tax(cdp, price):
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
-			print("AEC", AEC)
-			print("IDP was", IDP)
+
+			if val > 0:
+				print("AEC", AEC)
+				print("IDP was", IDP)
+				print("insurer, added col", val)
+
 			AEC -= ec * (oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
-			print("taking from pool", val)
+
+
 			if IDP < 0:
 				exit()
-			cdp.new_time(oracle_time)
+		cdp.new_time(oracle_time)
 	return cdp
 
 # Contract functions
@@ -311,8 +324,7 @@ def redemption(amount, price, cr, rf):
 					amount = 0
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
-					print("redeem done 1")
-					return
+					print("reached end")
 				else:
 					d = cdp.debt
 					print("redeem quantity", amount, cdp)
@@ -331,7 +343,7 @@ def reparametrize(id, c, d, price, old_price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
-	# print("reparam...", cdp)
+	print("reparam...", cdp)
 	cdp = update_tax(cdp, price)
 
 	# verify change with old price first (request creation step)
@@ -382,8 +394,8 @@ def change_acr(id, acr):
 		return False
 
 	cdp = table.pop(cdp_index(id))
+	print("change acr...", cdp)
 	cdp = update_tax(cdp, price)
-	# print("change acr...", cdp)
 
 	if cdp.acr == acr:
 		cdp_insert(cdp)
@@ -449,16 +461,16 @@ def run_round(balance):
 		length = len(table)
 		if length == 0: return [time, actions]
 
-	k = 10
-	for i in range(0, random.randint(0, length-1)):
-		if cdp_index(i) != False:
-			v1 = random.randrange(-100_0000, 1_000_0000)
-			v2 = random.randrange(-100_0000, 1_000_0000)
-			failed = reparametrize(i, v1, v2, price, old_price)
-			actions.append([["reparam", i, v1, v2], failed != False])
-			k -= 1
-		if k == 0:
-			break
+	# k = 10
+	# for i in range(0, random.randint(0, length-1)):
+	# 	if cdp_index(i) != False:
+	# 		v1 = random.randrange(-100_0000, 1_000_0000)
+	# 		v2 = random.randrange(-100_0000, 1_000_0000)
+	# 		failed = reparametrize(i, v1, v2, price, old_price)
+	# 		actions.append([["reparam", i, v1, v2], failed != False])
+	# 		k -= 1
+	# 	if k == 0:
+	# 		break
 
 	# v1 = random.randrange(0, 10_000_0000)
 	# success = v1 <= balance
@@ -489,8 +501,9 @@ def init():
 	x = random.randint(3, 3)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 5))
-	gen(d, l)
-
 	time_now()
 	oracle_time = time
+
+	gen(2, 4)
+
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

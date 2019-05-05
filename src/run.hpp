@@ -261,7 +261,6 @@ void buck::run_requests(uint8_t max) {
   auto accrual_index = _cdp.get_index<"accrued"_n>();
   auto accrual_itr = accrual_index.begin();
   
-  PRINT("collecting taxes", now)
   int i = 0;
   while (i < max && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
