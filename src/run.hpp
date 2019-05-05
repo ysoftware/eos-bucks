@@ -185,12 +185,21 @@ void buck::run_requests(uint8_t max) {
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end()) {
           
+          if (debtor_itr->collateral.amount > 0 || debtor_itr->debt.amount == 0) { // reached end of the table
+            break;
+          }
+          
           accrue_interest(_cdp.require_find(debtor_itr->id));
+          
+          if (debtor_itr->debt > MIN_DEBT) { // don't go below min debt
+            debtor_itr++;
+            continue;
+          }
           
           const int32_t ccr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
           // skip to the next debtor
-          if (ccr < 100 - RF || debtor_itr->debt > MIN_DEBT) { 
+          if (ccr < 100 - RF) { 
             debtor_itr++;
             continue; 
           }
@@ -236,6 +245,9 @@ void buck::run_requests(uint8_t max) {
         update_supply(burned_debt);
         add_funds(redeem_itr->account, collateral_return, same_payer);
         redeem_itr = _redeemreq.erase(redeem_itr);
+        
+        PRINT("left", redeem_quantity)
+        PRINT_("redeem done")
       }
       else {
         // no more redemption requests

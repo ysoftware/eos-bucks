@@ -150,7 +150,6 @@ def cdp_index(id):
 			return i
 	return False
 
-
 def print_table():
 	global table
 	if table == []:
@@ -213,16 +212,21 @@ def add_tax(cdp, price):
 	
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
+	print(cdp)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			val = IDP * ec *(oracle_time-cdp.time) // AEC
+			print("AEC", AEC)
+			print("IDP was", IDP)
 			AEC -= ec * (oracle_time - cdp.time) 
 			cdp.add_collateral(val)
 			TEC += val * 100 // cdp.acr
 			IDP -= val
 			print("taking from pool", val)
+			if IDP < 0:
+				exit()
 			cdp.new_time(oracle_time)
 	return cdp
 
@@ -296,9 +300,9 @@ def redemption(amount, price, cr, rf):
 			return
 		else:
 			if cdp.collateral * price // cdp.debt >= 100 - rf:
-				# if cdp.debt <= epsilon(cdp.debt): # duplicate check
-				# 	cdp_insert(cdp)
-				# 	return
+				if cdp.debt <= epsilon(cdp.debt): # duplicate check
+					cdp_insert(cdp)
+					return
 				if amount < cdp.debt:
 					print("redeem quantity", amount, cdp)
 					print("using debt", amount, "col", (amount*100) // (price+rf))
@@ -307,6 +311,7 @@ def redemption(amount, price, cr, rf):
 					amount = 0
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
+					print("redeem done 1")
 					return
 				else:
 					d = cdp.debt
@@ -317,12 +322,9 @@ def redemption(amount, price, cr, rf):
 					amount -= d
 
 					i -= 1
-
-					if cdp.collateral > 0: # check this!!!! <<<<<<<<<<< --------- to-do
-						cdp_insert(cdp)
-						print("keeping cdp")
 			else: 
 				cdp_insert(cdp)
+	print("redeem done 2")
 	return
 	
 def reparametrize(id, c, d, price, old_price):
@@ -458,10 +460,10 @@ def run_round(balance):
 		if k == 0:
 			break
 
-	v1 = random.randrange(0, 10_000_0000)
-	success = v1 <= balance
-	if success: redemption(v1, price, 150, 101)
-	actions.append([["redeem", v1], success])
+	# v1 = random.randrange(0, 10_000_0000)
+	# success = v1 <= balance
+	# if success: redemption(v1, price, 150, 101)
+	# actions.append([["redeem", v1], success])
 
 	# accrue taxes
 	for i in range(0, len(table)):
