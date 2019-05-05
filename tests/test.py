@@ -123,7 +123,7 @@ def cdp_insert(cdp):
 				table.insert(i, cdp)
 				return
 			else:
-				if c * 100 // acr > c2 * 100 // acr2:
+				if c * 10000 / acr > c2 * 10000 / acr2:
 					table.insert(i, cdp)
 					return
 		table.append(cdp)
@@ -140,7 +140,7 @@ def cdp_insert(cdp):
 			c2 = cdp2.collateral
 			acr2 = cdp2.acr
 			cd2 = cdp2.cd
-			if cd < cd2:
+			if c * 10000000 / d < cdp2.collateral * 10000000 / cdp2.debt:
 				table.insert(i+1, cdp)
 				return 
 		table.insert(0,cdp)
@@ -451,7 +451,7 @@ def run_round(balance):
 	print(f"time: {time}")
 
 	k = 10
-	for i in range(0, random.randint(0, length-1)):
+	for i in range(1, random.randint(0, length-1)):
 		if cdp_index(i) != False:
 			acr = random.randint(148, 300)
 			failed = change_acr(i, acr)
@@ -473,7 +473,7 @@ def run_round(balance):
 		if length == 0: return [time, actions]
 
 	# k = 10
-	# for i in range(0, random.randint(0, length-1)):
+	# for i in range(1, random.randint(0, length-1)):
 	# 	if cdp_index(i) != False:
 	# 		v1 = random.randrange(-100_0000, 1_000_0000)
 	# 		v2 = random.randrange(-100_0000, 1_000_0000)

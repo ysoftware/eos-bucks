@@ -21,7 +21,7 @@ void buck::process_taxes() {
     add_balance(SCRUGE, scruge_savings, _self, true);
   }
 
-const auto oracle_time = _stat.begin()->oracle_timestamp;
+  const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   PRINT("now", now)
   PRINT("processing taxes, price", tax.r_price)
