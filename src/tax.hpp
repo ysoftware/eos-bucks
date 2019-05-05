@@ -138,6 +138,11 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     PRINT("time", now)
   }
   
+  _tax.modify(tax, same_payer, [&](auto& r) {
+    r.r_supply -= cdp_itr->r_balance;
+    r.insurance_pool -= received_rex;
+  });
+  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.r_balance = 0;
     r.collateral += received_rex;
@@ -148,11 +153,6 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     cdp_itr->p();
     PRINT_("---\n")
   }
-  
-  _tax.modify(tax, same_payer, [&](auto& r) {
-    r.r_supply -= cdp_itr->r_balance;
-    r.insurance_pool -= received_rex;
-  });
 }
 
 void buck::save(const name& account, const asset& value) {
