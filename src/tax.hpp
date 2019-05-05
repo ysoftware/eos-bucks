@@ -32,9 +32,6 @@ void buck::process_taxes() {
     r.insurance_pool += asset(r.r_collected - scruge_insurance_amount, REX);
     r.savings_pool += asset(r.e_collected - scruge_savings_amount, BUCK);
     
-    r.r_supply += r.r_collected - scruge_insurance_amount;
-    r.e_supply += r.e_collected - scruge_savings_amount;
-    
     if (r.r_supply > 0) {
       r.r_price += (r.r_collected - scruge_insurance_amount) * PO / r.r_supply;
       r.r_collected = 0;
@@ -70,13 +67,10 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  cdp_itr->p();
-  PRINT("tax", cdp_itr->id)
-  PRINT("dt", now - last)
-  PRINT("d", accrued_debt)
-  PRINT("c", accrued_collateral)
-  PRINT("new collected", tax.r_collected + accrued_collateral_amount)
-  PRINT_("---")
+  // cdp_itr->p();
+  // PRINT("tax", cdp_itr->id)
+  // PRINT("d", accrued_debt)
+  // PRINT("c", accrued_collateral)
 
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -88,6 +82,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.e_collected += accrued_debt_amount;
     r.r_collected += accrued_collateral_amount;
   });
+  
+  // PRINT("new collected", tax.r_collected)
+  // PRINT_("---")
   
   // to-do check ccr for liquidation
 }
@@ -127,8 +124,13 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   
   // to-do check supply not 0
   
-  PRINT_("sell r")
-   
+  PRINT_("\n")
+  for (auto& s: _cdp) {
+    s.p();
+  }
+  
+  PRINT_("\n\nsell r")
+  
   const int64_t pool_part = cdp_itr->r_balance * tax.r_price / PO;
   const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
   const asset received_rex = asset(received_rex_amount, REX);
@@ -142,6 +144,7 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     PRINT("r price", tax.r_price)
     PRINT("r supply", tax.r_supply)
     PRINT("pool", tax.insurance_pool)
+    PRINT("cdp_itr->r_balance", cdp_itr->r_balance)
     PRINT("time", now)
   }
   
@@ -157,6 +160,7 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   });
   
   if (received_rex_amount > 0) {
+    PRINT("new r supply", tax.r_supply)
     cdp_itr->p();
     PRINT_("---\n")
   }

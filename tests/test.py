@@ -109,7 +109,6 @@ def cdp_insert(cdp):
 	if (d <= epsilon(d)) and acr == 0:
 		return 
 	elif (d <= epsilon(d)) and acr != 0:
-		# liquidators
 		for i in range(0, len_table):
 			cdp2 = table[i]
 			c2 = cdp2.collateral
@@ -132,15 +131,13 @@ def cdp_insert(cdp):
 		# debtors
 		for i in range(len(table)-1, -1, -1):
 			cdp2 = table[i]
-			print(cdp2)
 			d2 = cdp2.debt
 			if d2 <= epsilon(d2): # debt 0
 				table.insert(i+1, cdp)
 				return 
 			c2 = cdp2.collateral
-			acr2 = cdp2.acr
-			cd2 = cdp2.cd
-			if c * 10000000 / d < cdp2.collateral * 10000000 / cdp2.debt:
+			d2 = cdp2.debt
+			if c * 10000000 / d  <  c2 * 10000000 / d2:
 				table.insert(i+1, cdp)
 				return 
 		table.insert(0,cdp)
@@ -205,12 +202,13 @@ def add_tax(cdp, price):
 
 	if cdp.debt > epsilon(cdp.debt):
 
-		print("tax", cdp.id)
+		# print("tax", cdp.id)
 
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
-		print("c", interest * IR // price)
-		print("dt", oracle_time-cdp.time)
-		print("time", oracle_time)
+
+		# print("c", interest * IR // price)
+		# print("d", interest * SR // 100)
+		# print("collected", CIT)
 
 		
 		cdp.add_debt(interest * SR // 100)
@@ -219,11 +217,16 @@ def add_tax(cdp, price):
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
 
-		print("new collected", CIT)
-		print("---")
+		# print("new collected", CIT)
+		# print("---")
 	return cdp
 	
 def update_tax(cdp, price):
+
+	print("\n")
+	print_table()
+	print("\n")
+
 	cdp = add_tax(cdp, price)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
@@ -451,7 +454,7 @@ def run_round(balance):
 	print(f"time: {time}")
 
 	k = 10
-	for i in range(1, random.randint(0, length-1)):
+	for i in range(1, random.randint(1, length-1)):
 		if cdp_index(i) != False:
 			acr = random.randint(148, 300)
 			failed = change_acr(i, acr)
@@ -473,7 +476,7 @@ def run_round(balance):
 		if length == 0: return [time, actions]
 
 	# k = 10
-	# for i in range(1, random.randint(0, length-1)):
+	# for i in range(1, random.randint(1, length-1)):
 	# 	if cdp_index(i) != False:
 	# 		v1 = random.randrange(-100_0000, 1_000_0000)
 	# 		v2 = random.randrange(-100_0000, 1_000_0000)
