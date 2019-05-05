@@ -223,7 +223,7 @@ def update_tax(cdp, price):
 			TEC += val * 100 // cdp.acr
 			IDP -= val
 			print("taking from pool", val)
-		cdp.new_time(oracle_time)
+			cdp.new_time(oracle_time)
 	return cdp
 
 # Contract functions

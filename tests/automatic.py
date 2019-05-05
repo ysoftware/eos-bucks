@@ -154,7 +154,6 @@ class Test(unittest.TestCase):
 
 				# match taxes
 				taxation = table(buck, "taxation")
-				print("cit", test.CIT, "idp", test.IDP)
 				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 2, "insurance pools don't match")
 				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
 				print("+ Matched insurance pools")
@@ -166,22 +165,32 @@ class Test(unittest.TestCase):
 
 
 
+	def compare(self, buck, cdp_table):
+		rows = get_debtors(buck, limit=1000)
+		i = 0
+		table = sorted(cdp_table, key=lambda x: x.id)
+		for row in sorted(rows, key=lambda x: x["id"]):
+			cdp = table[i]
+			if cdp is None:
+				assert("CDP does not exist in test")
+			self.match(cdp, row)
+			i += 1
+		if len(cdp_table) > i + 1:
+			print("i", i)
+			test.print_table()
+			assert("CDP doesn't exist in contract")
+
 
 	def match(self, cdp, row):
 		print(cdp)
-		print(row)
+		print(row["id"], row["collateral"], row["debt"], row["acr"], row["modified_round"])
+
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
-		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+		# self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
-	def compare(self, buck, cdp_table):
-		# to-do optimize blockchain calls
-		for cdp in cdp_table:
-			row = get_cdp(buck, cdp.id)
-			if cdp.time == 0: cdp.time = int(row["modified_round"]) # update round time
-			self.match(cdp, row)
 
 # main
 
