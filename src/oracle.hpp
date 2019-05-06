@@ -18,11 +18,10 @@ void buck::update(uint32_t eos_price) {
     r.oracle_eos_price = eos_price;
   });
   
+  set_processing_status(ProcessingStatus::processing_cdp_requests);
+  
   if (eos_price < previous_price) {
     set_liquidation_status(LiquidationStatus::processing_liquidation);
-  }
-  else {
-    set_processing_status(ProcessingStatus::processing_cdp_requests);
   }
 }
 
