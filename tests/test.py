@@ -24,10 +24,10 @@ def epsilon(value): return value // 500
 
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
-		self.collateral = collateral
-		self.debt = debt
+		self.collateral = int(collateral)
+		self.debt = int(debt)
 		self.cd = cd
-		self.acr = acr 
+		self.acr = acr
 		self.id = id
 		self.time = time
 	def __repr__(self):
@@ -36,17 +36,17 @@ class CDP:
 		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
 
 	def add_debt(self,new_debt):
-		self.debt = self.debt + new_debt
+		self.debt = self.debt + int(new_debt)
 	def add_collateral(self, new_collateral):
-		self.collateral = self.collateral + new_collateral
+		self.collateral = self.collateral + int(new_collateral)
 	def new_cd(self, cd_new):
-		self.cd = cd_new
+		self.cd = int(cd_new)
 	def new_acr(self,acr_new):
-		self.acr = acr_new
+		self.acr = int(acr_new)
 	def new_debt(self, debt_new):
-		self.debt = debt_new
+		self.debt = int(debt_new)
 	def new_collateral(self, collateral_new):
-		self.collateral = collateral_new
+		self.collateral = int(collateral_new)
 	def new_time(self, time_new):
 		self.time = time_new		
 	
@@ -204,15 +204,29 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt):
-		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
+		dm = 1000000000000
+		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
+		interest = int(cdp.debt * v // dm)
+		print(cdp)
 		cdp.add_debt(interest * SR // 100)
-		# print("add tax", cdp.id)
-		# print("accrued amount", interest)
-		# print("add to pool", interest * IR // price)
-		cdp.add_collateral(-interest * IR // price)
+		print("v", v)
+		print("dt", oracle_time-cdp.time)
+		print("add tax", cdp.id)
+		print("debt", interest * SR // 100)
+		print(interest * IR // price)
+		print("accrued amount", interest)
+		print("add to pool", interest * IR // price)
+
+
+		c = cdp.collateral
+		val = -interest * IR // price
+		cdp.add_collateral(val)
+
+
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
+		print(cdp)
 	return cdp
 	
 def update_tax(cdp, price):
@@ -225,6 +239,7 @@ def update_tax(cdp, price):
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
 			print("AEC-", AGEC)
+			print("dividends", dividends)
 			IDP -= dividends
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
@@ -507,7 +522,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = random.randint(1, 3)
+	x = random.randint(3, 6)
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

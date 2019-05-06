@@ -72,8 +72,12 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  // PRINT("add tax", cdp_itr->id)
-  // PRINT("debt", accrued_debt)
+  PRINT("add tax", cdp_itr->id)
+  cdp_itr->p();
+  PRINT("debt", accrued_debt)
+  PRINT("v", v)
+  PRINT("accrued_collateral", accrued_collateral)
+  PRINT("accrued_amount", accrued_amount)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -85,6 +89,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.e_collected += accrued_debt_amount;
     r.r_collected += accrued_collateral_amount;
   });
+  
+  cdp_itr->p();
   
   // to-do check ccr for liquidation
 }
@@ -127,6 +133,7 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   });
   
   PRINT("AEC-", agec)
+  PRINT("dividends", dividends_amount)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral += asset(dividends_amount, REX);
