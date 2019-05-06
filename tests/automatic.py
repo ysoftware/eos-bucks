@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, random.randint(1, 20)):
+			for round_i in range(0, random.randint(5, 20)):
 				print("\n\n\n\n\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 
@@ -179,8 +179,8 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		# print(cdp)
-		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
+		print(cdp)
+		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		

@@ -285,6 +285,7 @@ void buck::run_requests(uint8_t max) {
 
 void buck::run_liquidation(uint8_t max) {
   uint64_t processed = 0;
+  PRINT_("liquidation")
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
@@ -329,7 +330,7 @@ void buck::run_liquidation(uint8_t max) {
       
       const int64_t x = (100 + liquidation_fee) 
                           * (750 * debt_amount - to_buck(5 * collateral_amount))
-                          / (50000 - 1500 * liquidation_fee);
+                          / (50'000 - 1'500 * liquidation_fee);
                           
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
       
@@ -341,7 +342,6 @@ void buck::run_liquidation(uint8_t max) {
       if (liquidator_debt > 0) {
         liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
       }
-      
       PRINT_("liquidator")
       liquidator_itr->p();
       
@@ -364,10 +364,11 @@ void buck::run_liquidation(uint8_t max) {
       
       const int64_t bailable = (to_buck(liquidator_collateral) - liquidator_debt * liquidator_acr)
                                     * (100 - liquidation_fee)
-                                  / (liquidator_acr * (100 - liquidation_fee) - 10000);
+                                  / (liquidator_acr * (100 - liquidation_fee) - 10'000);
       
       const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
-      const int64_t value2 = used_debt_amount * 10000 / (to_buck(100 - liquidation_fee));
+      
+      const int64_t value2 = used_debt_amount * 10'000 / to_buck(100 - liquidation_fee);
       const int64_t used_collateral_amount = std::min(collateral_amount, value2);
       
       const asset used_debt = asset(used_debt_amount, BUCK);
@@ -375,8 +376,11 @@ void buck::run_liquidation(uint8_t max) {
       
       PRINT("bad debt", bad_debt)
       PRINT("bailable", bailable)
+      PRINT("value2", value2)
       PRINT("used_debt", used_debt)
-      PRINT_("\n")
+      
+      PRINT("col", debtor_itr->collateral.amount)
+      PRINT("-", used_collateral_amount)
       
       if (bailable <= 0) {
         
@@ -390,6 +394,9 @@ void buck::run_liquidation(uint8_t max) {
         r.collateral -= used_collateral;
         r.debt -= used_debt;
       });
+      
+      PRINT("=", debtor_itr->collateral.amount)
+      PRINT_("\n")
       
       liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
         r.collateral += used_collateral;
