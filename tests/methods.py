@@ -155,12 +155,15 @@ def amount(quantity, force=True, default=0):
 	assert("value is not an asset")
 
 def asset(amount, symbol="EOS", precision=4):
-	a = str(int(amount))
+	num = int(amount)
+	n = num < 0
+	a = str(abs(num))
 	s = "0" if len(a) <= 4 else a[:len(a) - precision]
 	e = a[-precision:]
 	if len(e) < 4:
 		e = "".join(list(map(lambda x: "0", range(0, 4-len(e))))) + e
-	return s + "." + e + " " + symbol
+	n = "-" if n else "" 
+	return n + s + "." + e + " " + symbol
 
 def unpack(value):
 	return amount(asset(value))
