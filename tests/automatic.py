@@ -113,6 +113,7 @@ class Test(unittest.TestCase):
 							debt = asset(action[0][3], "BUCK")
 
 							if action[1] == False:
+								print("reparam", col, debt)
 								assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
 							else: reparam(buck, user1, cdp, debt, col)
 
@@ -132,6 +133,7 @@ class Test(unittest.TestCase):
 								balance(buck, user1)
 								assertRaises(self, lambda: redeem(buck, user1, quantity))
 							else: redeem(buck, user1, quantity)
+				table(buck, "reparamreq")
 
 				maketime(buck, round_time)
 				update(buck, test.price)
@@ -143,13 +145,16 @@ class Test(unittest.TestCase):
 				taxation = table(buck, "taxation")
 
 				print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
-				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 2, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 1, "insurance pools don't match")
 				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), -6, "aggregated excesses don't match")
 				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), -2, "total excesses don't match")
-				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
+				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 1, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
+
+				print("\n")
+				test.print_table()
 				self.compare(buck, test.table)
 
 				# match supply
@@ -180,8 +185,8 @@ class Test(unittest.TestCase):
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 1, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 1, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
