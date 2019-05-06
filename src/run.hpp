@@ -305,9 +305,8 @@ void buck::run_liquidation(uint8_t max) {
       debtor_ccr = to_buck(collateral_amount) / debt_amount;
     }
     
-    PRINT("debtor id", debtor_itr->id)
-    PRINT("debt", debt_amount) 
-    PRINT("col", debtor_itr->collateral)
+    PRINT_("debtor")
+    debtor_itr->p();
     PRINT("ccr", debtor_ccr)
     
     // this and all further debtors don't have any bad debt
@@ -331,7 +330,7 @@ void buck::run_liquidation(uint8_t max) {
       const int64_t x = (100 + liquidation_fee) 
                           * (750 * debt_amount - to_buck(5 * collateral_amount))
                           / (50000 - 1500 * liquidation_fee);
-      
+                          
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
       
       const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
@@ -343,7 +342,9 @@ void buck::run_liquidation(uint8_t max) {
         liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
       }
       
-      PRINT("liquidator", liquidator_itr->id)
+      PRINT_("liquidator")
+      liquidator_itr->p();
+      
       PRINT("ccr", liquidator_ccr)
       
       // this and all further liquidators can not bail out anymore bad debt
@@ -372,12 +373,12 @@ void buck::run_liquidation(uint8_t max) {
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, REX);
       
-      PRINT("bad debt", bad_debt)
-      PRINT("bailable", bailable)
-      PRINT("used_debt", used_debt)
-      PRINT_("\n")
+      // PRINT("bad debt", bad_debt)
+      // PRINT("bailable", bailable)
+      // PRINT("used_debt", used_debt)
+      // PRINT_("\n")
       
-      if (bailable == 0) {
+      if (bailable <= 0) {
         
         PRINT_("FAILED 2")
         set_liquidation_status(LiquidationStatus::failed);
@@ -404,6 +405,8 @@ void buck::run_liquidation(uint8_t max) {
         debtor_ccr = to_buck(collateral_amount) / debt_amount;
       }
     }
+    
+    // debtor_itr->p();
     
     // continue to the next (first) debtor
     processed++;

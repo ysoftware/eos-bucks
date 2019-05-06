@@ -141,7 +141,6 @@ CONTRACT buck : public contract {
       asset     debt;
       asset     collateral;
       uint32_t  modified_round; // accrual round
-      uint64_t  r_balance;
       
       void p() const {
         eosio::print("#");eosio::print(id);
@@ -149,10 +148,6 @@ CONTRACT buck : public contract {
         eosio::print(" col: ");eosio::print(collateral);
         eosio::print(" acr: ");eosio::print(acr);
         eosio::print(" time: ");eosio::print(modified_round);
-        eosio::print(" r_balance: ");eosio::print(r_balance);
-        if (acr > 0) {
-          eosio::print(" ec: ");eosio::print(collateral.amount/acr);
-        }
         eosio::print("\n");
       }
       

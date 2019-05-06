@@ -202,6 +202,6 @@ def assertRaisesMessage(self, message, func):
 	print("+ Exception raised: \"%s\"" % message)
 
 def assertRaises(self, func):
-	with self.assertRaises(Error):
+	with self.assertRaises(Error)  as c:
 		func()
 	print("+ Exception raised")

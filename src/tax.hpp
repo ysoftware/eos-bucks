@@ -41,6 +41,8 @@ void buck::process_taxes() {
       r.e_collected = 0;
     }
   });
+  
+  PRINT("add to pool", insurance_amount)
 }
 
 // collect interest to insurance pool from this cdp
@@ -65,6 +67,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
   update_supply(accrued_debt);
+  
+  // PRINT("add tax", cdp_itr->id)
+  // PRINT("debt", accrued_debt)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;

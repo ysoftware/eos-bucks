@@ -3,6 +3,8 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
+  PRINT_(change_debt)
+  PRINT_(change_collateral)
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
@@ -42,6 +44,8 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // to-do validate arguments
   
+  cdp_itr->p();
+  
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
   
@@ -52,15 +56,9 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     check(ccr > CR, "can not reparametrize below 150% CCR");
   }
   
-  static const auto min_collateral = to_buck(MIN_COLLATERAL.amount);
   
-  // PRINT_("request reparam")
-  // PRINT("new_debt", new_debt)
-  // PRINT("min_collateral", asset(min_collateral, REX))
-  // PRINT("new_collateral", new_collateral)
-  
+  PRINT("new_debt", new_debt)
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
-  check(new_collateral.amount >= min_collateral, "can not reparametrize collateral below the limit");
   // to-do check min collateral in EOS
   
   // take away debt if negative change
