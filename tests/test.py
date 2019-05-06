@@ -58,7 +58,6 @@ def generate_liquidators(k):
 	rand2 = random.randint(150,200)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
-	print("add excess", liquidator.collateral * 100 // liquidator.acr)
 	liquidators = [liquidator]
 	for i in range (0,k):
 		helper = liquidators[i].acr
@@ -66,7 +65,6 @@ def generate_liquidators(k):
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
 		liquidator = liquidators[len(liquidators)-1]
 		TEC += liquidator.collateral * 100 // liquidator.acr
-		print("add excess", liquidator.collateral * 100 // liquidator.acr)
 	return liquidators
 
 def generate_debtors(k, n):
@@ -202,28 +200,15 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt):
-
-		# print("tax", cdp.id)
-
 		interest = int(cdp.debt * (exp((r*(oracle_time-cdp.time))/(3.15576*10**7))-1))
-
-		# print("c", interest * IR // price)
-		# print("d", interest * SR // 100)
-		# print("collected", CIT)
-
-		
 		cdp.add_debt(interest * SR // 100)
 		cdp.add_collateral(-interest * IR // price)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 		cdp.new_time(oracle_time)
-
-		# print("new collected", CIT)
-		# print("---")
 	return cdp
 	
 def update_tax(cdp, price):
-	print("sell r", cdp)
 	cdp = add_tax(cdp, price)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
@@ -231,17 +216,10 @@ def update_tax(cdp, price):
 			ec = cdp.collateral * 100 // cdp.acr 
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
-
-			print("AEC", AEC)
-			print("TEC", TEC)
-			print("time", oracle_time)
-			print("cdp time", cdp.time)
-			print("insurer added col", dividends)
 			AEC -= AGEC
 			IDP -= dividends
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
-	print(cdp, "\n---\n")
 	return cdp
 
 # Contract functions
@@ -309,36 +287,37 @@ def redemption(amount, price, cr, rf):
 
 	while amount > epsilon(amount) and i != -1:
 		cdp = table.pop(i)
+		print("redeem quantity", amount)
+		print("before tax\n", cdp)
 		cdp = add_tax(cdp, price)
+		print("after tax\n", cdp)
 
 		if cdp.debt <= 50:
 			cdp_insert(cdp)
 			return
 		else:
 			if cdp.collateral * price // cdp.debt >= 100 - rf:
-				if cdp.debt <= epsilon(cdp.debt): # duplicate check
-					cdp_insert(cdp)
-					return
-				if amount < cdp.debt:
-					print("redeem quantity", amount, cdp)
+				# if cdp.debt <= epsilon(cdp.debt): # duplicate check
+				# 	cdp_insert(cdp)
+				# 	return
+				if cdp.debt > amount:
 					print("using debt", amount, "col", (amount*100) // (price+rf))
 					cdp.add_debt(-amount)
-					cdp.add_collateral((amount*100) //(price+rf))
-					amount = 0
+					cdp.add_collateral(-(amount*100) // (price+rf))
 					cdp.new_cd(cdp.collateral * 100 // cdp.debt)
 					cdp_insert(cdp)
-					print("reached end")
+					amount = 0
 				else:
 					d = cdp.debt
-					print("redeem quantity", amount, cdp)
 					print("using debt", cdp.debt, "col", (d*100) // (price+rf))
 					cdp.new_debt(0)
 					cdp.add_collateral((d*100) // (price+rf))
 					amount -= d
-
 					i -= 1
 			else: 
+				print("ccr is not suitable")
 				cdp_insert(cdp)
+		print(cdp, "\n")
 	print("redeem done 2")
 	return
 
@@ -433,7 +412,7 @@ def run_round(balance):
 
 	actions = []
 	old_price = price
-	price += 1 # = random.randint(100, 10000)
+	price = random.randint(100, 10000)
 
 	# acr requests get processed immediately
 
@@ -464,21 +443,21 @@ def run_round(balance):
 		length = len(table)
 		if length == 0: return [time, actions]
 
-	# k = 10
-	# for i in range(1, random.randint(1, length-1)):
-	# 	if cdp_index(i) != False:
-	# 		v1 = random.randrange(-100_0000, 1_000_0000)
-	# 		v2 = random.randrange(-100_0000, 1_000_0000)
-	# 		failed = reparametrize(i, v1, v2, price, old_price)
-	# 		actions.append([["reparam", i, v1, v2], failed != False])
-	# 		k -= 1
-	# 	if k == 0:
-	# 		break
+	k = 10
+	for i in range(1, random.randint(1, length-1)):
+		if cdp_index(i) != False:
+			v1 = random.randrange(-100_0000, 1_000_0000)
+			v2 = random.randrange(-100_0000, 1_000_0000)
+			failed = reparametrize(i, v1, v2, price, old_price)
+			actions.append([["reparam", i, v1, v2], failed != False])
+			k -= 1
+		if k == 0:
+			break
 
-	# v1 = random.randrange(0, 10_000_0000)
-	# success = v1 <= balance
-	# if success: redemption(v1, price, 150, 101)
-	# actions.append([["redeem", v1], success])
+	v1 = random.randrange(100, 10_00_0000)
+	success = v1 <= balance
+	if success: redemption(v1, price, 150, 101)
+	actions.append([["redeem", v1], success])
 
 	# accrue taxes
 	for i in range(0, len(table)):
@@ -501,13 +480,12 @@ def init():
 
 	price = random.randint(100, 1000)
 
-	x = random.randint(3, 3)
+	x = random.randint(5, 6)
 	d = random.randint(x, x * 2)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
 	oracle_time = time
 
-	gen(2, 4)
-	print_table()
+	gen(x, l)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

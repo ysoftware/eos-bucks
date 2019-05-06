@@ -185,13 +185,18 @@ void buck::run_requests(uint8_t max) {
         // loop through available debtors until all amount is redeemed or our of debtors
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end()) {
           
-          if (debtor_itr->collateral.amount > 0 || debtor_itr->debt.amount == 0) { // reached end of the table
+          if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
+            PRINT_("end of the table")
             break;
           }
           
+          PRINT_("before tax")
+          debtor_itr->p();
+          
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
-          if (debtor_itr->debt > MIN_DEBT) { // don't go below min debt
+          if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
+            PRINT_("not enough debt")
             debtor_itr++;
             continue;
           }
@@ -200,6 +205,7 @@ void buck::run_requests(uint8_t max) {
           
           // skip to the next debtor
           if (ccr < 100 - RF) { 
+            PRINT_("ccr is not suitable")
             debtor_itr++;
             continue; 
           }
@@ -211,7 +217,7 @@ void buck::run_requests(uint8_t max) {
           const asset using_collateral = asset(using_collateral_amount, REX);
           
           PRINT("redeem_quantity", redeem_quantity)
-          PRINT_("from cdp") debtor_itr->p();
+          PRINT_("after tax") debtor_itr->p();
           PRINT("available debt", debtor_itr->debt)
           PRINT("using_debt", using_debt)
           PRINT("using_collateral", using_collateral)
@@ -229,6 +235,8 @@ void buck::run_requests(uint8_t max) {
               r.collateral -= using_collateral;
             });
           }
+          
+          debtor_itr->p();
           
           burned_debt += using_debt;
           

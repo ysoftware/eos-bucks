@@ -28,9 +28,6 @@ void buck::process_taxes() {
   static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
   static const uint32_t delta_t = now - last;
   
-  PRINT("AEC", tax.r_aggregated)
-  PRINT("TEC", tax.r_total)
-  
   _tax.modify(tax, same_payer, [&](auto& r) {
     
     r.insurance_pool += insurance_amount;
@@ -44,10 +41,6 @@ void buck::process_taxes() {
       r.e_collected = 0;
     }
   });
-  
-  PRINT("AEC", tax.r_aggregated)
-  PRINT("TEC", tax.r_total)
-  
 }
 
 // collect interest to insurance pool from this cdp
@@ -103,17 +96,12 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total += excess;
   });
-  
-  PRINT("add excess", excess)
 }
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   if (cdp_itr->acr == 0 || tax.r_aggregated == 0 || cdp_itr->debt.amount > 0) return;
-  
-  PRINT_("sell r")
-  cdp_itr->p();
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
@@ -122,13 +110,6 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const uint64_t agec = excess * delta_t;
   const uint64_t dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
-  
-  PRINT("AEC", tax.r_aggregated)
-  PRINT("TEC", tax.r_total)
-  PRINT("time", now)
-  PRINT("cdp time", cdp_itr->modified_round)
-  PRINT("insurer added col", dividends_amount)
-  PRINT("remove excess", excess)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total -= excess;
@@ -140,8 +121,6 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.collateral += asset(dividends_amount, REX);
     r.modified_round = now;
   });
-  
-  cdp_itr->p();
 }
 
 void buck::save(const name& account, const asset& value) {
