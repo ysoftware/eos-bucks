@@ -294,6 +294,9 @@ void buck::run_liquidation(uint8_t max) {
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
+    const auto cdp_itr = _cdp.require_find(debtor_itr->id);
+    accrue_interest(cdp_itr);
+    
     int64_t debt_amount = debtor_itr->debt.amount;
     int64_t collateral_amount = debtor_itr->collateral.amount;
     
@@ -315,10 +318,7 @@ void buck::run_liquidation(uint8_t max) {
       run_requests(max - processed);
       return;
     }
-        
-    const auto cdp_itr = _cdp.require_find(debtor_itr->id);
-    accrue_interest(cdp_itr);
-  
+    
     // loop through liquidators
     while (debtor_ccr < CR) {
       const auto liquidator_itr = liquidator_index.begin();
