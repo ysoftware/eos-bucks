@@ -144,10 +144,10 @@ class Test(unittest.TestCase):
 				taxation = table(buck, "taxation")
 
 				print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
-				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 2, "insurance pools don't match")
-				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), -6, "aggregated excesses don't match")
-				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), -2, "total excesses don't match")
-				self.assertAlmostEqual(test.CIT, taxation["r_collected"], -1, "collected insurances don't match")
+				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 4, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), 0, "aggregated excesses don't match")
+				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), 0, "total excesses don't match")
+				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 0, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
@@ -179,13 +179,13 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		print(cdp)
-		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
+		# print(cdp)
+		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 4, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 4, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 

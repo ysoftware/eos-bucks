@@ -56,7 +56,7 @@ bool buck::init() {
     r.savings_pool = 0;
   
     r.r_total = 0;
-    r.r_aggregated = PO;
+    r.r_aggregated = 0;
     r.r_collected = 0;
     
     r.e_supply = 0;

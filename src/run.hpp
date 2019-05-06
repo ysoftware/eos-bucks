@@ -373,10 +373,10 @@ void buck::run_liquidation(uint8_t max) {
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, REX);
       
-      // PRINT("bad debt", bad_debt)
-      // PRINT("bailable", bailable)
-      // PRINT("used_debt", used_debt)
-      // PRINT_("\n")
+      PRINT("bad debt", bad_debt)
+      PRINT("bailable", bailable)
+      PRINT("used_debt", used_debt)
+      PRINT_("\n")
       
       if (bailable <= 0) {
         

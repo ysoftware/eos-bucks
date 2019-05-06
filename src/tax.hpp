@@ -33,6 +33,10 @@ void buck::process_taxes() {
     r.insurance_pool += insurance_amount;
     r.savings_pool += savings_amount;
     
+    PRINT_(r.r_total)
+    PRINT_(delta_t)
+    PRINT("AEC=", r.r_aggregated)
+    PRINT("AEC+", r.r_total * delta_t)
     r.r_aggregated += r.r_total * delta_t;
     r.r_collected = 0;
     
@@ -121,6 +125,8 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.r_aggregated -= agec;
     r.insurance_pool -= dividends_amount;
   });
+  
+  PRINT("AEC-", agec)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral += asset(dividends_amount, REX);

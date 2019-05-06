@@ -185,6 +185,7 @@ def x_value(d, l, c, p):
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	val = (cr-ccr)*cdp.debt // 100+x_value(cdp.debt, lf, cdp.collateral, price)
+	print("bad debt", val)
 	return val
 		
 def calc_val(cdp, cdp2, price, cr, lf):
@@ -194,6 +195,7 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	acr = cdp2.acr
 	v = calc_bad_debt(cdp, price, cr, l)
 	v2 = (c*price-d*acr)*(100-l) // (acr*(100-l)-10000)
+	print("used_debt_amount", min(v,v2, cdp.debt))
 	return min(v,v2, cdp.debt)
 
 # Taxes
@@ -222,6 +224,7 @@ def update_tax(cdp, price):
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
+			print("AEC-", AGEC)
 			IDP -= dividends
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
@@ -398,6 +401,7 @@ def change_acr(id, acr):
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
 	AEC += TEC * (time - oracle_time)
+	print("AEC+", TEC * (time - oracle_time))
 	IDP += CIT * (100 - commission) // 100
 	CIT = 0
 	oracle_time = time
@@ -407,9 +411,9 @@ def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
 	LIQUIDATION = True
-	REDEMPTION 	= True
-	ACR 		= True
-	REPARAM 	= True
+	REDEMPTION 	= False
+	ACR 		= False
+	REPARAM 	= False
 
 	actions = []
 	old_price = price
@@ -435,7 +439,6 @@ def run_round(balance):
 				break
 
 	# create reparam requests
-	print("REPARAM")
 	reparam_values = [] # [i, c, d, failed]
 	if REPARAM:
 		k = 10
