@@ -105,36 +105,35 @@ class Test(unittest.TestCase):
 
 				if len(actions) == 0:
 					COMMENT("No actions were performed")
-					break
+				else:
+					for action in actions:
+						if action[0][0] == "reparam":
+							cdp = action[0][1]
+							col = asset(action[0][2], "REX")
+							debt = asset(action[0][3], "BUCK")
 
-				for action in actions:
-					if action[0][0] == "reparam":
-						cdp = action[0][1]
-						col = asset(action[0][2], "REX")
-						debt = asset(action[0][3], "BUCK")
+							if action[1] == False:
+								assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
+							else: reparam(buck, user1, cdp, debt, col)
 
-						if action[1] == False:
-							assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
-						else: reparam(buck, user1, cdp, debt, col)
+						elif action[0][0] == "acr":
+							cdp = action[0][1]
+							acr = action[0][2]
 
-					elif action[0][0] == "acr":
-						cdp = action[0][1]
-						acr = action[0][2]
+							if action[1] == False:
+								assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
+							else: changeacr(buck, user1, cdp, acr)
 
-						if action[1] == False:
-							assertRaises(self, lambda: changeacr(buck, user1, cdp, acr))
-						else: changeacr(buck, user1, cdp, acr)
+						elif action[0][0] == "redeem":
 
-					elif action[0][0] == "redeem":
+							test.print_table()
 
-						test.print_table()
+							quantity = asset(action[0][1], "BUCK")
 
-						quantity = asset(action[0][1], "BUCK")
-
-						if action[1] == False:
-							balance(buck, user1)
-							assertRaises(self, lambda: redeem(buck, user1, quantity))
-						else: redeem(buck, user1, quantity)
+							if action[1] == False:
+								balance(buck, user1)
+								assertRaises(self, lambda: redeem(buck, user1, quantity))
+							else: redeem(buck, user1, quantity)
 
 				maketime(buck, round_time)
 				update(buck, test.price)
@@ -147,9 +146,11 @@ class Test(unittest.TestCase):
 				# match taxes
 				taxation = table(buck, "taxation")
 
-				print("idp", test.IDP, "cit", test.CIT)
-				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 3, "insurance pools don't match")
-				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 3, "collected insurances don't match")
+				print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
+				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 2, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), -6, "aggregated excesses don't match")
+				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), -2, "total excesses don't match")
+				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 2, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
@@ -181,9 +182,9 @@ class Test(unittest.TestCase):
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
-		# self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 2, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 2, "collaterals don't match")
+		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 		print(f"+ Matched cdp #{cdp.id}")
 
 

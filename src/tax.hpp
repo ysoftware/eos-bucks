@@ -9,6 +9,7 @@ void buck::process_taxes() {
   
   // send part of collected insurance to Scruge
   const uint64_t scruge_insurance_amount = tax.r_collected * SP / 100;
+  const uint64_t insurance_amount = tax.r_collected - scruge_insurance_amount;
   const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
@@ -16,32 +17,37 @@ void buck::process_taxes() {
   
   // send part of collected savings to Scruge
   const uint64_t scruge_savings_amount = tax.e_collected * SP / 100;
+  const uint64_t savings_amount = tax.e_collected - scruge_savings_amount;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
     add_balance(SCRUGE, scruge_savings, _self, true);
   }
 
   const auto oracle_time = _stat.begin()->oracle_timestamp;
-  static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
-  PRINT("now", now)
-  PRINT("processing taxes, price", tax.r_price)
-  PRINT("collected", collected_to_do_remove_this)
-  PRINT("add to pool", collected_to_do_remove_this - scruge_insurance_amount)
-
+  static const uint32_t last = time_point_sec(oracle_time).utc_seconds;
+  static const uint32_t now = time_point_sec(get_current_time_point()).utc_seconds;
+  static const uint32_t delta_t = now - last;
+  
+  PRINT("AEC", tax.r_aggregated)
+  PRINT("TEC", tax.r_total)
+  
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.insurance_pool += asset(r.r_collected - scruge_insurance_amount, REX);
-    r.savings_pool += asset(r.e_collected - scruge_savings_amount, BUCK);
     
-    if (r.r_supply > 0) {
-      r.r_price += (r.r_collected - scruge_insurance_amount) * PO / r.r_supply;
-      r.r_collected = 0;
-    }
+    r.insurance_pool += insurance_amount;
+    r.savings_pool += savings_amount;
+    
+    r.r_aggregated += r.r_total * delta_t;
+    r.r_collected = 0;
     
     if (r.e_supply > 0) {
-      r.e_price += (r.e_collected - scruge_savings_amount) * PO / r.e_supply;
+      r.e_price += savings_amount * PO / r.e_supply;
       r.e_collected = 0;
     }
   });
+  
+  PRINT("AEC", tax.r_aggregated)
+  PRINT("TEC", tax.r_total)
+  
 }
 
 // collect interest to insurance pool from this cdp
@@ -67,11 +73,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   update_supply(accrued_debt);
   
-  // cdp_itr->p();
-  // PRINT("tax", cdp_itr->id)
-  // PRINT("d", accrued_debt)
-  // PRINT("c", accrued_collateral)
-
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
     r.debt += accrued_debt;
@@ -83,87 +84,64 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.r_collected += accrued_collateral_amount;
   });
   
-  // PRINT("new collected", tax.r_collected)
-  // PRINT_("---")
-  
   // to-do check ccr for liquidation
 }
 
-void buck::buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collateral) {
+void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
-  if (added_collateral.amount <= 0) return;
   
-  const int64_t new_excess = added_collateral.amount / cdp_itr->acr;
-  const uint64_t received_r = ((uint128_t) new_excess * PO) / tax.r_price;
-  
-  
-  check(added_collateral.symbol == REX, "to-do incorrect symbol");
-  check(received_r > 0, "to-do remove. this is probably wrong (buy_r)");
-  
+  const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   
-  PRINT_("buy r")
-  PRINT("excess collateral", new_excess)
-  PRINT("received r", received_r)
-  
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-    r.r_balance += received_r;
     r.modified_round = now;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.r_supply += received_r;
+    r.r_total += excess;
   });
+  
+  PRINT("add excess", excess)
 }
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
-  // to-do check supply not 0
+  if (cdp_itr->acr == 0 || tax.r_aggregated == 0 || cdp_itr->debt.amount > 0) return;
   
-  PRINT_("\n")
-  for (auto& s: _cdp) {
-    s.p();
-  }
-  
-  PRINT_("\n\nsell r")
-  
-  const int64_t pool_part = cdp_itr->r_balance * tax.r_price / PO;
-  const int64_t received_rex_amount = pool_part * tax.insurance_pool.amount / tax.r_supply;
-  const asset received_rex = asset(received_rex_amount, REX);
+  PRINT_("sell r")
+  cdp_itr->p();
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
+  const uint32_t delta_t = now - cdp_itr->modified_round;
   
-  if (received_rex_amount > 0) {
-    cdp_itr->p();
-    PRINT("insurer, added col", received_rex)
-    PRINT("r price", tax.r_price)
-    PRINT("r supply", tax.r_supply)
-    PRINT("pool", tax.insurance_pool)
-    PRINT("cdp_itr->r_balance", cdp_itr->r_balance)
-    PRINT("time", now)
-  }
+  const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
+  const uint64_t agec = excess * delta_t;
+  const uint64_t dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
+  
+  PRINT("AEC", tax.r_aggregated)
+  PRINT("TEC", tax.r_total)
+  PRINT("time", now)
+  PRINT("cdp time", cdp_itr->modified_round)
+  PRINT("insurer added col", dividends_amount)
+  PRINT("remove excess", excess)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.r_supply -= cdp_itr->r_balance;
-    r.insurance_pool -= received_rex;
+    r.r_total -= excess;
+    r.r_aggregated -= agec;
+    r.insurance_pool -= dividends_amount;
   });
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-    r.r_balance = 0;
-    r.collateral += received_rex;
+    r.collateral += asset(dividends_amount, REX);
     r.modified_round = now;
   });
   
-  if (received_rex_amount > 0) {
-    PRINT("new r supply", tax.r_supply)
-    cdp_itr->p();
-    PRINT_("---\n")
-  }
+  cdp_itr->p();
 }
 
 void buck::save(const name& account, const asset& value) {
@@ -215,7 +193,7 @@ void buck::take(const name& account, const asset& value) {
   // to-do check supply not 0
   
   const int64_t pool_part = selling_e * tax.e_price / PO;
-  const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;
+  const int64_t received_bucks_amount = pool_part * tax.savings_pool / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
   _accounts.modify(account_itr, account, [&](auto& r) {
@@ -224,7 +202,7 @@ void buck::take(const name& account, const asset& value) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.e_supply -= selling_e;
-    r.savings_pool -= received_bucks;
+    r.savings_pool -= received_bucks_amount;
   });
   
   add_balance(account, received_bucks, same_payer, false);

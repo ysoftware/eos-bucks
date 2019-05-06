@@ -52,11 +52,11 @@ bool buck::init() {
   
   _tax.emplace(_self, [&](auto& r) {
     
-    r.insurance_pool = ZERO_REX;
-    r.savings_pool = ZERO_BUCK;
+    r.insurance_pool = 0;
+    r.savings_pool = 0;
   
-    r.r_supply = 0;
-    r.r_price = PO;
+    r.r_total = 0;
+    r.r_aggregated = PO;
     r.r_collected = 0;
     
     r.e_supply = 0;

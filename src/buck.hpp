@@ -67,12 +67,12 @@ CONTRACT buck : public contract {
     TABLE taxation_stats {
       
       // actual processed taxes
-      asset     insurance_pool;
-      asset     savings_pool;
+      uint64_t insurance_pool;
+      uint64_t savings_pool;
       
       // insurance
-      uint64_t r_supply;
-      uint64_t r_price;
+      uint64_t r_total;
+      uint64_t r_aggregated;
       uint64_t r_collected; // BUCK this round
       
       // savings 
@@ -147,8 +147,12 @@ CONTRACT buck : public contract {
         eosio::print("#");eosio::print(id);
         eosio::print(" debt: ");eosio::print(debt);
         eosio::print(" col: ");eosio::print(collateral);
+        eosio::print(" acr: ");eosio::print(acr);
         eosio::print(" time: ");eosio::print(modified_round);
         eosio::print(" r_balance: ");eosio::print(r_balance);
+        if (acr > 0) {
+          eosio::print(" ec: ");eosio::print(collateral.amount/acr);
+        }
         eosio::print("\n");
       }
       
@@ -268,7 +272,7 @@ CONTRACT buck : public contract {
     void process_taxes();
     void add_savings_pool(const asset& value);
     void accrue_interest(const cdp_i::const_iterator& cdp_itr);
-    void buy_r(const cdp_i::const_iterator& cdp_itr, const asset& added_collateral);
+    void buy_r(const cdp_i::const_iterator& cdp_itr);
     void sell_r(const cdp_i::const_iterator& cdp_itr);
     void update_supply(const asset& quantity);
     

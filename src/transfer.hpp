@@ -131,7 +131,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     });
     
     if (issue_debt.amount == 0) {
-      buy_r(_cdp.require_find(id), quantity);
+      buy_r(_cdp.require_find(id));
     }
     else {
       add_balance(account, issue_debt, account, true);

@@ -118,13 +118,15 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   require_auth(cdp_itr->account);
   
+  PRINT_("changing acr...")
+  
   sell_r(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.acr = acr;
   });
   
-  buy_r(cdp_itr, cdp_itr->collateral);
+  buy_r(cdp_itr);
   
   run_requests(10);
 }

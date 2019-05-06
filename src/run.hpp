@@ -109,7 +109,7 @@ void buck::run_requests(uint8_t max) {
           r.debt += change_debt;
         });
       
-        buy_r(cdp_itr, change_collateral);
+        buy_r(cdp_itr);
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
@@ -154,7 +154,7 @@ void buck::run_requests(uint8_t max) {
           r.modified_round = now;
         });
         
-        buy_r(cdp_itr, add_collateral);
+        buy_r(cdp_itr);
         
         maturity_itr = maturity_index.erase(maturity_itr); // remove request
         did_work = true;
