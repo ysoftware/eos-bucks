@@ -79,9 +79,13 @@ def generate_debtors(k, n):
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
 		helper = ccr
+
+		acr = random.randint(100, 160)
+		if acr < 150: acr = 0
+
 		rand2 = random.randint(helper+1, helper + 2)
 		ccr = rand2
-		debtor = CDP(rand, 0, rand2, 0, i+1, time)
+		debtor = CDP(rand, 0, rand2, acr, i+1, time)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
 		debtor.new_cd(debtor.collateral * price // debtor.debt)
 		debtors.insert(0, debtor)
@@ -190,21 +194,13 @@ def calc_bad_debt(cdp, price, cr, lf):
 		exit()
 	return int(val)
 	
-def calc_val(cdp, cdp2, price, cr, lf):
+def calc_val(cdp, liquidator, price, cr, lf):
 	l = calc_lf(cdp, price, cr, lf)
-	c = cdp2.collateral
-	d = cdp2.debt
-	acr = cdp2.acr
+	c = liquidator.collateral
+	d = liquidator.debt
+	acr = liquidator.acr
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
 	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
-
-	print("1", ((c*price)-(d*acr)))
-	print("2", (100-l))
-	print("3", (acr*(100-l)-10_000))
-
-
-	print("bad debt", bad_debt)
-	print("bailable", bailable)
 	return min(bad_debt, bailable, cdp.debt)
 
 # Taxes
@@ -217,7 +213,6 @@ def add_tax(cdp, price):
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
-		print(cdp)
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
@@ -247,8 +242,7 @@ def update_tax(cdp, price):
 def liquidation(price, cr, lf):	
 	print("liquidation")
 	global TEC, table
-	if table == []:
-		return
+	if table == []: return
 	i = 0
 	while table[i].cd * price >= cr * 100 + epsilon (cr*100):
 		debtor = table.pop(len(table)-1)
@@ -256,6 +250,7 @@ def liquidation(price, cr, lf):
 		print("debtor", debtor)
 		if debtor.debt == 0:
 			cdp_insert(debtor)
+			print("DONE")
 			return
 		print("ccr", debtor.collateral * price // debtor.debt)
 
@@ -269,7 +264,7 @@ def liquidation(price, cr, lf):
 		else:
 			if table[i].acr == 0:
 				if i == len(table)-1:
-					print("end of the table")
+					print("FAILED end of the table")
 					cdp_insert(debtor)
 					return
 				else:
@@ -277,13 +272,14 @@ def liquidation(price, cr, lf):
 					print("looking for liquidators")
 					cdp_insert(debtor)
 			elif table[i].cd * price <= table[i].acr * 100 + epsilon(table[i].acr * 100):
-				print("liquidator ccr < acr")
+				print("liquidator ccr < acr\n")
 				i += 1
 				cdp_insert(debtor)
 			else:
 				liquidator = table.pop(i)
 				print("liquidator", liquidator)
 				if liquidator.debt <= epsilon(liquidator.debt):
+					print("sell_r")
 					TEC -= liquidator.collateral * 100 // liquidator.acr
 				liquidator = update_tax(liquidator, price)
 				l = calc_lf(debtor, price, cr, lf)
@@ -299,6 +295,7 @@ def liquidation(price, cr, lf):
 				else:
 					debtor.new_cd(debtor.collateral * 100 / debtor.debt)
 				if liquidator.debt <= epsilon(liquidator.debt):
+					print("buy_r")
 					TEC += liquidator.collateral * 100 // liquidator.acr
 					liquidator.new_cd(9999999)
 				else:
@@ -309,6 +306,7 @@ def liquidation(price, cr, lf):
 				print(".\n")
 
 				if i == len(table):
+					print("LIQ END")
 					return
 
 def redemption(amount, price, cr, rf):
@@ -534,13 +532,13 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 2
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
 	oracle_time = time
 
-	# gen(x, l)
-	gen(4, 8)
+	gen(x, l)
+	# gen(4, 8)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
