@@ -17,7 +17,7 @@ oracle_time = 0
 
 def time_now():
 	global time
-	time += 10_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
+	time += 1_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
 def epsilon(value): return value / 500
@@ -452,9 +452,9 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = True
+	LIQUIDATION = False
 	REDEMPTION 	= False
-	ACR 		= False
+	ACR 		= True
 	REPARAM 	= False
 
 	actions = []

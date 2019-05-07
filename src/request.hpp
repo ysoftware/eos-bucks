@@ -53,6 +53,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   if (new_debt.amount > 0) {
     const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
+    PRINT("ccr", ccr)
     check(ccr > CR, "can not reparametrize below 150% CCR");
   }
   
@@ -118,6 +119,7 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   PRINT_("changing acr...")
   
+  accrue_interest(cdp_itr);
   sell_r(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {

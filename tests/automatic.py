@@ -167,17 +167,17 @@ class Test(unittest.TestCase):
 	def compare(self, buck, cdp_table):
 
 		print("debtors")
-		top_debtors = get_debtors(buck, limit=5)
+		top_debtors = get_debtors(buck, limit=10)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
 			self.match(test.table[i * -1 - 1], debtor)
 
 		print("liquidators")
-		top_liquidators = get_liquidators(buck, limit=5)
+		top_liquidators = get_liquidators(buck, limit=10)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
-			if amount(liquidator["debt"]) > 0: break # unsorted end of the table
+			if amount(liquidator["acr"]) == 0: break # unsorted end of the table
 			self.match(test.table[i], liquidator)
 
 

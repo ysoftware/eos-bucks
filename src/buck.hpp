@@ -164,23 +164,41 @@ CONTRACT buck : public contract {
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
         
-        static const uint64_t MAX = 100'000'000;
+        static const uint64_t MAX = 1'000'000'000;
         
-        if (acr == 0 || collateral.amount == 0) return MAX * 3; // end of the table
+        // d!=0: index = cd, else 999999 + c/acr
         
-        if (debt.amount == 0) return MAX - collateral.amount / acr; // descending c/acr
         
-        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000 / debt.amount;
-        return MAX * 2 - cd; // descending cd
+        
+        return UINT64_MAX - debtor();
+        
+        
+        
+        
+        // if (acr == 0 || collateral.amount == 0) return MAX * 3; // end of the table
+        
+        // if (debt.amount == 0) return MAX - collateral.amount / acr; // descending c/acr
+        
+        // const uint64_t cd = uint128_t(collateral.amount) * 10'000'000 / debt.amount;
+        // return MAX * 2 - cd; // descending cd
       }
       
       // index to search for debtors with highest ccr
       uint64_t debtor() const {
         
-        if (debt.amount == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
+        static const uint64_t MAX = 1'000'000'000;
+
+        if (debt.amount == 0) {
+          return MAX + collateral.amount / acr;
+        }
         
-        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000 / debt.amount;
-        return cd; // ascending cd
+        return collateral.amount * 10'000'000 / debt.amount;
+        
+        
+        // if (debt.amount == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
+        
+        // const uint64_t cd = uint128_t(collateral.amount) * 10'000'000 / debt.amount;
+        // return cd; // ascending cd
       }
     };
     
