@@ -225,7 +225,12 @@ void buck::run_requests(uint8_t max) {
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
           
-          if (debtor_itr->debt == using_debt && debtor_itr->collateral == using_collateral) {
+          if (debtor_itr->debt == using_debt) {
+            const asset left_over_collateral = debtor_itr->collateral - using_collateral;
+            if (left_over_collateral.amount > 0) {
+              add_funds(debtor_itr->account, left_over_collateral, same_payer);
+            }
+            
             debtor_index.erase(debtor_itr); 
             PRINT_("removing cdp")
           }

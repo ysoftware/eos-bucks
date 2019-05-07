@@ -189,6 +189,8 @@ CONTRACT buck : public contract {
         static const uint64_t MAX = 1'000'000'000;
 
         if (debt.amount == 0) {
+          eosio::print("calculating...");
+          eosio::print(acr);
           return MAX + collateral.amount / acr;
         }
         
