@@ -275,8 +275,9 @@ def liquidation(price, cr, lf):
 				if liquidator.debt <= epsilon(liquidator.debt):
 					print("sell_r")
 					TEC -= liquidator.collateral * 100 // liquidator.acr
-				print("liquidator", liquidator)
 				liquidator = update_tax(liquidator, price)
+				print("liquidator", liquidator)
+				
 				l = calc_lf(debtor, price, cr, lf)
 				val = calc_val(debtor, liquidator, price, cr,l) 
 				print("value2", val * 10000 // (price*(100-l)))
@@ -287,7 +288,8 @@ def liquidation(price, cr, lf):
 				liquidator.add_debt(val)
 				liquidator.add_collateral(c)
 				debtor.add_collateral(-c)
-				if debtor.debt <=  100:
+
+				if debtor.debt <= 100:
 					debtor.new_cd(9999999)
 				else:
 					debtor.new_cd(debtor.collateral * 100 / debtor.debt)
@@ -297,6 +299,7 @@ def liquidation(price, cr, lf):
 					liquidator.new_cd(9999999)
 				else:
 					liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
+
 				cdp_insert(liquidator)
 				if debtor.debt >= 10:
 					cdp_insert(debtor)

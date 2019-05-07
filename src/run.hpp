@@ -303,7 +303,7 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
-        
+    
     PRINT_("debtor")
     debtor_itr->p();
 
@@ -326,6 +326,7 @@ void buck::run_liquidation(uint8_t max) {
     while (debtor_ccr < CR) {
       
       sell_r(_cdp.require_find(liquidator_itr->id));
+      accrue_interest(_cdp.require_find(liquidator_itr->id));
       
       PRINT_("liquidator")
       liquidator_itr->p();
@@ -374,8 +375,6 @@ void buck::run_liquidation(uint8_t max) {
         PRINT_("looking for liquidator 1")
         continue;
       }
-      
-      accrue_interest(_cdp.require_find(liquidator_itr->id));
       
       const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
           * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
