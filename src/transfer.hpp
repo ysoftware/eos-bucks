@@ -74,8 +74,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr != 0 || ccr != 0, "acr and ccr can not be both 0");
   
-  check(ccr < 10'000'00, "ccr value is too high");
-  check(acr < 10'000'00, "acr value is too high");
+  check(ccr < 1'000'00, "ccr value is too high");
+  check(acr < 1'000'00, "acr value is too high");
   
   sub_funds(account, quantity);
   

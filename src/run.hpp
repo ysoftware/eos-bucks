@@ -295,47 +295,53 @@ void buck::run_liquidation(uint8_t max) {
   // loop through debtors
   while (debtor_itr != debtor_index.end() && processed < max) {
     
-    const auto cdp_itr = _cdp.require_find(debtor_itr->id);
-    accrue_interest(cdp_itr);
-    
-    int64_t debt_amount = debtor_itr->debt.amount;
-    int64_t collateral_amount = debtor_itr->collateral.amount;
-    
-    int64_t debtor_ccr = 9999999;
-    if (debt_amount > 0) {
-      debtor_ccr = to_buck(collateral_amount) / debt_amount;
+    if (debtor_itr->debt.amount == 0) {
+      PRINT_("DONE1")
+      set_liquidation_status(LiquidationStatus::liquidation_complete);
+      run_requests(max - processed);
+      return;
     }
     
+    accrue_interest(_cdp.require_find(debtor_itr->id));
+        
     PRINT_("debtor")
     debtor_itr->p();
-    PRINT("ccr", debtor_ccr)
+
+    int64_t debt_amount = debtor_itr->debt.amount;
+    int64_t collateral_amount = debtor_itr->collateral.amount;
+    int64_t debtor_ccr = to_buck(collateral_amount) / debt_amount;
     
     // this and all further debtors don't have any bad debt
-    if (debtor_ccr >= CR && max > processed) {
+    if (debtor_ccr >= CR) {
       
-      PRINT_("DONE")
+      PRINT_("DONE2")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
     }
     
     auto liquidator_itr = liquidator_index.begin();
-      
+    
     // loop through liquidators
     while (debtor_ccr < CR) {
       
       sell_r(_cdp.require_find(liquidator_itr->id));
+      
+      PRINT_("liquidator")
+      liquidator_itr->p();
       
       int64_t liquidation_fee = LF;
       if (debtor_ccr >= 100 + LF) { liquidation_fee = LF; }
       else if (debtor_ccr < 75) { liquidation_fee = -25; }
       else { liquidation_fee = debtor_ccr - 100; }
       
-      const int64_t x = (100 + liquidation_fee) 
+      const int64_t x = (100 + liquidation_fee)
                           * (750 * debt_amount - to_buck(5 * collateral_amount))
                           / (50'000 - 1'500 * liquidation_fee);
       
       const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
+      
+      PRINT("bad debt", bad_debt)
       
       const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
       const int64_t liquidator_debt = liquidator_itr->debt.amount;
@@ -351,24 +357,25 @@ void buck::run_liquidation(uint8_t max) {
       // ccr < CR or
       // no more cdps in the table or
       // liquidator is debtor
-      if (liquidator_ccr < CR || liquidator_itr == liquidator_index.end() || liquidator_itr->id == debtor_itr->id) {
+      if (liquidator_ccr < CR || liquidator_itr->id == debtor_itr->id) {
         
         // to-do bailout pool?
         
+        PRINT_("FAILED")
         buy_r(_cdp.require_find(liquidator_itr->id));
         set_liquidation_status(LiquidationStatus::failed);
         run_requests(max - processed);
         return;
       }
       
-      if (liquidator_ccr <= liquidator_acr) {
+      if (liquidator_ccr < liquidator_acr) {
+        buy_r(_cdp.require_find(liquidator_itr->id));
         liquidator_itr++;
-        PRINT_("looking for liquidator")
+        PRINT_("looking for liquidator 1")
         continue;
       }
       
-      const auto cdp_itr = _cdp.require_find(liquidator_itr->id);
-      accrue_interest(cdp_itr);
+      accrue_interest(_cdp.require_find(liquidator_itr->id));
       
       const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
           * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
@@ -381,43 +388,49 @@ void buck::run_liquidation(uint8_t max) {
       const asset used_debt = asset(used_debt_amount, BUCK);
       const asset used_collateral = asset(used_collateral_amount, REX);
       
-      // can not bail out
+      PRINT("bailable", bailable)
+      PRINT("value2", debt_amount)
+      PRINT("used_debt", used_debt_amount)
+      
       if (bailable <= 0) {
-        
-        // to-do bailout pool?
-        PRINT_("FAILED2")
         buy_r(_cdp.require_find(liquidator_itr->id));
-        set_liquidation_status(LiquidationStatus::failed);
-        run_requests(max - processed);
-        return;
+        liquidator_itr++;
+        PRINT_("looking for liquidator 2")
+        continue;
       }
       
-      PRINT("bailable", bailable)
-      PRINT_("\n")
+      const bool removed = debtor_itr->debt == used_debt;
+      if (removed) {
+        PRINT_("removing debtor")
+        debtor_index.erase(debtor_itr);
+      }
+      else {
+        PRINT_("updating debtor")
+        debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
+          r.collateral -= used_collateral;
+          r.debt -= used_debt;
+        });
+      }
       
-      debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
-        r.collateral -= used_collateral;
-        r.debt -= used_debt;
-      });
+      PRINT_("\n")
       
       liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
         r.collateral += used_collateral;
         r.debt += used_debt;
       });
       
-      // update values
-      debt_amount = debtor_itr->debt.amount;
-      collateral_amount = debtor_itr->collateral.amount;
-      
-      debtor_ccr = 9999999;
-      if (debt_amount > 0) {
-        debtor_ccr = to_buck(collateral_amount) / debt_amount;
-      }
-      
       buy_r(_cdp.require_find(liquidator_itr->id));
       liquidator_itr = liquidator_index.begin();
+      
+      if (removed) break;
+      debt_amount = debtor_itr->debt.amount;
+      if (debt_amount == 0) break;
+      
+      collateral_amount = debtor_itr->collateral.amount;
+      debtor_ccr = to_buck(collateral_amount) / debt_amount;
     }
     
+    PRINT_(".\n")
     // continue to the next (first) debtor
     processed++;
     debtor_itr = debtor_index.begin();

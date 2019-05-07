@@ -33,7 +33,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "cd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(int(self.cd)) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
 
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
@@ -74,7 +74,7 @@ def generate_debtors(k, n):
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
-	debtor.new_cd(debtor.collateral * price // debtor.debt)
+	debtor.new_cd(debtor.collateral * price / debtor.debt)
 	debtors = [debtor]
 	for i in range (k+1,n):
 		rand = random.randrange(1000000,10000000,10000)
@@ -87,7 +87,7 @@ def generate_debtors(k, n):
 		ccr = rand2
 		debtor = CDP(rand, 0, rand2, acr, i+1, time)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
-		debtor.new_cd(debtor.collateral * price // debtor.debt)
+		debtor.new_cd(debtor.collateral * price / debtor.debt)
 		debtors.insert(0, debtor)
 	return debtors
 
@@ -189,18 +189,17 @@ def x_value(d, l, c, p):
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
-	if val < 0:
-		print("val < 0:", val)
-		exit()
+	print("bad debt", int(val))
 	return int(val)
 	
 def calc_val(cdp, liquidator, price, cr, lf):
 	l = calc_lf(cdp, price, cr, lf)
 	c = liquidator.collateral
 	d = liquidator.debt
-	acr = liquidator.acr
+	acr = int(liquidator.acr)
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
 	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
+	print("bailable", bailable)
 	return min(bad_debt, bailable, cdp.debt)
 
 # Taxes
@@ -226,12 +225,12 @@ def update_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
-			print("update tax", cdp.id)
+			# print("update tax", cdp.id)
 			ec = cdp.collateral * 100 // cdp.acr 
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
-			print("AEC-", AGEC)
+			# print("AEC-", AGEC)
 			IDP -= dividends
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
@@ -252,10 +251,6 @@ def liquidation(price, cr, lf):
 			cdp_insert(debtor)
 			print("DONE")
 			return
-		print("ccr", debtor.collateral * price // debtor.debt)
-
-		print("liq ccr", table[i].cd * price)
-		print("liq acr", table[i].acr)
 
 		if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 			print("DONE")
@@ -277,16 +272,18 @@ def liquidation(price, cr, lf):
 				cdp_insert(debtor)
 			else:
 				liquidator = table.pop(i)
-				print("liquidator", liquidator)
 				if liquidator.debt <= epsilon(liquidator.debt):
 					print("sell_r")
 					TEC -= liquidator.collateral * 100 // liquidator.acr
+				print("liquidator", liquidator)
 				liquidator = update_tax(liquidator, price)
 				l = calc_lf(debtor, price, cr, lf)
 				val = calc_val(debtor, liquidator, price, cr,l) 
+				print("value2", val * 10000 // (price*(100-l)))
 				c = min(val * 10000 // (price*(100-l)), debtor.collateral)
 
 				debtor.add_debt(-val)
+				print("used debt", val)
 				liquidator.add_debt(val)
 				liquidator.add_collateral(c)
 				debtor.add_collateral(-c)
@@ -532,7 +529,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 5
+	x = 3
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
