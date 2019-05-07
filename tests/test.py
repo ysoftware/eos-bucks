@@ -215,6 +215,8 @@ def add_tax(cdp, price):
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
+		# print("collect c", val)
+		print("collect d", interest * SR // 100)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
@@ -549,7 +551,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 3
+	x = 1
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

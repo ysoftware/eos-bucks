@@ -55,6 +55,8 @@ void buck::run_requests(uint8_t max) {
         // find cdp
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
         
+        accrue_interest(cdp_itr);
+        
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
         
@@ -91,8 +93,6 @@ void buck::run_requests(uint8_t max) {
         else if (reparam_itr->change_debt.amount < 0) { // removing debt
           change_debt = reparam_itr->change_debt; // add negative value
         }
-        
-        accrue_interest(cdp_itr);
         
         if (change_debt.amount > 0) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);

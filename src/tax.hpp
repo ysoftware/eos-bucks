@@ -31,6 +31,9 @@ void buck::process_taxes() {
     r.insurance_pool += insurance_amount;
     r.savings_pool += savings_amount;
     
+    PRINT("CIT", r.r_collected)
+    PRINT("AEC+", r.r_total * delta_t)
+    
     r.r_aggregated += r.r_total * delta_t;
     r.r_collected = 0;
     
@@ -39,6 +42,8 @@ void buck::process_taxes() {
       r.e_collected = 0;
     }
   });
+  
+  PRINT("add to pool", insurance_amount)
 }
 
 // collect interest to insurance pool from this cdp
@@ -77,6 +82,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.r_collected += accrued_collateral_amount;
   });
   
+  // PRINT("collect d", accrued_debt_amount)
+  PRINT("collect c", accrued_collateral_amount)
+  
   // to-do check ccr for liquidation
 }
 
@@ -98,6 +106,8 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total += excess;
   });
+  
+  PRINT("TEC+", excess)
 }
 
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
@@ -118,6 +128,8 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   if (tax.r_aggregated > 0) {
     dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
   }
+  PRINT("TEC-", excess)
+  PRINT("AEC+", agec)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total -= excess;
