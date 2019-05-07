@@ -5,9 +5,6 @@
 void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
-  const auto collected_to_do_remove_this = tax.r_collected;
-  PRINT("CIT", tax.r_collected)
-  
   // send part of collected insurance to Scruge
   const uint64_t scruge_insurance_amount = tax.r_collected * SP / 100;
   const uint64_t insurance_amount = tax.r_collected - scruge_insurance_amount;
@@ -34,10 +31,6 @@ void buck::process_taxes() {
     r.insurance_pool += insurance_amount;
     r.savings_pool += savings_amount;
     
-    PRINT_(r.r_total)
-    PRINT_(delta_t)
-    PRINT("AEC=", r.r_aggregated)
-    PRINT("AEC+", r.r_total * delta_t)
     r.r_aggregated += r.r_total * delta_t;
     r.r_collected = 0;
     
@@ -46,8 +39,6 @@ void buck::process_taxes() {
       r.e_collected = 0;
     }
   });
-  
-  PRINT("add to pool", insurance_amount)
 }
 
 // collect interest to insurance pool from this cdp
@@ -86,8 +77,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.r_collected += accrued_collateral_amount;
   });
   
-  cdp_itr->p();
-  
   // to-do check ccr for liquidation
 }
 
@@ -95,6 +84,8 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
+  
+  PRINT_("buy_r")
   
   const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const auto oracle_time = _stat.begin()->oracle_timestamp;
@@ -112,7 +103,9 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
 void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
-  if (cdp_itr->acr == 0 || tax.r_aggregated == 0 || cdp_itr->debt.amount > 0) return;
+  if (cdp_itr->acr == 0 || cdp_itr->debt.amount > 0) return;
+  
+  PRINT_("sell_r")
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
@@ -120,18 +113,17 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   
   const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const uint64_t agec = excess * delta_t;
-  const uint64_t dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
+  
+  uint64_t dividends_amount = 0;
+  if (tax.r_aggregated > 0) {
+    dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
+  }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total -= excess;
     r.r_aggregated -= agec;
     r.insurance_pool -= dividends_amount;
   });
-  
-  
-  PRINT("AEC-", agec)
-  PRINT("remove from pool", dividends_amount)
-  PRINT("pool", tax.insurance_pool)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral += asset(dividends_amount, REX);

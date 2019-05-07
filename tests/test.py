@@ -33,7 +33,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + ("acr: " + str(self.acr) + "\tcd: " + str(self.cd) if self.cd > 999999 else ("cd: " + str(self.cd))) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "cd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
 
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
@@ -180,13 +180,14 @@ def calc_lf(cdp, price, cr, lf):
 	
 def x_value(d, l, c, p):
 		x = int((100+l)*(750*d-5*c*p) // (50000-1500*l))
-		print("x", x)
 		return x
 		
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
-	val = int(cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
-	print("bad debt", val)
+	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
+	if val < 0:
+		print("val < 0:", val)
+		exit()
 	return int(val)
 	
 def calc_val(cdp, cdp2, price, cr, lf):
@@ -195,9 +196,15 @@ def calc_val(cdp, cdp2, price, cr, lf):
 	d = cdp2.debt
 	acr = cdp2.acr
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
-	bailable = (c*price-d*acr)*(100-l) // (acr*(100-l)-10_000)
+	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
+
+	print("1", ((c*price)-(d*acr)))
+	print("2", (100-l))
+	print("3", (acr*(100-l)-10_000))
+
+
+	print("bad debt", bad_debt)
 	print("bailable", bailable)
-	print("used_debt_amount", min(bad_debt, bailable, cdp.debt))
 	return min(bad_debt, bailable, cdp.debt)
 
 # Taxes
@@ -205,13 +212,13 @@ def calc_val(cdp, cdp2, price, cr, lf):
 def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
-	if cdp.debt > epsilon(cdp.debt):
+	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
+		print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
 		print(cdp)
 		cdp.add_debt(interest * SR // 100)
-		print("add tax", cdp.id)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
 		CIT += interest * IR // price
@@ -224,13 +231,13 @@ def update_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
+			print("update tax", cdp.id)
 			ec = cdp.collateral * 100 // cdp.acr 
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
+			print("AEC-", AGEC)
 			IDP -= dividends
-			print("remove from pool", dividends)
-			print("pool", IDP)
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
 	return cdp
@@ -251,6 +258,10 @@ def liquidation(price, cr, lf):
 			cdp_insert(debtor)
 			return
 		print("ccr", debtor.collateral * price // debtor.debt)
+
+		print("liq ccr", table[i].cd * price)
+		print("liq acr", table[i].acr)
+
 		if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 			print("DONE")
 			cdp_insert(debtor)
@@ -258,12 +269,15 @@ def liquidation(price, cr, lf):
 		else:
 			if table[i].acr == 0:
 				if i == len(table)-1:
+					print("end of the table")
 					cdp_insert(debtor)
 					return
 				else:
 					i += 1
+					print("looking for liquidators")
 					cdp_insert(debtor)
 			elif table[i].cd * price <= table[i].acr * 100 + epsilon(table[i].acr * 100):
+				print("liquidator ccr < acr")
 				i += 1
 				cdp_insert(debtor)
 			else:
@@ -276,13 +290,10 @@ def liquidation(price, cr, lf):
 				val = calc_val(debtor, liquidator, price, cr,l) 
 				c = min(val * 10000 // (price*(100-l)), debtor.collateral)
 
-				print("col", debtor.collateral)
-				print("-", c)
 				debtor.add_debt(-val)
 				liquidator.add_debt(val)
 				liquidator.add_collateral(c)
 				debtor.add_collateral(-c)
-				print("=", debtor.collateral)
 				if debtor.debt <=  100:
 					debtor.new_cd(9999999)
 				else:
@@ -295,10 +306,10 @@ def liquidation(price, cr, lf):
 				cdp_insert(liquidator)
 				if debtor.debt >= 10:
 					cdp_insert(debtor)
+				print(".\n")
 
 				if i == len(table):
 					return
-		print("after", debtor, "\n")
 
 def redemption(amount, price, cr, rf):
 	global time, table
@@ -397,12 +408,14 @@ def change_acr(id, acr):
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= (cdp.collateral * 100 // cdp.acr)
+		print("TEC-", (cdp.collateral * 100 // cdp.acr))
 
 	cdp = update_tax(cdp, price)
 	cdp.new_acr(acr)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += (cdp.collateral * 100 // cdp.acr)
+		print("TEC+", (cdp.collateral * 100 // cdp.acr))
 
 	cdp_insert(cdp)
 
@@ -411,9 +424,10 @@ def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
 	val1 = TEC * (time - oracle_time)
 	AEC += val1
-	print("AEC+", val1)
-	val2 = (CIT - (CIT * commission) // 100)
 	print("CIT", CIT)
+	print("AEC+", val1)
+	print("AEC=", AEC)
+	val2 = (CIT - (CIT * commission) // 100)
 	IDP += val2
 	print("add to pool", val2)
 	CIT = 0
@@ -423,7 +437,7 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = False
+	LIQUIDATION = True
 	REDEMPTION 	= False
 	ACR 		= False
 	REPARAM 	= False
@@ -432,7 +446,7 @@ def run_round(balance):
 	old_price = price
 
 	l_m = -1 if LIQUIDATION else 1
-	price += random.randint(l_m * price // 10, price // 10)
+	price += random.randint(l_m * price // 5, price // 5)
 
 	length = len(table)
 	if length == 0: return [time, actions]
@@ -520,13 +534,13 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = random.randint(1, 2)
+	x = 2
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
 	oracle_time = time
 
 	# gen(x, l)
-	gen(1, 2)
+	gen(4, 8)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

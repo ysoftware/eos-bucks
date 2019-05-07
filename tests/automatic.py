@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, random.randint(5, 20)):
+			for round_i in range(0, random.randint(30, 70)):
 				print("\n\n\n\n\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 
@@ -133,6 +133,8 @@ class Test(unittest.TestCase):
 								balance(buck, user1)
 								assertRaises(self, lambda: redeem(buck, user1, quantity))
 							else: redeem(buck, user1, quantity)
+
+				test.print_table()
 
 				maketime(buck, round_time)
 				update(buck, test.price)
@@ -179,8 +181,8 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		print(cdp)
-		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
+		# print(cdp)
+		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
