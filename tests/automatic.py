@@ -92,7 +92,7 @@ class Test(unittest.TestCase):
 			COMMENT("Start rounds")
 
 			for round_i in range(0, random.randint(30, 70)):
-				print("\n\n\n\n\n\n\n\n")
+				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 
 				##################################

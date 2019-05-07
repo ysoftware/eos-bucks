@@ -321,6 +321,15 @@ void buck::run_liquidation(uint8_t max) {
       return;
     }
     
+    // this check used to come before dealing with taxes in the python test
+    // that's why it's here and not after
+    if (liquidator_itr->debt.amount > 0 && to_buck(liquidator_itr->collateral.amount) / liquidator_itr->debt.amount <= liquidator_itr->acr) {
+      liquidator_itr->p();
+      liquidator_itr++;
+      PRINT_("looking for liquidators\n")
+      continue;
+    }
+    
     sell_r(_cdp.require_find(liquidator_itr->id));
     accrue_interest(_cdp.require_find(liquidator_itr->id));
     
@@ -359,18 +368,16 @@ void buck::run_liquidation(uint8_t max) {
       // to-do bailout pool?
       
       PRINT_("FAILED")
-      buy_r(_cdp.require_find(liquidator_itr->id));
       set_liquidation_status(LiquidationStatus::failed);
       run_requests(max - processed);
       return;
     }
     
-    if (liquidator_ccr < liquidator_acr) {
-      buy_r(_cdp.require_find(liquidator_itr->id));
-      liquidator_itr++;
-      PRINT_("looking for liquidator 1")
-      continue;
-    }
+    // if (liquidator_ccr <= liquidator_acr) {
+    //   liquidator_itr++;
+    //   PRINT_("looking for liquidators")
+    //   continue;
+    // }
     
     const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
         * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
@@ -383,14 +390,15 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
-    PRINT("bailable", bailable)
-    PRINT("value2", debt_amount)
+    // PRINT("bailable", bailable)
+    // PRINT("value2", debt_amount)
     PRINT("used_debt", used_debt_amount)
     
-    if (bailable <= 0) {
+    if (used_debt_amount <= 0) {
       buy_r(_cdp.require_find(liquidator_itr->id));
+      liquidator_itr->p();
       liquidator_itr++;
-      PRINT_("looking for liquidator 2")
+      PRINT_("looking for liquidators 2")
       continue;
     }
     
