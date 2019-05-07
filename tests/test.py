@@ -212,11 +212,15 @@ def add_tax(cdp, price):
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
+		print(cdp)
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
-		# print("collect c", val)
-		print("collect d", interest * SR // 100)
+		print("dt", oracle_time-cdp.time)
+		print("interest", interest)
+		print("collect c", -val)
+		print("price", price)
+		# print("collect d", interest * SR // 100)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
@@ -454,17 +458,13 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = False
+	LIQUIDATION = True
 	REDEMPTION 	= False
 	ACR 		= True
 	REPARAM 	= False
 
 	actions = []
 	old_price = price
-
-	l_m = -1 if LIQUIDATION else 1
-	price += random.randint(l_m * price // 5, price // 5)
-
 	length = len(table)
 	if length == 0: return [time, actions]
 
@@ -502,6 +502,9 @@ def run_round(balance):
 				k -= 1
 			if k == 0:
 				break
+
+	l_m = -1 if LIQUIDATION else 1
+	price += random.randint(l_m * price // 5, price // 5)
 
 	time_now()
 	update_round()

@@ -70,6 +70,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   update_supply(accrued_debt);
   
   PRINT("add tax", cdp_itr->id)
+  cdp_itr->p();
+  PRINT("interest", accrued_amount)
+  PRINT("dt", now-last)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
