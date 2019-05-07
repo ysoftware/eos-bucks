@@ -6,6 +6,7 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   const auto collected_to_do_remove_this = tax.r_collected;
+  PRINT("CIT", tax.r_collected)
   
   // send part of collected insurance to Scruge
   const uint64_t scruge_insurance_amount = tax.r_collected * SP / 100;
@@ -73,11 +74,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   update_supply(accrued_debt);
   
   PRINT("add tax", cdp_itr->id)
-  cdp_itr->p();
-  PRINT("debt", accrued_debt)
-  PRINT("v", v)
-  PRINT("accrued_collateral", accrued_collateral)
-  PRINT("accrued_amount", accrued_amount)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -132,8 +128,10 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     r.insurance_pool -= dividends_amount;
   });
   
+  
   PRINT("AEC-", agec)
-  PRINT("dividends", dividends_amount)
+  PRINT("remove from pool", dividends_amount)
+  PRINT("pool", tax.insurance_pool)
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral += asset(dividends_amount, REX);

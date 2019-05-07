@@ -38,7 +38,7 @@ class CDP:
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
 	def add_collateral(self, new_collateral):
-		self.collateral = self.collateral + int(new_collateral)
+		self.collateral = int(self.collateral) + int(new_collateral)
 	def new_cd(self, cd_new):
 		self.cd = cd_new
 	def new_acr(self,acr_new):
@@ -211,24 +211,12 @@ def add_tax(cdp, price):
 		interest = int(cdp.debt * v) // dm
 		print(cdp)
 		cdp.add_debt(interest * SR // 100)
-		print("v", v)
-		print("dt", oracle_time-cdp.time)
 		print("add tax", cdp.id)
-		print("debt", interest * SR // 100)
-		print(interest * IR // price)
-		print("accrued amount", interest)
-		print("add to pool", interest * IR // price)
-
-
-		c = cdp.collateral
-		val = -interest * IR // price
+		val = -(interest * IR // price)
 		cdp.add_collateral(val)
-
-
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
-		print(cdp)
 	return cdp
 	
 def update_tax(cdp, price):
@@ -240,9 +228,9 @@ def update_tax(cdp, price):
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
-			print("AEC-", AGEC)
-			print("dividends", dividends)
 			IDP -= dividends
+			print("remove from pool", dividends)
+			print("pool", IDP)
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
 	return cdp
@@ -336,7 +324,7 @@ def redemption(amount, price, cr, rf):
 				if cdp.debt > amount:
 					print("using debt", amount, "col", (amount*100) // (price+rf))
 					cdp.add_debt(-amount)
-					cdp.add_collateral(-(amount*100) // (price+rf))
+					cdp.add_collateral(-((amount*100) // (price+rf)))
 					cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 					cdp_insert(cdp)
 					amount = 0
@@ -344,7 +332,7 @@ def redemption(amount, price, cr, rf):
 					d = cdp.debt
 					print("using debt", cdp.debt, "col", (d*100) // (price+rf))
 					cdp.new_debt(0)
-					cdp.add_collateral(-(d*100) // (price+rf))
+					cdp.add_collateral(-((d*100) // (price+rf)))
 					amount -= d
 					i -= 1
 			else:
@@ -408,22 +396,26 @@ def change_acr(id, acr):
 		return False
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
-		TEC -= cdp.collateral * 100 // cdp.acr
+		TEC -= (cdp.collateral * 100 // cdp.acr)
 
 	cdp = update_tax(cdp, price)
 	cdp.new_acr(acr)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
-		TEC += cdp.collateral * 100 // cdp.acr
+		TEC += (cdp.collateral * 100 // cdp.acr)
 
 	cdp_insert(cdp)
 
 		
 def update_round():
 	global AEC, IDP, CIT, oracle_time, time, TEC, price
-	AEC += TEC * (time - oracle_time)
-	print("AEC+", TEC * (time - oracle_time))
-	IDP += CIT * (100 - commission) // 100
+	val1 = TEC * (time - oracle_time)
+	AEC += val1
+	print("AEC+", val1)
+	val2 = (CIT - (CIT * commission) // 100)
+	print("CIT", CIT)
+	IDP += val2
+	print("add to pool", val2)
 	CIT = 0
 	oracle_time = time
 
@@ -431,7 +423,7 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = True
+	LIQUIDATION = False
 	REDEMPTION 	= False
 	ACR 		= False
 	REPARAM 	= False
@@ -534,6 +526,7 @@ def init():
 	time_now()
 	oracle_time = time
 
-	gen(x, l)
+	# gen(x, l)
+	gen(1, 2)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

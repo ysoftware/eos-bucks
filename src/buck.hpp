@@ -144,8 +144,8 @@ CONTRACT buck : public contract {
       
       void p() const {
         eosio::print("#");eosio::print(id);
-        eosio::print(" debt: ");eosio::print(debt);
         eosio::print(" col: ");eosio::print(collateral);
+        eosio::print(" debt: ");eosio::print(debt);
         eosio::print(" acr: ");eosio::print(acr);
         eosio::print(" time: ");eosio::print(modified_round);
         eosio::print("\n");

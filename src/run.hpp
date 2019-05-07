@@ -379,9 +379,6 @@ void buck::run_liquidation(uint8_t max) {
       PRINT("value2", value2)
       PRINT("used_debt", used_debt)
       
-      PRINT("col", debtor_itr->collateral.amount)
-      PRINT("-", used_collateral_amount)
-      
       if (bailable <= 0) {
         
         PRINT_("FAILED 2")
