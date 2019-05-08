@@ -77,8 +77,7 @@ void buck::run_requests(uint8_t max) {
           // check ccr with new collateral
           int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
-            // const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
-            ccr = to_buck(cdp_itr->collateral.amount) / cdp_itr->debt.amount;
+            ccr = to_buck(cdp_itr->collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
           }
         
           PRINT("ccr", ccr)

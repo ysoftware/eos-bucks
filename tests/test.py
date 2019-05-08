@@ -403,9 +403,13 @@ def reparametrize(id, c, d, price):
 					cdp_insert(cdp)
 					return
 				else:
-					print("c", (cr-100) * cdp.debt // price)
-					print("change", -(min(-c, (cr-100) * cdp.debt // price)))
-					cdp.add_collateral(-(min(-c, (cr-100) * cdp.debt // price)))
+					m = (cr-100) * cdp.debt // price
+
+					print("1", (cr-100))
+					print("2", (cr-100) * cdp.debt)
+					print("3", (cr-100) * cdp.debt // price)
+					print("4", max(c, -m))
+					cdp.add_collateral(max(c, -m))
 
 	if d > 0:
 		if cdp.debt == 0:
@@ -569,7 +573,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 10
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
