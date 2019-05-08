@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		# while True:
+		while True:
 
 			##################################
 			COMMENT("Initialize")
@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, random.randint(30, 100)):
+			for round_i in range(0, 100):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 
@@ -167,14 +167,14 @@ class Test(unittest.TestCase):
 	def compare(self, buck, cdp_table):
 
 		print("debtors")
-		top_debtors = get_debtors(buck, limit=10)
+		top_debtors = get_debtors(buck, limit=30)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
 			self.match(test.table[i * -1 - 1], debtor)
 
 		print("liquidators")
-		top_liquidators = get_liquidators(buck, limit=10)
+		top_liquidators = get_liquidators(buck, limit=30)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if amount(liquidator["acr"]) == 0: break # unsorted end of the table

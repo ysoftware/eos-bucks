@@ -80,13 +80,8 @@ void buck::run_requests(uint8_t max) {
             ccr = to_buck(cdp_itr->collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
           }
         
-          PRINT("ccr", ccr)
-          
           const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
           const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
-          
-          PRINT("m", m1)
-          PRINT("change", change_amount)
           const asset change = asset(change_amount, REX);
           change_collateral = change;
         }
@@ -95,8 +90,6 @@ void buck::run_requests(uint8_t max) {
 
           const int32_t ccr = to_buck(cdp_itr->collateral.amount) / cdp_itr->debt.amount;
           const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
-          PRINT("max debt", max_debt)
-          PRINT("ccr", ccr)
           const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
           change_debt = asset(change_amount, BUCK);
         }
@@ -195,17 +188,12 @@ void buck::run_requests(uint8_t max) {
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end()) {
           
           if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
-            PRINT_("end of the table")
             break;
           }
-          
-          PRINT_("before tax")
-          debtor_itr->p();
           
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
-            PRINT_("not enough debt")
             debtor_itr++;
             continue;
           }
@@ -214,7 +202,6 @@ void buck::run_requests(uint8_t max) {
           
           // skip to the next debtor
           if (ccr < 100 - RF) { 
-            PRINT_("ccr is not suitable")
             debtor_itr++;
             continue; 
           }
@@ -225,11 +212,11 @@ void buck::run_requests(uint8_t max) {
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          PRINT("redeem_quantity", redeem_quantity)
-          PRINT_("after tax") debtor_itr->p();
-          PRINT("available debt", debtor_itr->debt)
-          PRINT("using_debt", using_debt)
-          PRINT("using_collateral", using_collateral)
+          // PRINT("redeem_quantity", redeem_quantity)
+          // PRINT_("after tax") debtor_itr->p();
+          // PRINT("available debt", debtor_itr->debt)
+          // PRINT("using_debt", using_debt)
+          // PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
@@ -241,7 +228,6 @@ void buck::run_requests(uint8_t max) {
             }
             
             debtor_index.erase(debtor_itr); 
-            PRINT_("removing cdp")
           }
           else {
             debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
@@ -308,6 +294,13 @@ void buck::run_liquidation(uint8_t max) {
   // loop through liquidators
   while (max > processed) {
     
+    if (liquidator_itr == liquidator_index.end()) {
+      PRINT_("FAILED: END")
+      set_liquidation_status(LiquidationStatus::failed);
+      run_requests(max - processed);
+      return;
+    }
+
     const auto debtor_itr = debtor_index.begin();
     
     if (debtor_itr->debt.amount == 0) {
@@ -340,7 +333,7 @@ void buck::run_liquidation(uint8_t max) {
     if (liquidator_itr->debt.amount > 0 && to_buck(liquidator_itr->collateral.amount) / liquidator_itr->debt.amount <= liquidator_itr->acr) {
       liquidator_itr->p();
       liquidator_itr++;
-      PRINT_("looking for liquidators\n")
+      PRINT_("L1\n")
       continue;
     }
     
@@ -412,7 +405,7 @@ void buck::run_liquidation(uint8_t max) {
       buy_r(_cdp.require_find(liquidator_itr->id));
       liquidator_itr->p();
       liquidator_itr++;
-      PRINT_("looking for liquidators 2")
+      PRINT_("L2\n")
       continue;
     }
     

@@ -42,7 +42,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // to-do validate arguments
   
-  // cdp_itr->p();
+  cdp_itr->p();
   
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
@@ -51,12 +51,12 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   if (new_debt.amount > 0) {
     const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
-    // PRINT("ccr", ccr)
+    PRINT("ccr", ccr)
     check(ccr > CR, "can not reparametrize below 150% CCR");
   }
   
   
-  // PRINT("new_debt", new_debt)
+  PRINT("new_debt", new_debt)
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
   // to-do check min collateral in EOS
   
@@ -68,8 +68,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   if (change_collateral.amount > 0) {
     sub_funds(cdp_itr->account, change_collateral);
   }
-  
-  // PRINT("now", time_point_sec(get_current_time_point()).utc_seconds)
   
   // if rex is not matured, create maturity request
   if (get_amount_maturity(cdp_itr->account, change_collateral) > get_current_time_point()) {
@@ -114,8 +112,6 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   check(cdp_itr->acr != acr, "acr is already set to this value");
   
   require_auth(cdp_itr->account);
-  
-  PRINT_("changing acr...")
   
   accrue_interest(cdp_itr);
   sell_r(cdp_itr);

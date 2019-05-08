@@ -249,32 +249,37 @@ def liquidation(price, cr, lf):
 	if table == []: return
 	i = 0
 	while i < len(table)-1:
+		
+		print("\nfull table:")
+		print_table()
+		print("\n")
+
 		debtor = table.pop(len(table)-1)
 		debtor = add_tax(debtor, price)
 		print("debtor\n", debtor)
 
 		if debtor.debt == 0:
 			cdp_insert(debtor)
-			print("DONE")
+			print("DONE1")
 			return
 
 		if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
-			print("DONE")
+			print("DONE2")
 			cdp_insert(debtor)
 			return
 		else:
 			if table[i].acr == 0:
 				if i == len(table)-1:
-					print("END")
+					print("FAILED: END")
 					cdp_insert(debtor)
 					return
 				else:
 					i += 1
-					print(table[i])
+					print("L2", table[i])
 					cdp_insert(debtor)
 			elif table[i].cd * price <= table[i].acr * 100 + epsilon(table[i].acr * 100):
 				print(table[i])
-				print("looking for liquidators\n")
+				print("L1\n")
 				i += 1
 				cdp_insert(debtor)
 			else:
@@ -369,7 +374,6 @@ def redemption(amount, price, cr, rf):
 			else:
 				print("ccr is not suitable")
 				cdp_insert(cdp)
-		print(cdp, "\n")
 	print("redeem done 2")
 
 	return
@@ -385,7 +389,6 @@ def reparametrize(id, c, d, price):
 		print("TEC-", cdp.collateral * 100 // cdp.acr)
 
 	cdp = update_tax(cdp, price)
-	print(cdp)
 
 	if d < 0:
 		if cdp.debt + d > 50000 + epsilon(50000):
@@ -432,7 +435,6 @@ def reparametrize(id, c, d, price):
 		TEC += cdp.collateral * 100 // cdp.acr
 		print("TEC+", cdp.collateral * 100 // cdp.acr)
 	cdp_insert(cdp)
-	print(cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
@@ -477,10 +479,10 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = False
+	LIQUIDATION = True
 	REDEMPTION 	= False
 	ACR 		= False
-	REPARAM 	= True
+	REPARAM 	= False
 
 	actions = []
 	old_price = price
@@ -522,7 +524,8 @@ def run_round(balance):
 			if k == 0:
 				break
 
-	new_price = random.randint(-price // 5, price // 5) if LIQUIDATION else 1
+	new_price = random.randint(-price // 3, price // 3) if LIQUIDATION else 1
+	if new_price == 0: new_price = 100
 	price += new_price
 
 	time_now()
@@ -573,13 +576,13 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 10
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
 	oracle_time = time
 
-	gen(x, l)
-	# gen(4, 8)
+	# gen(x, l)
+	gen(2, 4)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

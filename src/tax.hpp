@@ -90,8 +90,6 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
   
-  PRINT_("buy_r")
-  
   const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
@@ -111,8 +109,6 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   if (cdp_itr->acr == 0 || cdp_itr->debt.amount > 0) return;
-  
-  PRINT_("sell_r")
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
