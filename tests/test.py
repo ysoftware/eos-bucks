@@ -20,7 +20,7 @@ def time_now():
 	time += 1_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
-def epsilon(value): return 0 # value / 500
+def epsilon(value): return value / 500
 
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
@@ -245,24 +245,38 @@ def liquidation(price, cr, lf):
 	if table == []: return
 	i = 0
 
-	print_table()
 
-	while i < len(table)-1:
+	while True:
+		print_table()
 
 		debtor = table.pop(len(table)-1)
+
+		if i >= len(table) or debtor.id == table[i].id: 
+			cdp_insert(debtor)
+
+			print("\n")
+			print("\n")
+			print(f"#{i}", table[i])
+			print("debtor", debtor)
+			print("FAILED: END")
+			return # failed
+
 		debtor = add_tax(debtor, price)
 
-		if debtor.debt == 0:
+		print("\nliquidator\n", table[i])
+		print("debtor\n", debtor)
+
+		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
-			return
+			return # done
 
 		if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
 			cdp_insert(debtor)
-			return
+			return # done
 	
-		if table[i].acr == 0:
-			print("L2\n")
+		if table[i].acr < CR + epsilon(CR):
 			print(table[i])
+			print("L2\n")
 			cdp_insert(debtor)
 			i += 1
 			continue
@@ -273,25 +287,23 @@ def liquidation(price, cr, lf):
 		liquidator = update_tax(liquidator, price)
 
 		liq_ccr = 9999999
-		if liquidator.debt > 0: liq_ccr = liquidator.collateral * price / liquidator.debt
+		if liquidator.debt > epsilon(liquidator.debt): 
+			liq_ccr = liquidator.collateral * price / liquidator.debt
 
-		if liquidator.debt > 0 and liq_ccr <= liquidator.acr + epsilon(liquidator.acr):
-			print("L1\n")
+		if liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr + epsilon(liquidator.acr):
 			print(liquidator)
+			print("L1\n")
 			i += 1
 			cdp_insert(debtor)
 			cdp_insert(liquidator)
 			continue
-
-		print("\nliquidator\n", liquidator)
-		print("debtor\n", debtor)
 
 		l = calc_lf(debtor, price, cr, lf)
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
 		use_c = min(use_d * 10000 // (price*(100-l)), debtor.collateral) # use col
 
 		print("use d", use_d)
-		print("use c", use_c)
+		print("use c", use_c, "\n")
 
 		if use_d <= 0: # used debt
 			print("L3")
@@ -327,7 +339,6 @@ def liquidation(price, cr, lf):
 			print("removing debtor", debtor.id)
 		i = 0
 		# print(".\n")
-	print("FAILED: END")
 
 def redemption(amount, price, cr, rf):
 	global time, table
@@ -486,10 +497,10 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = False
+	LIQUIDATION = True
 	REDEMPTION 	= False
 	ACR 		= False
-	REPARAM 	= True
+	REPARAM 	= False
 
 	actions = []
 	old_price = price

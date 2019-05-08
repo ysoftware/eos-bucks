@@ -91,9 +91,10 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, 10):
+			rounds = 10
+			for round_i in range(0, rounds):
 				print("\n\n\n\n")
-				COMMENT(f"Round {round_i+1}")
+				COMMENT(f"Round {round_i+1} / {rounds} of cycle {cycle_i}")
 
 				##################################
 				COMMENT(f"Actions for round {round_i+1}")

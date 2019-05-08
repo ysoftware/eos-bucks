@@ -340,8 +340,9 @@ void buck::run_liquidation(uint8_t max) {
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   auto liquidator_itr = liquidator_index.begin();
-  
-        PRINT_("")
+    
+    
+     PRINT_("")
         for (auto& s: debtor_index) {
           s.p();
         }
@@ -358,6 +359,12 @@ void buck::run_liquidation(uint8_t max) {
       run_requests(max - processed);
       return;
     }
+    
+    PRINT_("\nliquidator")
+    liquidator_itr->p();
+    
+    PRINT_("debtor")
+    debtor_itr->p();
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
@@ -431,16 +438,11 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
-    PRINT_("\nliquidator")
-    liquidator_itr->p();
-    
-    PRINT_("debtor")
-    debtor_itr->p();
-    
     PRINT("\nbad debt", bad_debt)
     PRINT("bailable", bailable)
     PRINT("used d", used_debt_amount)
     PRINT("use c", used_collateral_amount)
+    PRINT_("")
     
     if (used_debt_amount <= 0) {
       PRINT_("L3")
