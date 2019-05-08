@@ -198,6 +198,7 @@ def calc_val(cdp, liquidator, price, cr, lf):
 	acr = int(liquidator.acr)
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
 	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
+	print("bad_debt", bad_debt)
 	print("bailable", bailable)
 	return min(bad_debt, bailable, cdp.debt)
 
@@ -282,31 +283,30 @@ def liquidation(price, cr, lf):
 			cdp_insert(liquidator)
 			continue
 
-		print("liquidator\n", liquidator)
-
+		print("\nliquidator\n", liquidator)
 		print("debtor\n", debtor)
 
 		l = calc_lf(debtor, price, cr, lf)
-		val = calc_val(debtor, liquidator, price, cr,l) # use debt
-		c = min(val * 10000 // (price*(100-l)), debtor.collateral) # use col
+		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
+		use_c = min(use_d * 10000 // (price*(100-l)), debtor.collateral) # use col
 
-		print("use d", val)
-		print("use c", c)
+		print("use d", use_d)
+		print("use c", use_c)
 
-		if val <= 0: # used debt
-			print("L3")
-			print(liquidator)
-			i += 1
-			cdp_insert(debtor)
-			cdp_insert(liquidator)
-			if liquidator.debt <= epsilon(liquidator.debt):
-				TEC += liquidator.collateral * 100 // liquidator.acr
-			continue
+		# if use_d <= 0: # used debt
+		# 	print("L3")
+		# 	print(liquidator)
+		# 	i += 1
+		# 	cdp_insert(debtor)
+		# 	cdp_insert(liquidator)
+		# 	if liquidator.debt <= epsilon(liquidator.debt):
+		# 		TEC += liquidator.collateral * 100 // liquidator.acr
+		# 	continue
 
-		debtor.add_debt(-val)
-		liquidator.add_debt(val)
-		liquidator.add_collateral(c)
-		debtor.add_collateral(-c)
+		debtor.add_debt(-use_d)
+		debtor.add_collateral(-use_c)
+		liquidator.add_debt(use_d)
+		liquidator.add_collateral(use_c)
 
 		if debtor.debt <= epsilon(debtor.debt):
 			debtor.new_cd(9999999)
@@ -342,6 +342,7 @@ def redemption(amount, price, cr, rf):
 
 		if cdp.debt <= 50:
 			cdp_insert(cdp)
+			print("!!! 3")
 			return
 		else:
 			if cdp.collateral * price // cdp.debt >= 100 - rf:
@@ -350,6 +351,7 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral(-((amount*100) // (price+rf)))
 					cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 					cdp_insert(cdp)
+					print("updating", cdp)
 					amount = 0
 				else:
 					d = cdp.debt
@@ -357,7 +359,7 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral(-((d*100) // (price+rf)))
 					amount -= d
 					i -= 1
-					print("redeem removing", cdp.id)
+					print("redeem removing", cdp)
 			else:
 				cdp_insert(cdp)
 
@@ -386,22 +388,23 @@ def reparametrize(id, c, d, price):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
 			else:
-				if calc_ccr(cdp, price) < cr:
-					cdp_insert(cdp)
-					return
-				else:
+				# if calc_ccr(cdp, price) < cr:
+				# 	cdp_insert(cdp)
+				# 	print("!!!")
+				# 	return
+				# else:
 					m = (cr-100) * cdp.debt // price
-
 					cdp.add_collateral(max(c, -m))
 
 	if d > 0:
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
-			if calc_ccr(cdp, price) < cr:
-				cdp_insert(cdp)
-				return
-			else:
+			# if calc_ccr(cdp, price) < cr:
+			# 	cdp_insert(cdp)
+			# 	print("!!! 2")
+			# 	return
+			# else:
 				cdp.add_debt(min(d, (cdp.collateral * price * 100 // (cr*cdp.debt) - 100) * cdp.debt // 100))
 	
 	if cdp.debt != 0:

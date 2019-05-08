@@ -94,7 +94,6 @@ void buck::run_requests(uint8_t max) {
           change_debt = asset(change_amount, BUCK);
         }
         
-        
         if (change_debt.amount > 0) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
@@ -172,7 +171,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT("redeem\n", redeem_itr->quantity)
+        PRINT("redeem", redeem_itr->quantity)
         
         // to-do sorting
         // to-do verify timestamp
@@ -227,7 +226,8 @@ void buck::run_requests(uint8_t max) {
               add_funds(debtor_itr->account, left_over_collateral, same_payer);
             }
             
-            PRINT("redeem removing", debtor_itr->id)
+            PRINT_("redeem removing")
+            debtor_itr->p();
             debtor_index.erase(debtor_itr); 
           }
           else {
@@ -235,6 +235,9 @@ void buck::run_requests(uint8_t max) {
               r.debt -= using_debt;
               r.collateral -= using_collateral;
             });
+            
+            PRINT_("redeem updating")
+            debtor_itr->p();
           }
           
           debtor_itr->p();
@@ -362,36 +365,35 @@ void buck::run_liquidation(uint8_t max) {
     
     const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
     
-    // PRINT("bad debt", bad_debt)
-    
     const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
         * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
     
     const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
-    
+
     const int64_t value2 = used_debt_amount * 10'000 / to_buck(100 - liquidation_fee);
     const int64_t used_collateral_amount = std::min(collateral_amount, value2);
     
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
-    PRINT_("liquidator")
+    PRINT_("\nliquidator")
     liquidator_itr->p();
     
     PRINT_("debtor")
     debtor_itr->p();
     
+    PRINT("\nbad debt", bad_debt)
     PRINT("bailable", bailable)
-    PRINT("used d", debt_amount)
+    PRINT("used d", used_debt_amount)
     PRINT("use c", used_collateral_amount)
     
-    if (used_debt_amount <= 0) {
-      PRINT_("L3")
-      liquidator_itr->p();
-      buy_r(_cdp.require_find(liquidator_itr->id));
-      liquidator_itr++;
-      continue;
-    }
+    // if (used_debt_amount <= 0) {
+    //   PRINT_("L3")
+    //   liquidator_itr->p();
+    //   buy_r(_cdp.require_find(liquidator_itr->id));
+    //   liquidator_itr++;
+    //   continue;
+    // }
     
     // PRINT("used_debt", used_debt_amount)
     
