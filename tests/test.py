@@ -189,7 +189,6 @@ def x_value(d, l, c, p):
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
-	# print("bad debt", int(val))
 	return int(val)
 	
 def calc_val(cdp, liquidator, price, cr, lf):
@@ -199,7 +198,7 @@ def calc_val(cdp, liquidator, price, cr, lf):
 	acr = int(liquidator.acr)
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
 	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
-	# print("bailable", bailable)
+	print("bailable", bailable)
 	return min(bad_debt, bailable, cdp.debt)
 
 # Taxes
@@ -272,7 +271,10 @@ def liquidation(price, cr, lf):
 			TEC -= liquidator.collateral * 100 // liquidator.acr
 		liquidator = update_tax(liquidator, price)
 
-		if liquidator.cd * price <= liquidator.acr + epsilon(liquidator.acr):
+		liq_ccr = 9999999
+		if liquidator.debt > 0: liq_ccr = liquidator.collateral * price / liquidator.debt
+
+		if liquidator.debt > 0 and liq_ccr <= liquidator.acr + epsilon(liquidator.acr):
 			print("L1")
 			print(liquidator)
 			i += 1
@@ -285,10 +287,11 @@ def liquidation(price, cr, lf):
 		print("debtor\n", debtor)
 
 		l = calc_lf(debtor, price, cr, lf)
-		val = calc_val(debtor, liquidator, price, cr,l) 
-		print("value2", val * 10000 // (price*(100-l)))
-		c = min(val * 10000 // (price*(100-l)), debtor.collateral)
-		print("used", c)
+		val = calc_val(debtor, liquidator, price, cr,l) # use debt
+		c = min(val * 10000 // (price*(100-l)), debtor.collateral) # use col
+
+		print("use d", val)
+		print("use c", c)
 
 		if val <= 0: # used debt
 			print("L3")
@@ -364,7 +367,7 @@ def reparametrize(id, c, d, price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
-	# print("reparametrize...")
+	print("reparam...", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -409,6 +412,7 @@ def reparametrize(id, c, d, price):
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
+	print(cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price

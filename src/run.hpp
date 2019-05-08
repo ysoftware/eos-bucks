@@ -344,7 +344,7 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     // check liquidator ccr
-    if (liquidator_itr->debt.amount > 0 && liquidator_ccr <= liquidator_itr->acr) {
+    if (liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
       PRINT_("L1\n")
       liquidator_itr->p();
       liquidator_itr++;
@@ -382,7 +382,8 @@ void buck::run_liquidation(uint8_t max) {
     debtor_itr->p();
     
     PRINT("bailable", bailable)
-    PRINT("used", debt_amount)
+    PRINT("used d", debt_amount)
+    PRINT("use c", used_collateral_amount)
     
     if (used_debt_amount <= 0) {
       PRINT_("L3")
