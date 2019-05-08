@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, 100):
+			for round_i in range(0, 20):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 
@@ -134,8 +134,6 @@ class Test(unittest.TestCase):
 								assertRaises(self, lambda: redeem(buck, user1, quantity))
 							else: redeem(buck, user1, quantity)
 
-				# test.print_table()
-
 				maketime(buck, round_time)
 				update(buck, test.price)
 				
@@ -154,8 +152,9 @@ class Test(unittest.TestCase):
 
 				# match cdps
 
-				print("\n")
+				print("\nfull table")
 				test.print_table()
+				print("\n")
 				self.compare(buck, test.table)
 
 				# match supply

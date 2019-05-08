@@ -323,8 +323,8 @@ def liquidation(price, cr, lf):
 		if debtor.debt >= 10:
 			# print("updating debtor")
 			cdp_insert(debtor)
-		# else:
-			# print("removing debtor")
+		else:
+			print("removing debtor", debtor.id)
 		i = 0
 		# print(".\n")
 	print("FAILED: END")
@@ -344,9 +344,6 @@ def redemption(amount, price, cr, rf):
 			return
 		else:
 			if cdp.collateral * price // cdp.debt >= 100 - rf:
-				# if cdp.debt <= epsilon(cdp.debt): # duplicate check
-				# 	cdp_insert(cdp)
-				# 	return
 				if cdp.debt > amount:
 					cdp.add_debt(-amount)
 					cdp.add_collateral(-((amount*100) // (price+rf)))
@@ -359,6 +356,7 @@ def redemption(amount, price, cr, rf):
 					cdp.add_collateral(-((d*100) // (price+rf)))
 					amount -= d
 					i -= 1
+					print("redeem removing", cdp.id)
 			else:
 				cdp_insert(cdp)
 

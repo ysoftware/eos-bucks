@@ -111,7 +111,6 @@ void buck::run_requests(uint8_t max) {
         cdp_itr->p();
       
         buy_r(cdp_itr);
-        PRINT_("\n")
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
@@ -227,6 +226,7 @@ void buck::run_requests(uint8_t max) {
               add_funds(debtor_itr->account, left_over_collateral, same_payer);
             }
             
+            PRINT("redeem removing", debtor_itr->id)
             debtor_index.erase(debtor_itr); 
           }
           else {
@@ -395,7 +395,7 @@ void buck::run_liquidation(uint8_t max) {
     
     const bool removed = debtor_itr->debt == used_debt;
     if (removed) {
-      // PRINT_("removing debtor")
+      PRINT("removing debtor", debtor_itr->id)
       debtor_index.erase(debtor_itr);
     }
     else {
