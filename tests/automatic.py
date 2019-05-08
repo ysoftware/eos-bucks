@@ -56,10 +56,10 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		while True:
+		for cycle_i in range(0, 50):
 
 			##################################
-			COMMENT("Initialize")
+			COMMENT(f"Cycle {cycle_i}")
 
 			try:
 				transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			for round_i in range(0, 4):
+			for round_i in range(0, 10):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1}")
 

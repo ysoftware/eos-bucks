@@ -489,10 +489,10 @@ def update_round():
 def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
-	LIQUIDATION = True
-	REDEMPTION 	= True
-	ACR 		= True
-	REPARAM 	= True
+	LIQUIDATION = False
+	REDEMPTION 	= False
+	ACR 		= False
+	REPARAM 	= False
 
 	actions = []
 	old_price = price
