@@ -83,16 +83,20 @@ void buck::run_requests(uint8_t max) {
           change_collateral = reparam_itr->change_collateral;
         }
         
+        
+        
         if (reparam_itr->change_collateral.amount < 0 && cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) { // removing collateral
           
+          const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
+
           // check ccr with new collateral
           int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
-            ccr = to_buck(cdp_itr->collateral.amount + change_collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
+            ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
           }
           
           PRINT("ccr", ccr)
-          if (ccr >= CR) {
+          if (ccr > CR) {
             const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
             const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
             const asset change = asset(change_amount, REX);
@@ -104,16 +108,19 @@ void buck::run_requests(uint8_t max) {
         }
         
         if (reparam_itr->change_debt.amount > 0) { // adding debt
+        
+          const auto new_collateral_amount = change_collateral.amount + cdp_itr->collateral.amount;
 
           int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
-            ccr = to_buck(cdp_itr->collateral.amount + change_collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
+            ccr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
           }
           
           PRINT("ccr", ccr)
-          if (ccr >= CR && cdp_itr->debt + change_debt >= MIN_DEBT) {
-            // const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100; // to-do why??
-            const int64_t max_debt = (to_buck(cdp_itr->collateral.amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
+          if (ccr > CR) {
+            PRINT_("YEEES")
+            
+            const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
             const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
             change_debt = asset(change_amount, BUCK);
           }
