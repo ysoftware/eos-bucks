@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		# while True:
+		while True:
 
 			##################################
 			COMMENT("Initialize")

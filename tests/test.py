@@ -33,7 +33,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(int(self.cd)) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
 
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
@@ -251,7 +251,6 @@ def liquidation(price, cr, lf):
 
 		debtor = table.pop(len(table)-1)
 		debtor = add_tax(debtor, price)
-		# print("debtor\n", debtor)
 
 		if debtor.debt == 0:
 			cdp_insert(debtor)
@@ -281,12 +280,15 @@ def liquidation(price, cr, lf):
 			cdp_insert(liquidator)
 			continue
 
-		# print("liquidator\n", liquidator)
+		print("liquidator\n", liquidator)
+
+		print("debtor\n", debtor)
 
 		l = calc_lf(debtor, price, cr, lf)
 		val = calc_val(debtor, liquidator, price, cr,l) 
-		# print("value2", val * 10000 // (price*(100-l)))
+		print("value2", val * 10000 // (price*(100-l)))
 		c = min(val * 10000 // (price*(100-l)), debtor.collateral)
+		print("used", c)
 
 		if val <= 0: # used debt
 			print("L3")
@@ -298,17 +300,12 @@ def liquidation(price, cr, lf):
 				TEC += liquidator.collateral * 100 // liquidator.acr
 			continue
 
-		# if liquidator.cd * price < cr * 100 + epsilon (cr*100):
-		# 	print("FAILED")
-		# 	return
-
 		debtor.add_debt(-val)
-		# print("used debt", val)
 		liquidator.add_debt(val)
 		liquidator.add_collateral(c)
 		debtor.add_collateral(-c)
 
-		if debtor.debt <= 100:
+		if debtor.debt <= epsilon(debtor.debt):
 			debtor.new_cd(9999999)
 		else:
 			debtor.new_cd(debtor.collateral * 100 / debtor.debt)
@@ -320,7 +317,8 @@ def liquidation(price, cr, lf):
 			liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
 
 		cdp_insert(liquidator)
-		if debtor.debt >= 10:
+
+		if debtor.debt > 0:
 			# print("updating debtor")
 			cdp_insert(debtor)
 		else:

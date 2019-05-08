@@ -172,7 +172,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        // PRINT_("redeem\n")
+        PRINT("redeem\n", redeem_itr->quantity)
         
         // to-do sorting
         // to-do verify timestamp
@@ -222,6 +222,7 @@ void buck::run_requests(uint8_t max) {
           
           if (debtor_itr->debt == using_debt) {
             const asset left_over_collateral = debtor_itr->collateral - using_collateral;
+            
             if (left_over_collateral.amount > 0) {
               add_funds(debtor_itr->account, left_over_collateral, same_payer);
             }
@@ -302,9 +303,6 @@ void buck::run_liquidation(uint8_t max) {
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
-    // PRINT_("debtor")
-    // debtor_itr->p();
-    
     if (debtor_itr->debt.amount == 0) {
       // PRINT_("DONE1")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
@@ -353,9 +351,6 @@ void buck::run_liquidation(uint8_t max) {
       continue;
     }
     
-    // PRINT_("liquidator")
-    // liquidator_itr->p();
-    
     int64_t liquidation_fee = LF;
     if (debtor_ccr >= 100 + LF) { liquidation_fee = LF; }
     else if (debtor_ccr < 75) { liquidation_fee = -25; }
@@ -380,8 +375,14 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
-    // PRINT("bailable", bailable)
-    // PRINT("value2", debt_amount)
+    PRINT_("liquidator")
+    liquidator_itr->p();
+    
+    PRINT_("debtor")
+    debtor_itr->p();
+    
+    PRINT("bailable", bailable)
+    PRINT("used", debt_amount)
     
     if (used_debt_amount <= 0) {
       PRINT_("L3")
