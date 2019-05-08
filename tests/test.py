@@ -340,7 +340,7 @@ def redemption(amount, price, cr, rf):
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		if cdp.debt < 50_0000:
+		if cdp.debt < 50000 + epsilon(50000):
 			cdp_insert(cdp)
 			i -= 1
 			continue
@@ -400,6 +400,7 @@ def reparametrize(id, c, d, price):
 				# 	return
 				# else:
 					m = (cr-100) * cdp.debt // price
+					print("m1", m)
 					cdp.add_collateral(max(c, -m))
 
 	if d > 0:
@@ -411,7 +412,11 @@ def reparametrize(id, c, d, price):
 			# 	print("!!! 2")
 			# 	return
 			# else:
-				cdp.add_debt(min(d, (cdp.collateral * price * 100 // (cr*cdp.debt) - 100) * cdp.debt // 100))
+				val1 = cdp.collateral * price * 100 // (cr*cdp.debt)
+				val2 = (val1 - 100)
+				m = val2 * cdp.debt // 100
+				print("m2", m)
+				cdp.add_debt(min(d, m))
 	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
