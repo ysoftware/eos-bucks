@@ -522,8 +522,8 @@ def run_round(balance):
 			if k == 0:
 				break
 
-	l_m = -1 if LIQUIDATION else 1
-	price += random.randint(l_m * price // 5, price // 5)
+	new_price = random.randint(-price // 5, price // 5) if LIQUIDATION else 1
+	price += new_price
 
 	time_now()
 	update_round()
