@@ -151,6 +151,7 @@ def cdp_insert(cdp):
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(id):
 	global table
+
 	if len(table) == 0:
 		return False
 
@@ -217,11 +218,6 @@ def add_tax(cdp, price):
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
-		# print("dt", oracle_time-cdp.time)
-		# print("interest", interest)
-		# print("collect c", -val)
-		# print("price", price)
-		# print("collect d", interest * SR // 100)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
@@ -297,15 +293,15 @@ def liquidation(price, cr, lf):
 		print("use d", use_d)
 		print("use c", use_c)
 
-		# if use_d <= 0: # used debt
-		# 	print("L3")
-		# 	print(liquidator)
-		# 	i += 1
-		# 	cdp_insert(debtor)
-		# 	cdp_insert(liquidator)
-		# 	if liquidator.debt <= epsilon(liquidator.debt):
-		# 		TEC += liquidator.collateral * 100 // liquidator.acr
-		# 	continue
+		if use_d <= 0: # used debt
+			print("L3")
+			print(liquidator)
+			i += 1
+			cdp_insert(debtor)
+			cdp_insert(liquidator)
+			if liquidator.debt <= epsilon(liquidator.debt):
+				TEC += liquidator.collateral * 100 // liquidator.acr
+			continue
 
 		debtor.add_debt(-use_d)
 		debtor.add_collateral(-use_c)
@@ -389,8 +385,8 @@ def reparametrize(id, c, d, price):
 	cr = CR
 
 	idx = cdp_index(id)
-	if idx == False: 
-		print("NO CDP FOR THIS REPARAM", id)
+	if table[idx].id != id:
+		print("NO CDP FOR THIS REPARAM", id, table[idx])
 		return
 
 	cdp = table.pop(idx)

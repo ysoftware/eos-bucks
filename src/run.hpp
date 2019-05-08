@@ -434,13 +434,13 @@ void buck::run_liquidation(uint8_t max) {
     PRINT("used d", used_debt_amount)
     PRINT("use c", used_collateral_amount)
     
-    // if (used_debt_amount <= 0) {
-    //   PRINT_("L3")
-    //   liquidator_itr->p();
-    //   buy_r(_cdp.require_find(liquidator_itr->id));
-    //   liquidator_itr++;
-    //   continue;
-    // }
+    if (used_debt_amount <= 0) {
+      PRINT_("L3")
+      liquidator_itr->p();
+      buy_r(_cdp.require_find(liquidator_itr->id));
+      liquidator_itr++;
+      continue;
+    }
     
     // PRINT("used_debt", used_debt_amount)
     
