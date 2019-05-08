@@ -403,16 +403,21 @@ def reparametrize(id, c, d, price):
 					cdp_insert(cdp)
 					return
 				else:
+					print("c", (cr-100) * cdp.debt // price)
+					print("change", -(min(-c, (cr-100) * cdp.debt // price)))
 					cdp.add_collateral(-(min(-c, (cr-100) * cdp.debt // price)))
+
 	if d > 0:
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
+			# print("d1", cdp.collateral * price // cr)
 		else:
 			if calc_ccr(cdp, price) < cr:
 				cdp_insert(cdp)
 				return
 			else:
-				cdp.add_debt(min(d, (cdp.collateral * price * 100 // (cr*cdp.debt) - 100)*cdp.debt // 100))
+				# print("d2", (cdp.collateral * price * 100 // (cr*cdp.debt) - 100) * cdp.debt // 100)
+				cdp.add_debt(min(d, (cdp.collateral * price * 100 // (cr*cdp.debt) - 100) * cdp.debt // 100))
 	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)

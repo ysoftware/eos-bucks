@@ -82,9 +82,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.r_collected += accrued_collateral_amount;
   });
   
-  // PRINT("collect d", accrued_debt_amount)
-  PRINT("collect c", accrued_collateral_amount)
-  
   // to-do check ccr for liquidation
 }
 
