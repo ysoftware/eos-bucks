@@ -173,7 +173,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT_("redeem\n")
+        // PRINT_("redeem\n")
         
         // to-do sorting
         // to-do verify timestamp
@@ -253,9 +253,6 @@ void buck::run_requests(uint8_t max) {
         update_supply(burned_debt);
         add_funds(redeem_itr->account, collateral_return, same_payer);
         redeem_itr = _redeemreq.erase(redeem_itr);
-        
-        PRINT("left", redeem_quantity)
-        PRINT_("redeem done")
       }
       else {
         // no more redemption requests
@@ -304,11 +301,12 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
-    PRINT_("debtor")
-    debtor_itr->p();
+    
+    // PRINT_("debtor")
+    // debtor_itr->p();
     
     if (debtor_itr->debt.amount == 0) {
-      PRINT_("DONE1")
+      // PRINT_("DONE1")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
@@ -320,7 +318,7 @@ void buck::run_liquidation(uint8_t max) {
     
     if (debtor_ccr >= CR) {
       
-      PRINT_("DONE2")
+      // PRINT_("DONE2")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
@@ -334,6 +332,7 @@ void buck::run_liquidation(uint8_t max) {
       continue;
     }
     
+    processed++;
     sell_r(_cdp.require_find(liquidator_itr->id));
     accrue_interest(_cdp.require_find(liquidator_itr->id));
     
@@ -348,16 +347,14 @@ void buck::run_liquidation(uint8_t max) {
     
     // check liquidator ccr
     if (liquidator_itr->debt.amount > 0 && liquidator_ccr <= liquidator_itr->acr) {
-      PRINT("ccr", liquidator_ccr)
-      PRINT("acr", liquidator_itr->acr)
+      PRINT_("L1\n")
       liquidator_itr->p();
       liquidator_itr++;
-      PRINT_("L1\n")
       continue;
     }
     
-    PRINT_("liquidator")
-    liquidator_itr->p();
+    // PRINT_("liquidator")
+    // liquidator_itr->p();
     
     int64_t liquidation_fee = LF;
     if (debtor_ccr >= 100 + LF) { liquidation_fee = LF; }
@@ -370,7 +367,7 @@ void buck::run_liquidation(uint8_t max) {
     
     const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
     
-    PRINT("bad debt", bad_debt)
+    // PRINT("bad debt", bad_debt)
     
     const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
         * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
@@ -394,15 +391,15 @@ void buck::run_liquidation(uint8_t max) {
       continue;
     }
     
-    PRINT("used_debt", used_debt_amount)
+    // PRINT("used_debt", used_debt_amount)
     
     const bool removed = debtor_itr->debt == used_debt;
     if (removed) {
-      PRINT_("removing debtor")
+      // PRINT_("removing debtor")
       debtor_index.erase(debtor_itr);
     }
     else {
-      PRINT_("updating debtor")
+      // PRINT_("updating debtor")
       debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
         r.collateral -= used_collateral;
         r.debt -= used_debt;
@@ -414,9 +411,7 @@ void buck::run_liquidation(uint8_t max) {
       r.debt += used_debt;
     });
     
-    PRINT_(".\n")
-    
+    // PRINT_(".\n")
     liquidator_itr = liquidator_index.begin();
-    processed++;
   }
 }

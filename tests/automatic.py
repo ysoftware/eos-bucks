@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		while True:
+		# while True:
 
 			##################################
 			COMMENT("Initialize")
@@ -145,7 +145,7 @@ class Test(unittest.TestCase):
 				# match taxes
 				taxation = table(buck, "taxation")
 
-				print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
+				# print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
 				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 4, "insurance pools don't match")
 				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), 0, "aggregated excesses don't match")
 				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), 0, "total excesses don't match")
@@ -183,7 +183,7 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		print(cdp)
+		# print(cdp)
 		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")

@@ -60,7 +60,6 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
 }
 
 void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
-  PRINT_("open")
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
