@@ -390,17 +390,10 @@ def reparametrize(id, c, d, price):
 
 	idx = cdp_index(id)
 	if idx == False: 
-		print("NO CDP FOR ID", idx)
 		return
 
 	cdp = table.pop(idx)
-	
-
-	if cdp.id != id:
-		print("WTF IS THIS")
-		exit()
-
-	print("reparam...", cdp)
+	print("\nreparam...", "id", id, cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -425,6 +418,7 @@ def reparametrize(id, c, d, price):
 					print("reparam quit 1")
 				else:
 					m = (cr-100) * cdp.debt // price
+					print("m", m)
 					cdp.add_collateral(max(c, -m))
 
 	if d > 0:
@@ -439,6 +433,7 @@ def reparametrize(id, c, d, price):
 				val1 = cdp.collateral * price * 100 // (cr*cdp.debt)
 				val2 = (val1 - 100)
 				m = val2 * cdp.debt // 100
+				print("m2", m, val1, val2)
 				cdp.add_debt(min(d, m))
 	
 	if cdp.debt != 0:
