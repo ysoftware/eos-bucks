@@ -49,7 +49,7 @@ class CDP:
 		self.collateral = int(collateral_new)
 	def new_time(self, time_new):
 		self.time = time_new		
-	
+
 # Functions for generation of sorted CDPs with random values
 
 def generate_liquidators(k):
@@ -147,12 +147,13 @@ def cdp_insert(cdp):
 				return 
 		table.insert(0, cdp)
 		return 
-	
+
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(id):
 	global table
 	if len(table) == 0:
 		return False
+
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
@@ -172,7 +173,7 @@ def print_table():
 def calc_ccr(cdp, price):
 	ccr = cdp.collateral * price // cdp.debt
 	return int(ccr)
-	
+
 def calc_lf(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	if ccr >= 100 + lf:
@@ -182,16 +183,16 @@ def calc_lf(cdp, price, cr, lf):
 	else: 
 		l = ccr - 100
 	return l
-	
+
 def x_value(d, l, c, p):
 		x = int((100+l)*(750*d-5*c*p) // (50000-1500*l))
 		return x
-		
+
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
 	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
 	return int(val)
-	
+
 def calc_val(cdp, liquidator, price, cr, lf):
 	l = calc_lf(cdp, price, cr, lf)
 	c = liquidator.collateral
@@ -225,7 +226,7 @@ def add_tax(cdp, price):
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
 	return cdp
-	
+
 def update_tax(cdp, price):
 	cdp = add_tax(cdp, price)
 	global IDP, AEC, CIT, TEC, oracle_time
@@ -325,7 +326,6 @@ def liquidation(price, cr, lf):
 		cdp_insert(liquidator)
 
 		if debtor.debt > 0:
-			# print("updating debtor")
 			cdp_insert(debtor)
 		else:
 			print("removing debtor", debtor.id)
@@ -387,7 +387,19 @@ def redemption(amount, price, cr, rf):
 def reparametrize(id, c, d, price):
 	global TEC, table, CR 
 	cr = CR
-	cdp = table.pop(cdp_index(id))
+
+	idx = cdp_index(id)
+	if idx == False: 
+		print("NO CDP FOR ID", idx)
+		return
+
+	cdp = table.pop(idx)
+	
+
+	if cdp.id != id:
+		print("WTF IS THIS")
+		exit()
+
 	print("reparam...", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):

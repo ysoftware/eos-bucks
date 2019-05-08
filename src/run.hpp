@@ -61,6 +61,7 @@ void buck::run_requests(uint8_t max) {
         // find cdp
         const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
         if (cdp_itr == _cdp.end()) {
+          PRINT("NO CDP FOR REPARAM", reparam_itr->cdp_id)
           reparam_itr = _reparamreq.erase(reparam_itr);
           did_work = true;
           continue;
@@ -90,7 +91,7 @@ void buck::run_requests(uint8_t max) {
           if (cdp_itr->debt.amount > 0) {
             ccr = to_buck(cdp_itr->collateral.amount + change_collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
           }
-        
+          
           PRINT("ccr", ccr)
           if (ccr >= CR) {
             const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
