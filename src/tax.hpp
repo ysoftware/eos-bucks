@@ -70,10 +70,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   update_supply(accrued_debt);
   
   PRINT("add tax", cdp_itr->id)
-  cdp_itr->p();
-  PRINT("interest", accrued_amount)
-  PRINT("dt", now-last)
-  
+
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
     r.debt += accrued_debt;
@@ -132,7 +129,7 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
     dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
   }
   PRINT("TEC-", excess)
-  PRINT("AEC+", agec)
+  PRINT("AEC-", agec)
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total -= excess;

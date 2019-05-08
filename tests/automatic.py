@@ -112,7 +112,7 @@ class Test(unittest.TestCase):
 							col = asset(action[0][2], "REX")
 							debt = asset(action[0][3], "BUCK")
 
-							print("reparam", col, debt)
+							# print("reparam", col, debt)
 							if action[1] == False:
 								assertRaises(self, lambda: reparam(buck, user1, cdp, debt, col))
 							else: reparam(buck, user1, cdp, debt, col)

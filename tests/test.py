@@ -212,14 +212,13 @@ def add_tax(cdp, price):
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
-		print(cdp)
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
-		print("dt", oracle_time-cdp.time)
-		print("interest", interest)
-		print("collect c", -val)
-		print("price", price)
+		# print("dt", oracle_time-cdp.time)
+		# print("interest", interest)
+		# print("collect c", -val)
+		# print("price", price)
 		# print("collect d", interest * SR // 100)
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
@@ -231,12 +230,12 @@ def update_tax(cdp, price):
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
-			# print("update tax", cdp.id)
+			print("update tax", cdp.id)
 			ec = cdp.collateral * 100 // cdp.acr 
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
 			dividends = IDP * AGEC // AEC
 			AEC -= AGEC
-			# print("AEC-", AGEC)
+			print("AEC-", AGEC)
 			IDP -= dividends
 			cdp.add_collateral(dividends)
 			cdp.new_time(oracle_time)
@@ -379,22 +378,29 @@ def reparametrize(id, c, d, price):
 	global TEC, table, CR 
 	cr = CR
 	cdp = table.pop(cdp_index(id))
+	print("reparametrize...")
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
+		print("TEC-", cdp.collateral * 100 // cdp.acr)
+
 	cdp = update_tax(cdp, price)
+	print(cdp)
 
 	if d < 0:
 		if cdp.debt + d > 50000 + epsilon(50000):
 			cdp.add_debt(d)
+
 	if c > 0:
 		cdp.add_collateral(c)
+
 	if c < 0:
 		if cdp.collateral + c > 5 + epsilon(5):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
 			else:
 				if calc_ccr(cdp, price) < cr:
+					cdp_insert(cdp)
 					return
 				else:
 					cdp.add_collateral(-(min(-c, (cr-100) * cdp.debt // price)))
@@ -403,17 +409,21 @@ def reparametrize(id, c, d, price):
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
 			if calc_ccr(cdp, price) < cr:
+				cdp_insert(cdp)
 				return
 			else:
 				cdp.add_debt(min(d, (cdp.collateral * price * 100 // (cr*cdp.debt) - 100)*cdp.debt // 100))
+	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 	else:
 		cdp.new_cd(9999999)
+
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
+		print("TEC+", cdp.collateral * 100 // cdp.acr)
 	cdp_insert(cdp)
-	print(cdp)
+	print(cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
@@ -459,9 +469,9 @@ def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
 	LIQUIDATION = False
-	REDEMPTION 	= True
+	REDEMPTION 	= False
 	ACR 		= False
-	REPARAM 	= False
+	REPARAM 	= True
 
 	actions = []
 	old_price = price
@@ -483,7 +493,7 @@ def run_round(balance):
 				break
 
 	# create reparam requests
-	reparam_values = [] # [i, c, d, failed]
+	reparam_values = [] # [i, c, d, success]
 	if REPARAM:
 		k = 10
 		for i in range(1, random.randint(1, length-1)):
@@ -497,8 +507,8 @@ def run_round(balance):
 				new_col = cdp.collateral + c
 				new_debt = cdp.debt + d
 				new_ccr = new_col * old_price / new_debt
-				failed = not (new_ccr < CR or new_debt < 50000 or new_debt < 50_0000 and new_debt != 0)
-				reparam_values.append([i, c, d, failed])
+				success = not (new_ccr < CR or new_debt < 50000 or new_debt < 50_0000 and new_debt != 0)
+				reparam_values.append([i, c, d, success])
 				k -= 1
 			if k == 0:
 				break
@@ -522,9 +532,9 @@ def run_round(balance):
 		i = values[0]
 		c = values[1]
 		d = values[2]
-		failed = values[3]
-		if not failed: reparametrize(i, c, d, price)
-		actions.append([["reparam", i, c, d], failed])
+		success = values[3]
+		if success: reparametrize(i, c, d, price)
+		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
 		v1 = random.randrange(100, 10_00_0000)

@@ -56,6 +56,9 @@ void buck::run_requests(uint8_t max) {
         const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
         
         accrue_interest(cdp_itr);
+        sell_r(cdp_itr);
+        
+        cdp_itr->p();
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
@@ -66,7 +69,7 @@ void buck::run_requests(uint8_t max) {
         else if (reparam_itr->change_collateral.amount < 0) { // removing collateral
           
           // check ccr with new collateral
-          int32_t ccr = 9999999;
+          int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
             const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
             ccr = to_buck(new_collateral.amount) / cdp_itr->debt.amount;
@@ -84,7 +87,7 @@ void buck::run_requests(uint8_t max) {
           // calculate with new collateral and issuing debt
           const auto new_collateral = (cdp_itr->collateral + reparam_itr->change_collateral);
           const auto new_debt = cdp_itr->debt + reparam_itr->change_debt;
-          int32_t ccr = to_buck(new_collateral.amount) / new_debt.amount;
+          const int32_t ccr = to_buck(new_collateral.amount) / new_debt.amount;
           
           const int64_t max_debt = ((ccr * 100 / CR) - 100) * new_debt.amount / 100;
           const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
@@ -102,14 +105,15 @@ void buck::run_requests(uint8_t max) {
           sub_funds(cdp_itr->account, -change_collateral);
         }
         
-        sell_r(cdp_itr);
-        
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
+        
+        cdp_itr->p();
       
         buy_r(cdp_itr);
+        PRINT_("\n")
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
