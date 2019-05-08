@@ -75,7 +75,7 @@ void buck::run_requests(uint8_t max) {
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
         
-        if (reparam_itr->change_debt.amount < 0) { // removing debt
+        if (reparam_itr->change_debt.amount < 0 && reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) { // removing debt
           change_debt = reparam_itr->change_debt; // add negative value
         }
         
@@ -83,8 +83,7 @@ void buck::run_requests(uint8_t max) {
           change_collateral = reparam_itr->change_collateral;
         }
         
-        
-        if (reparam_itr->change_collateral.amount < 0) { // removing collateral
+        if (reparam_itr->change_collateral.amount < 0 && cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) { // removing collateral
           
           // check ccr with new collateral
           int32_t ccr = CR;
@@ -121,6 +120,9 @@ void buck::run_requests(uint8_t max) {
             PRINT_("reparam quit 2")
           }
         }
+        
+        PRINT("change d", change_debt.amount)
+        PRINT("change c", change_collateral.amount)
         
         if (change_debt.amount > 0) {
           add_balance(cdp_itr->account, change_debt, same_payer, true);

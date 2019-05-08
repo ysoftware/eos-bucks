@@ -20,7 +20,7 @@ def time_now():
 	time += 1_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
-def epsilon(value): return value / 500
+def epsilon(value): return 0 # value / 500
 
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
@@ -390,6 +390,7 @@ def reparametrize(id, c, d, price):
 
 	idx = cdp_index(id)
 	if idx == False: 
+		print("NO CDP FOR THIS REPARAM", id)
 		return
 
 	cdp = table.pop(idx)
@@ -401,40 +402,50 @@ def reparametrize(id, c, d, price):
 	cdp = update_tax(cdp, price)
 
 	if d < 0:
-		if cdp.debt + d > 50000 + epsilon(50000):
+		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
+			print("change d", d)
+		else:
+			print("not enough collateral")
 
 	if c > 0:
 		cdp.add_collateral(c)
+		print("change c", c)
 
 	if c < 0:
 		print("ccr", calc_ccr(cdp, price))
 		print("----", cdp)
-		if cdp.collateral + c > 5 + epsilon(5):
+		if cdp.collateral + c >= 5 + epsilon(5):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
+				print("change c", -c)
 			else:
 				if calc_ccr(cdp, price) < cr:
 					print("reparam quit 1")
 				else:
 					m = (cr-100) * cdp.debt // price
 					print("m", m)
+					print("change c", max(c, -m))
 					cdp.add_collateral(max(c, -m))
+		else:
+			print("not enough collateral")
 
 	if d > 0:
 		print("ccr", calc_ccr(cdp, price))
 		print("----", cdp)
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
+			print("change d", min(d, cdp.collateral * price // cr))
 		else:
 			if calc_ccr(cdp, price) < cr:
 				print("reparam quit 2")
 			else:
-				val1 = cdp.collateral * price * 100 // (cr*cdp.debt)
+				val1 = cdp.collateral * price * 100 // (cr * cdp.debt)
 				val2 = (val1 - 100)
 				m = val2 * cdp.debt // 100
-				print("m2", m, val1, val2)
+				print("m2", m, val1, val2, d)
 				cdp.add_debt(min(d, m))
+				print("change d", min(d, m))
 	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
@@ -548,7 +559,10 @@ def run_round(balance):
 		c = values[1]
 		d = values[2]
 		success = values[3]
-		if success: reparametrize(i, c, d, price)
+		if success: 
+			reparametrize(i, c, d, price)
+		else:
+			print("this reparam should fail", [["reparam", i, c, d], success])
 		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
