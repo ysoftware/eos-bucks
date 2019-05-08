@@ -340,28 +340,34 @@ def redemption(amount, price, cr, rf):
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		if cdp.debt <= 50:
+		if cdp.debt < 50_0000:
 			cdp_insert(cdp)
-			print("!!! 3")
-			return
+			i -= 1
+			continue
+
+		if cdp.collateral * price // cdp.debt < 100 - rf:
+			cdp_insert(cdp)
+			i -= 1
+			continue
+
+		if cdp.debt > amount:
+			c = (amount * 100) // (price+rf)
+			d = amount
+
+			cdp.add_debt(-d)
+			cdp.add_collateral(-c)
+			cdp.new_cd(cdp.collateral * 100 / cdp.debt)
+			cdp_insert(cdp)
+			amount = 0
 		else:
-			if cdp.collateral * price // cdp.debt >= 100 - rf:
-				if cdp.debt > amount:
-					cdp.add_debt(-amount)
-					cdp.add_collateral(-((amount*100) // (price+rf)))
-					cdp.new_cd(cdp.collateral * 100 / cdp.debt)
-					cdp_insert(cdp)
-					print("updating", cdp)
-					amount = 0
-				else:
-					d = cdp.debt
-					cdp.new_debt(0)
-					cdp.add_collateral(-((d*100) // (price+rf)))
-					amount -= d
-					i -= 1
-					print("redeem removing", cdp)
-			else:
-				cdp_insert(cdp)
+			d = cdp.debt
+			c = (d * 100) // (price+rf)
+
+			cdp.new_debt(0)
+			cdp.add_collateral(-c)
+
+			amount -= d
+			i -= 1
 
 	return
 

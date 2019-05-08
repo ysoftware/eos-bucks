@@ -213,8 +213,8 @@ void buck::run_requests(uint8_t max) {
           // PRINT("redeem_quantity", redeem_quantity)
           // PRINT_("after tax") debtor_itr->p();
           // PRINT("available debt", debtor_itr->debt)
-          // PRINT("using_debt", using_debt)
-          // PRINT("using_collateral", using_collateral)
+          PRINT("using_debt", using_debt)
+          PRINT("using_collateral", using_collateral)
           
           redeem_quantity -= using_debt;
           collateral_return += using_collateral;
@@ -236,11 +236,9 @@ void buck::run_requests(uint8_t max) {
               r.collateral -= using_collateral;
             });
             
-            PRINT_("redeem updating")
+            PRINT("redeem updating", using_debt)
             debtor_itr->p();
           }
-          
-          debtor_itr->p();
           
           burned_debt += using_debt;
           
