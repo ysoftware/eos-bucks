@@ -111,8 +111,9 @@ void buck::run_requests(uint8_t max) {
           }
           
           PRINT("ccr", ccr)
-          if (ccr >= CR && cdp_itr->debt + change_debt > MIN_DEBT) {
-            const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
+          if (ccr >= CR && cdp_itr->debt + change_debt >= MIN_DEBT) {
+            // const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100; // to-do why??
+            const int64_t max_debt = (to_buck(cdp_itr->collateral.amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
             const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
             change_debt = asset(change_amount, BUCK);
           }

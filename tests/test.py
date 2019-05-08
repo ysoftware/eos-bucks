@@ -433,15 +433,12 @@ def reparametrize(id, c, d, price):
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 			print("change d", min(d, cdp.collateral * price // cr))
 		else:
-			if calc_ccr(cdp, price) < cr:
+			if (cdp.collateral * price // cdp.debt + d) < cr:
 				print("reparam quit 2")
 			else:
-				val1 = cdp.collateral * price * 100 // (cr * cdp.debt)
-				val2 = (val1 - 100)
-				m = val2 * cdp.debt // 100
-				print("m2", m, val1, val2, d)
-				cdp.add_debt(min(d, m))
-				print("change d", min(d, m))
+				val = (cdp.collateral * price * 100 // (cr * cdp.debt) - 100) * cdp.debt // 100
+				cdp.add_debt(min(d, val))
+				print("change d", min(d, val))
 	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
@@ -492,7 +489,7 @@ def run_round(balance):
 	LIQUIDATION = False
 	REDEMPTION 	= False
 	ACR 		= False
-	REPARAM 	= False
+	REPARAM 	= True
 
 	actions = []
 	old_price = price
