@@ -77,21 +77,37 @@ void buck::run_requests(uint8_t max) {
           // check ccr with new collateral
           int32_t ccr = CR;
           if (cdp_itr->debt.amount > 0) {
-            ccr = to_buck(cdp_itr->collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
+            ccr = to_buck(cdp_itr->collateral.amount + change_collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
           }
         
-          const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
-          const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
-          const asset change = asset(change_amount, REX);
-          change_collateral = change;
+          PRINT("ccr", ccr)
+          if (ccr >= CR) {
+            const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
+            const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
+            const asset change = asset(change_amount, REX);
+            change_collateral = change;
+          }
+          else {
+            PRINT_("reparam quit 1")
+          }
         }
         
         if (reparam_itr->change_debt.amount > 0) { // adding debt
 
-          const int32_t ccr = to_buck(cdp_itr->collateral.amount) / cdp_itr->debt.amount;
-          const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
-          const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
-          change_debt = asset(change_amount, BUCK);
+          int32_t ccr = CR;
+          if (cdp_itr->debt.amount > 0) {
+            ccr = to_buck(cdp_itr->collateral.amount + change_collateral.amount) / (cdp_itr->debt.amount + change_debt.amount);
+          }
+          
+          PRINT("ccr", ccr)
+          if (ccr >= CR) {
+            const int64_t max_debt = ((ccr * 100 / CR) - 100) * cdp_itr->debt.amount / 100;
+            const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
+            change_debt = asset(change_amount, BUCK);
+          }
+          else {
+            PRINT_("reparam quit 2")
+          }
         }
         
         if (change_debt.amount > 0) {
@@ -172,6 +188,12 @@ void buck::run_requests(uint8_t max) {
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
         PRINT("redeem", redeem_itr->quantity)
+        
+        PRINT_("")
+        for (auto& s: debtor_index) {
+          s.p();
+        }
+        PRINT_("")
         
         // to-do sorting
         // to-do verify timestamp

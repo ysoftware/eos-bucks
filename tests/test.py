@@ -163,6 +163,7 @@ def print_table():
 	if table == []:
 		print("table is empty")
 	else:
+		print("\nfull table:")
 		for i in range(0,len(table)):
 			print(table[i])	
 			
@@ -208,7 +209,7 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
-		# print("add tax", cdp.id)
+		print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
@@ -247,6 +248,8 @@ def liquidation(price, cr, lf):
 	if table == []: return
 	i = 0
 
+	print_table()
+
 	while i < len(table)-1:
 
 		debtor = table.pop(len(table)-1)
@@ -261,7 +264,7 @@ def liquidation(price, cr, lf):
 			return
 	
 		if table[i].acr == 0:
-			print("L2")
+			print("L2\n")
 			print(table[i])
 			cdp_insert(debtor)
 			i += 1
@@ -276,7 +279,7 @@ def liquidation(price, cr, lf):
 		if liquidator.debt > 0: liq_ccr = liquidator.collateral * price / liquidator.debt
 
 		if liquidator.debt > 0 and liq_ccr <= liquidator.acr + epsilon(liquidator.acr):
-			print("L1")
+			print("L1\n")
 			print(liquidator)
 			i += 1
 			cdp_insert(debtor)
@@ -334,6 +337,8 @@ def redemption(amount, price, cr, rf):
 	global time, table
 	i = len(table)-1
 
+	print_table()
+
 	print("\n\nredeem", amount)
 
 	while amount > epsilon(amount) and i != -1:
@@ -354,17 +359,25 @@ def redemption(amount, price, cr, rf):
 			c = (amount * 100) // (price+rf)
 			d = amount
 
+			print(cdp)
 			cdp.add_debt(-d)
 			cdp.add_collateral(-c)
 			cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 			cdp_insert(cdp)
 			amount = 0
+
+			print("redeem updating", d, c)
+			print(cdp)
 		else:
 			d = cdp.debt
 			c = (d * 100) // (price+rf)
 
+			print(cdp)
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
+
+			print("redeem removing", d, c)
+			print(cdp)
 
 			amount -= d
 			i -= 1
@@ -390,32 +403,30 @@ def reparametrize(id, c, d, price):
 		cdp.add_collateral(c)
 
 	if c < 0:
+		print("ccr", calc_ccr(cdp, price))
+		print("----", cdp)
 		if cdp.collateral + c > 5 + epsilon(5):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
 			else:
-				# if calc_ccr(cdp, price) < cr:
-				# 	cdp_insert(cdp)
-				# 	print("!!!")
-				# 	return
-				# else:
+				if calc_ccr(cdp, price) < cr:
+					print("reparam quit 1")
+				else:
 					m = (cr-100) * cdp.debt // price
-					print("m1", m)
 					cdp.add_collateral(max(c, -m))
 
 	if d > 0:
+		print("ccr", calc_ccr(cdp, price))
+		print("----", cdp)
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
-			# if calc_ccr(cdp, price) < cr:
-			# 	cdp_insert(cdp)
-			# 	print("!!! 2")
-			# 	return
-			# else:
+			if calc_ccr(cdp, price) < cr:
+				print("reparam quit 2")
+			else:
 				val1 = cdp.collateral * price * 100 // (cr*cdp.debt)
 				val2 = (val1 - 100)
 				m = val2 * cdp.debt // 100
-				print("m2", m)
 				cdp.add_debt(min(d, m))
 	
 	if cdp.debt != 0:
@@ -477,7 +488,7 @@ def run_round(balance):
 	print(f"time: {time}")
 
 	# acr requests get processed immediately
-	if ACR:
+	if ACR and length > 1:
 		k = 10
 		for i in range(0, random.randint(1, length-1)):
 			if cdp_index(i) != False:
@@ -490,7 +501,7 @@ def run_round(balance):
 
 	# create reparam requests
 	reparam_values = [] # [i, c, d, success]
-	if REPARAM:
+	if REPARAM and length > 1:
 		k = 10
 		for i in range(0, random.randint(1, length-1)):
 			idx = cdp_index(i) 
