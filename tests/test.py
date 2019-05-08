@@ -248,11 +248,12 @@ def liquidation(price, cr, lf):
 	global TEC, table
 	if table == []: return
 	i = 0
+
+	print("\nfull table:")
+	print_table()
+	print("\n")
+
 	while i < len(table)-1:
-		
-		print("\nfull table:")
-		print_table()
-		print("\n")
 
 		debtor = table.pop(len(table)-1)
 		debtor = add_tax(debtor, price)
@@ -267,74 +268,81 @@ def liquidation(price, cr, lf):
 			print("DONE2")
 			cdp_insert(debtor)
 			return
-		else:
-			if table[i].acr == 0:
-				if i == len(table)-1:
-					print("FAILED: END")
-					cdp_insert(debtor)
-					return
-				else:
-					i += 1
-					print("L2", table[i])
-					cdp_insert(debtor)
-			elif table[i].cd * price <= table[i].acr * 100 + epsilon(table[i].acr * 100):
-				print(table[i])
-				print("L1\n")
-				i += 1
+	
+		if table[i].acr == 0:
+			# if i == len(table)-1:
+			# 	print("FAILED: END")
+			# 	cdp_insert(debtor)
+			# 	return
+			# else:
+				print("L2", table[i])
 				cdp_insert(debtor)
-			else:
-				liquidator = table.pop(i)
-				if liquidator.debt <= epsilon(liquidator.debt):
-					print("sell_r")
-					TEC -= liquidator.collateral * 100 // liquidator.acr
-				liquidator = update_tax(liquidator, price)
-				print("liquidator\n", liquidator)
+				i += 1
+				continue
 
-				l = calc_lf(debtor, price, cr, lf)
-				val = calc_val(debtor, liquidator, price, cr,l) 
-				print("value2", val * 10000 // (price*(100-l)))
-				c = min(val * 10000 // (price*(100-l)), debtor.collateral)
+		liquidator = table.pop(i)
+		if liquidator.debt <= epsilon(liquidator.debt):
+			print("sell_r")
+			TEC -= liquidator.collateral * 100 // liquidator.acr
+		liquidator = update_tax(liquidator, price)
 
-				if val <= 0:
-					print("looking for liquidators2\n")
-					i += 1
-					cdp_insert(debtor)
-					cdp_insert(liquidator)
-					if liquidator.debt <= epsilon(liquidator.debt):
-						print("sell_r")
-						TEC -= liquidator.collateral * 100 // liquidator.acr
-					continue
+		if liquidator.cd * price <= liquidator.acr * 100 + epsilon(liquidator.acr * 100):
+			print(liquidator)
+			print("L1\n")
+			i += 1
+			cdp_insert(debtor)
+			cdp_insert(liquidator)
+			continue
 
-				if liquidator.cd * price < cr * 100 + epsilon (cr*100):
-					print("FAILED")
-					return
+		print("liquidator\n", liquidator)
 
-				debtor.add_debt(-val)
-				print("used debt", val)
-				liquidator.add_debt(val)
-				liquidator.add_collateral(c)
-				debtor.add_collateral(-c)
+		l = calc_lf(debtor, price, cr, lf)
+		val = calc_val(debtor, liquidator, price, cr,l) 
+		print("value2", val * 10000 // (price*(100-l)))
+		c = min(val * 10000 // (price*(100-l)), debtor.collateral)
 
-				if debtor.debt <= 100:
-					debtor.new_cd(9999999)
-				else:
-					debtor.new_cd(debtor.collateral * 100 / debtor.debt)
-				if liquidator.debt <= epsilon(liquidator.debt):
-					print("buy_r")
-					TEC += liquidator.collateral * 100 // liquidator.acr
-					liquidator.new_cd(9999999)
-				else:
-					liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
+		if val <= 0: # used debt
+			print("L3\n")
+			i += 1
+			cdp_insert(debtor)
+			cdp_insert(liquidator)
+			if liquidator.debt <= epsilon(liquidator.debt):
+				print("buy_r")
+				TEC += liquidator.collateral * 100 // liquidator.acr
+			continue
 
-				cdp_insert(liquidator)
-				if debtor.debt >= 10:
-					cdp_insert(debtor)
-				i = 0
-				print(".\n")
+		# if liquidator.cd * price < cr * 100 + epsilon (cr*100):
+		# 	print("FAILED")
+		# 	return
 
-				if i == len(table):
-					print("LIQ END")
-					return
+		debtor.add_debt(-val)
+		print("used debt", val)
+		liquidator.add_debt(val)
+		liquidator.add_collateral(c)
+		debtor.add_collateral(-c)
+
+		if debtor.debt <= 100:
+			debtor.new_cd(9999999)
+		else:
+			debtor.new_cd(debtor.collateral * 100 / debtor.debt)
+
+		if liquidator.debt <= epsilon(liquidator.debt):
+			print("buy_r")
+			TEC += liquidator.collateral * 100 // liquidator.acr
+			liquidator.new_cd(9999999)
+		else:
+			liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
+
+		cdp_insert(liquidator)
+		if debtor.debt >= 10:
+			print("updating debtor")
+			cdp_insert(debtor)
+		else:
+			print("removing debtor")
+
+		i = 0
+		print(".\n")
+	print("FAILED: END")
 
 def redemption(amount, price, cr, rf):
 	global time, table
