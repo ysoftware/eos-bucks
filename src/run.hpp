@@ -337,8 +337,19 @@ void buck::run_liquidation(uint8_t max) {
     sell_r(_cdp.require_find(liquidator_itr->id));
     accrue_interest(_cdp.require_find(liquidator_itr->id));
     
+    const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
+    const int64_t liquidator_debt = liquidator_itr->debt.amount;
+    const int64_t liquidator_acr = liquidator_itr->acr;
+    
+    int64_t liquidator_ccr = 9999999;
+    if (liquidator_debt > 0) {
+      liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
+    }
+    
     // check liquidator ccr
-    if (liquidator_itr->debt.amount > 0 && to_buck(liquidator_itr->collateral.amount) / liquidator_itr->debt.amount <= liquidator_itr->acr) {
+    if (liquidator_itr->debt.amount > 0 && liquidator_ccr <= liquidator_itr->acr) {
+      PRINT("ccr", liquidator_ccr)
+      PRINT("acr", liquidator_itr->acr)
       liquidator_itr->p();
       liquidator_itr++;
       PRINT_("L1\n")
@@ -360,15 +371,6 @@ void buck::run_liquidation(uint8_t max) {
     const int64_t bad_debt = ((CR - debtor_ccr) * debt_amount) / 100 + x;
     
     PRINT("bad debt", bad_debt)
-    
-    const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
-    const int64_t liquidator_debt = liquidator_itr->debt.amount;
-    const int64_t liquidator_acr = liquidator_itr->acr;
-    
-    int64_t liquidator_ccr = 9999999;
-    if (liquidator_debt > 0) {
-      liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
-    }
     
     const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
         * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);

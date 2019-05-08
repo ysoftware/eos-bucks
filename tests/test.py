@@ -270,15 +270,10 @@ def liquidation(price, cr, lf):
 			return
 	
 		if table[i].acr == 0:
-			# if i == len(table)-1:
-			# 	print("FAILED: END")
-			# 	cdp_insert(debtor)
-			# 	return
-			# else:
-				print("L2", table[i])
-				cdp_insert(debtor)
-				i += 1
-				continue
+			print("L2", table[i])
+			cdp_insert(debtor)
+			i += 1
+			continue
 
 		liquidator = table.pop(i)
 		if liquidator.debt <= epsilon(liquidator.debt):
@@ -286,7 +281,7 @@ def liquidation(price, cr, lf):
 			TEC -= liquidator.collateral * 100 // liquidator.acr
 		liquidator = update_tax(liquidator, price)
 
-		if liquidator.cd * price <= liquidator.acr * 100 + epsilon(liquidator.acr * 100):
+		if liquidator.cd * price <= liquidator.acr + epsilon(liquidator.acr):
 			print(liquidator)
 			print("L1\n")
 			i += 1
