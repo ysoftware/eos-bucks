@@ -37,7 +37,13 @@ void buck::run_requests(uint8_t max) {
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
         
-        const auto cdp_itr = _cdp.require_find(close_itr->cdp_id, "to-do: remove. no cdp for this close request");
+        // find cdp
+        const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
+        if (cdp_itr == _cdp.end()) {
+          close_itr = _closereq.erase(close_itr);
+          did_work = true;
+          continue;
+        }
         
         sell_r(cdp_itr);
         
@@ -53,7 +59,12 @@ void buck::run_requests(uint8_t max) {
         PRINT_("reparam")
       
         // find cdp
-        const auto cdp_itr = _cdp.require_find(reparam_itr->cdp_id);
+        const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
+        if (cdp_itr == _cdp.end()) {
+          reparam_itr = _reparamreq.erase(reparam_itr);
+          did_work = true;
+          continue;
+        }
         
         accrue_interest(cdp_itr);
         sell_r(cdp_itr);
@@ -140,7 +151,14 @@ void buck::run_requests(uint8_t max) {
         PRINT_("\nmaturity req")
         
         // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
-        const auto cdp_itr = _cdp.require_find(maturity_itr->cdp_id, "to-do: remove. no cdp for this maturity");
+         
+        // find cdp
+        const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
+        if (cdp_itr == _cdp.end()) {
+          maturity_itr = maturity_index.erase(maturity_itr);
+          did_work = true;
+          continue;
+        }
         
         // calculate new debt and collateral
         asset change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
@@ -312,6 +330,12 @@ void buck::run_liquidation(uint8_t max) {
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   auto liquidator_itr = liquidator_index.begin();
   
+        PRINT_("")
+        for (auto& s: debtor_index) {
+          s.p();
+        }
+        PRINT_("")
+        
   // loop through liquidators
   while (max > processed) {
     

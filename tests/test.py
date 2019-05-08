@@ -98,7 +98,7 @@ def gen(k, n):
 	table = liquidators + debtors
 
 # Function for inserting CDP into the table
-	
+
 def cdp_insert(cdp):
 	global table
 
@@ -166,11 +166,11 @@ def print_table():
 		print("\nfull table:")
 		for i in range(0,len(table)):
 			print(table[i])	
-			
+
 # Helper functions for calculations
 
 def calc_ccr(cdp, price):
-	ccr = cdp.cd * price // 100
+	ccr = cdp.collateral * price // cdp.debt
 	return int(ccr)
 	
 def calc_lf(cdp, price, cr, lf):
