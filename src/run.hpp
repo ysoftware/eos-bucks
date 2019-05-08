@@ -91,12 +91,12 @@ void buck::run_requests(uint8_t max) {
 
           // check ccr with new collateral
           int32_t ccr = CR;
-          if (cdp_itr->debt.amount > 0) {
+          if (new_debt_amount > 0) {
             ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
           }
           
           PRINT("ccr", ccr)
-          if (ccr > CR) {
+          if (ccr >= CR) {
             const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
             const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
             const asset change = asset(change_amount, REX);
@@ -117,7 +117,7 @@ void buck::run_requests(uint8_t max) {
           }
           
           PRINT("ccr", ccr)
-          if (ccr > CR) {
+          if (ccr >= CR) {
             PRINT_("YEEES")
             
             const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;

@@ -410,7 +410,7 @@ def reparametrize(id, c, d, price):
 
 	if c < 0:
 		print("ccr", calc_ccr(cdp, price))
-		if cdp.collateral + c >= 5 + epsilon(5):
+		if cdp.collateral + c >= 50000 + epsilon(50000):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
 				print("1 change c", -c)
@@ -425,13 +425,15 @@ def reparametrize(id, c, d, price):
 		else:
 			print("not enough collateral")
 
+	print(cdp)
+
 	if d > 0:
 		print("ccr", calc_ccr(cdp, price))
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 			print("2 change d", min(d, cdp.collateral * price // cr))
 		else:
-			if (cdp.collateral * price // cdp.debt + d) < cr:
+			if calc_ccr(cdp, price) < cr:
 				print("reparam quit 2")
 			else:
 				val = (cdp.collateral * price * 100 // (cr * cdp.debt) - 100) * cdp.debt // 100
