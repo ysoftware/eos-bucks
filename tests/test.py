@@ -54,7 +54,7 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(1000000,10000000,10000)
+	rand = random.randrange(100_0000,1_000_0000, 1_0000)
 	rand2 = random.randint(150,200)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
@@ -251,31 +251,34 @@ def liq_sort(x):
 	if x.debt == 0:
 		return MAX + x.collateral * 100_000_000 // x.acr
 
-	cd = x.collateral * 100_000_000 // x.debt
+	cd = x.collateral * 1_000_000_000_000 // x.debt
 	return MAX * 2 - cd // x.acr
 
 def liquidation(price, cr, lf):	
 	print("liquidation")
 	global TEC, table
 	if table == []: return
-	i = 0
+	# i = 0
 
 	while True:
 
 		liquidators = sorted(table, key=liq_sort)
+		print("liquidators")
 		print_table(liquidators)
 
 		debtor = table.pop(len(table)-1)
-		idx = cdp_index(liquidators[i])
+		idx = cdp_index(liquidators[0].id)
 
-		if i >= len(table) or debtor.id == table[idx].id: 
-			cdp_insert(debtor)
+		# if i >= len(table) or debtor.id == table[idx].id: 
+		# 	cdp_insert(debtor)
 
-			print("\n\n")
-			print(f"liquidator", table[idx])
-			print("debtor", debtor)
-			print("FAILED: END")
-			return # failed
+		# 	print("\n\n")
+		# 	print(f"liquidator", table[idx])
+		# 	print("debtor", debtor)
+		# 	print("FAILED: END")
+		# 	return # failed
+
+		print("liq sort:", liq_sort(liquidators[0]))
 
 		debtor = add_tax(debtor, price)
 
@@ -299,7 +302,9 @@ def liquidation(price, cr, lf):
 			return
 
 		liquidator = table.pop(idx)
+
 		if liquidator.debt <= epsilon(liquidator.debt):
+			print("sellr")
 			TEC -= liquidator.collateral * 100 // liquidator.acr
 		liquidator = update_tax(liquidator, price)
 
@@ -321,24 +326,21 @@ def liquidation(price, cr, lf):
 		print("use d", use_d)
 		print("use c", use_c, "\n")
 
-		if use_d <= 0: # used debt
-			print("L3")
-			print(liquidator)
-			i += 1
-			cdp_insert(debtor)
-			cdp_insert(liquidator)
-			if liquidator.debt <= epsilon(liquidator.debt):
-				TEC += liquidator.collateral * 100 // liquidator.acr
-			continue
+		# if use_d <= 0: # used debt
+		# 	print("L3")
+		# 	print(liquidator)
+		# 	# i += 1
+		# 	cdp_insert(debtor)
+		# 	cdp_insert(liquidator)
+		# 	if liquidator.debt <= epsilon(liquidator.debt):
+		# 		TEC += liquidator.collateral * 100 // liquidator.acr
+		# 		print("buyr")
+		# 	continue
 
 		debtor.add_debt(-use_d)
 		debtor.add_collateral(-use_c)
 		liquidator.add_debt(use_d)
 		liquidator.add_collateral(use_c)
-
-		liquidators[i].add_debt(use_d)
-		liquidators[i].add_collateral(use_c)
-
 
 		if debtor.debt <= epsilon(debtor.debt):
 			debtor.new_cd(9999999)
@@ -347,11 +349,10 @@ def liquidation(price, cr, lf):
 
 		if liquidator.debt <= epsilon(liquidator.debt):
 			TEC += liquidator.collateral * 100 // liquidator.acr
+			print("buyr")
 			liquidator.new_cd(9999999)
-			liquidators[i].new_cd(9999999)
 		else:
 			liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
-			liquidators[i].new_cd(liquidator.collateral * 100 / liquidator.debt)
 
 		cdp_insert(liquidator)
 
@@ -359,7 +360,7 @@ def liquidation(price, cr, lf):
 			cdp_insert(debtor)
 		else:
 			print("removing debtor", debtor.id)
-		i = 0
+		# i = 0
 		# print(".\n")
 
 def redemption(amount, price, cr, rf):
@@ -619,7 +620,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 2
+	x = 1
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

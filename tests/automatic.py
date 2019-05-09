@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		for cycle_i in range(0, 50):
+		for cycle_i in range(1, 50):
 
 			##################################
 			COMMENT(f"Cycle {cycle_i}")
@@ -173,6 +173,8 @@ class Test(unittest.TestCase):
 
 		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
+
+		test.print_table(test_liquidators)
 		top_liquidators = get_liquidators(buck, limit=30)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]

@@ -337,18 +337,24 @@ void buck::run_liquidation(uint8_t max) {
   
   // loop through liquidators
   while (max > processed) {
-    
+    const auto liquidator_itr = liquidator_index.begin();
     const auto debtor_itr = debtor_index.begin();
     
-    if (liquidator_itr == liquidator_index.end() || debtor_itr->id == liquidator_itr->id) {
-      PRINT_("FAILED: END")
-      set_liquidation_status(LiquidationStatus::failed);
-      run_requests(max - processed);
-      return;
-    }
+    PRINT_("LIQS")
+    for (auto& s: liquidator_index) { s.p(); }
+    PRINT_("---")
+    
+    // if (liquidator_itr == liquidator_index.end() || debtor_itr->id == liquidator_itr->id) {
+    //   PRINT_("FAILED: END")
+    //   set_liquidation_status(LiquidationStatus::failed);
+    //   run_requests(max - processed);
+    //   return;
+    // }
     
     PRINT_("\nliquidator")
     liquidator_itr->p();
+    
+    PRINT("liq sort", liquidator_itr->liquidator())
     
     PRINT_("debtor")
     debtor_itr->p();
@@ -432,13 +438,13 @@ void buck::run_liquidation(uint8_t max) {
     PRINT("use c", used_collateral_amount)
     PRINT_("")
     
-    if (used_debt_amount <= 0) {
-      PRINT_("L3")
-      liquidator_itr->p();
-      buy_r(_cdp.require_find(liquidator_itr->id));
-      liquidator_itr++;
-      continue;
-    }
+    // if (used_debt_amount <= 0) {
+    //   PRINT_("L3")
+    //   liquidator_itr->p();
+    //   buy_r(_cdp.require_find(liquidator_itr->id));
+    //   liquidator_itr++;
+    //   continue;
+    // }
     
     // PRINT("used_debt", used_debt_amount)
     
@@ -461,6 +467,6 @@ void buck::run_liquidation(uint8_t max) {
     });
     
     // PRINT_(".\n")
-    liquidator_itr = liquidator_index.begin();
+    // liquidator_itr = liquidator_index.begin();
   }
 }
