@@ -55,7 +55,7 @@ class CDP:
 def generate_liquidators(k):
 	global TEC, time
 	rand = random.randrange(100_0000, 10_000_0000, 1)
-	rand2 = random.randint(150,200)
+	rand2 = random.randint(150, 500)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
@@ -70,7 +70,7 @@ def generate_liquidators(k):
 def generate_debtors(k, n):
 	global time, price
 	rand = random.randrange(100_0000, 10_000_0000, 1) # collateral
-	rand2 = random.randint(150,155) # cd
+	rand2 = random.randint(150, 500) # cd
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
@@ -247,28 +247,29 @@ def update_tax(cdp, price):
 
 # Contract functions
 
-def deb_sort(x): # in reverse
-	MAX = 100_000_000_000_000
-	id = x.id / 100_000
+def liq_sort(x): return ls(x.collateral, x.debt, x.acr, x.id)
+def deb_sort(x): return ds(x.collateral, x.debt, x.id)
 
-	if x.debt == 0 or x.collateral == 0:
+def ds(collateral, debt, id): # in reverse
+	MAX = 100_000_000_000_000_000
+
+	if debt == 0 or collateral == 0:
 		return -id
 
-	cd = x.collateral * 10_000_000_000_000 // x.debt
-	return MAX - cd - id
+	cd = collateral * 10_000_000_000_000 // debt
+	return MAX - cd    #* 100 - id
 
-def liq_sort(x):
-	MAX = 100_000_000_000_000
-	id = x.id / 100_000 # cdp id to the end of the index to match multi_index
+def ls(collateral, debt, acr, id):
+	MAX = 100_000_000_000_000_000
 
-	if x.acr == 0 or x.collateral == 0:
-		return MAX * 3
+	if acr == 0 or collateral == 0:
+		return MAX * 3    #* 100 + id
 
-	if x.debt == 0:
-		return MAX + x.collateral * 100_000_000 // x.acr + id
+	if debt == 0:
+		return MAX + collateral * 100_000_000 // acr   #* 100 + id
 
-	cd = x.collateral * 10_000_000_000_000 // x.debt + id
-	return MAX * 2 - cd // x.acr + id
+	cd = collateral * 10_000_000_000_000 // debt
+	return MAX * 2 - cd // acr   #* 100 + id
 
 def liquidation(price, cr, lf):	
 	# print("liquidation")
@@ -612,7 +613,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 5
+	x = 3
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()
