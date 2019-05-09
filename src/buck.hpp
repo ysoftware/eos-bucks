@@ -164,12 +164,12 @@ CONTRACT buck : public contract {
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
         
-        static const uint64_t MAX = 100'000'000'000'000;
+        static const uint64_t MAX = 1'000'000'000'000'000'000; // almost uint64max
         
         if (acr == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
         
-        if (debt.amount == 0) return MAX + uint128_t(collateral.amount) * 100'000'000 / acr; // ascending c/acr
-        
+        if (debt.amount == 0) return MAX + uint128_t(collateral.amount) * 10'000 / acr; // ascending c/acr
+
         const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000 / debt.amount;
         return MAX * 2 - cd / acr; // ascending cd/acr
       }
@@ -179,7 +179,7 @@ CONTRACT buck : public contract {
         
         if (debt.amount == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
         
-        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000 / debt.amount;
+        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000'000 / debt.amount;
         return cd; // ascending cd
       }
     };

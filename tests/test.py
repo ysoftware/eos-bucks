@@ -251,25 +251,25 @@ def liq_sort(x): return ls(x.collateral, x.debt, x.acr, x.id)
 def deb_sort(x): return ds(x.collateral, x.debt, x.id)
 
 def ds(collateral, debt, id): # in reverse
-	MAX = 100_000_000_000_000_000
+	MAX = 100_000_000_000_000_000_000
 
 	if debt == 0 or collateral == 0:
 		return -id
 
-	cd = collateral * 10_000_000_000_000 // debt
-	return MAX - cd    #* 100 - id
+	cd = collateral * 10_000_000_000_000_000 // debt
+	return MAX - cd    * 1_000 - id
 
 def ls(collateral, debt, acr, id):
-	MAX = 100_000_000_000_000_000
+	MAX = 100_000_000_000_000_000_000
 
 	if acr == 0 or collateral == 0:
-		return MAX * 3    #* 100 + id
+		return MAX * 3    * 1_000 + id
 
 	if debt == 0:
-		return MAX + collateral * 100_000_000 // acr   #* 100 + id
+		return MAX + collateral * 10_000 // acr   * 1_000 + id
 
 	cd = collateral * 10_000_000_000_000 // debt
-	return MAX * 2 - cd // acr   #* 100 + id
+	return MAX * 2 - cd // acr   * 1_000 + id
 
 def liquidation(price, cr, lf):	
 	# print("liquidation")
