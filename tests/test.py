@@ -204,8 +204,8 @@ def calc_val(cdp, liquidator, price, cr, lf):
 	acr = int(liquidator.acr)
 	bad_debt = calc_bad_debt(cdp, price, cr, l)
 	bailable = ((c*price)-(d*acr)) * (100-l) // (acr*(100-l)-10_000)
-	print("bad_debt", bad_debt)
-	print("bailable", bailable)
+	# print("bad_debt", bad_debt)
+	# print("bailable", bailable)
 	return min(bad_debt, bailable, cdp.debt)
 
 # Taxes
@@ -263,8 +263,8 @@ def liquidation(price, cr, lf):
 	while True:
 
 		liquidators = sorted(table, key=liq_sort)
-		print("liquidators")
-		print_table(liquidators)
+		# print("liquidators")
+		# print_table(liquidators)
 
 		debtor = table.pop(len(table)-1)
 		idx = cdp_index(liquidators[0].id)
@@ -278,26 +278,24 @@ def liquidation(price, cr, lf):
 		# 	print("FAILED: END")
 		# 	return # failed
 
-		print("liq sort:", liq_sort(liquidators[0]))
-
 		debtor = add_tax(debtor, price)
 
-		print("\nliquidator\n", table[idx])
-		print("debtor\n", debtor)
+		# print("\nliquidator\n", table[idx])
+		# print("debtor\n", debtor)
 
 		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
-			print("DONE1")
+			# print("DONE1")
 			return # done
 
 		if debtor.collateral * price // debtor.debt >= CR  - epsilon(CR):
 			cdp_insert(debtor)
-			print("DONE2")
+			# print("DONE2")
 			return # done
 	
 		if table[idx].acr == 0:
 			print(table[idx])
-			print("NO ACR\n")
+			# print("NO ACR\n")
 			cdp_insert(debtor)
 			return
 
@@ -311,10 +309,10 @@ def liquidation(price, cr, lf):
 		liq_ccr = 9999999
 		if liquidator.debt > epsilon(liquidator.debt):
 			liq_ccr = liquidator.collateral * price // liquidator.debt
-		print("ccr", liq_ccr)
+		# print("ccr", liq_ccr)
 
 		if liq_ccr < CR or liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
-			print("FAILED: NO MORE GOOD LIQUIDATORS\n")
+			# print("FAILED: NO MORE GOOD LIQUIDATORS\n")
 			cdp_insert(liquidator)
 			cdp_insert(debtor)
 			return
@@ -323,8 +321,8 @@ def liquidation(price, cr, lf):
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
 		use_c = min(use_d * 10000 // (price*(100-l)), debtor.collateral) # use col
 
-		print("use d", use_d)
-		print("use c", use_c, "\n")
+		# print("use d", use_d)
+		# print("use c", use_c, "\n")
 
 		# if use_d <= 0: # used debt
 		# 	print("L3")
@@ -358,8 +356,8 @@ def liquidation(price, cr, lf):
 
 		if debtor.debt > 0:
 			cdp_insert(debtor)
-		else:
-			print("removing debtor", debtor.id)
+		# else:
+			# print("removing debtor", debtor.id)
 		# i = 0
 		# print(".\n")
 

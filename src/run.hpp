@@ -340,9 +340,9 @@ void buck::run_liquidation(uint8_t max) {
     const auto liquidator_itr = liquidator_index.begin();
     const auto debtor_itr = debtor_index.begin();
     
-    PRINT_("LIQS")
-    for (auto& s: liquidator_index) { s.p(); }
-    PRINT_("---")
+    // PRINT_("LIQS")
+    // for (auto& s: liquidator_index) { s.p(); }
+    // PRINT_("---")
     
     // if (liquidator_itr == liquidator_index.end() || debtor_itr->id == liquidator_itr->id) {
     //   PRINT_("FAILED: END")
@@ -351,13 +351,13 @@ void buck::run_liquidation(uint8_t max) {
     //   return;
     // }
     
-    PRINT_("\nliquidator")
-    liquidator_itr->p();
+    // PRINT_("\nliquidator")
+    // liquidator_itr->p();
     
-    PRINT("liq sort", liquidator_itr->liquidator())
+    // PRINT("liq sort", liquidator_itr->liquidator())
     
-    PRINT_("debtor")
-    debtor_itr->p();
+    // PRINT_("debtor")
+    // debtor_itr->p();
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
@@ -404,7 +404,7 @@ void buck::run_liquidation(uint8_t max) {
     PRINT("ccr", liquidator_ccr)
     
     if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
-      PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
+      // PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
       set_liquidation_status(LiquidationStatus::failed);
       run_requests(max - processed);
       return;
@@ -432,11 +432,11 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
-    PRINT("\nbad debt", bad_debt)
-    PRINT("bailable", bailable)
-    PRINT("used d", used_debt_amount)
-    PRINT("use c", used_collateral_amount)
-    PRINT_("")
+    // PRINT("\nbad debt", bad_debt)
+    // PRINT("bailable", bailable)
+    // PRINT("used d", used_debt_amount)
+    // PRINT("use c", used_collateral_amount)
+    // PRINT_("")
     
     // if (used_debt_amount <= 0) {
     //   PRINT_("L3")

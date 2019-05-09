@@ -86,7 +86,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Initial matching")
 			
-			test.print_table()
+			# test.print_table()
 			self.compare(buck, test.table)
 
 			##################################
@@ -154,7 +154,7 @@ class Test(unittest.TestCase):
 
 				# match cdps
 
-				test.print_table()
+				# test.print_table()
 				self.compare(buck, test.table)
 
 				# match supply
@@ -174,7 +174,7 @@ class Test(unittest.TestCase):
 		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
 
-		test.print_table(test_liquidators)
+		# test.print_table(test_liquidators)
 		top_liquidators = get_liquidators(buck, limit=30)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
@@ -184,15 +184,15 @@ class Test(unittest.TestCase):
 
 
 	def match(self, cdp, row):
-		print(cdp)
-		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
+		# print(cdp)
+		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 4, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 4, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
-		print(f"+ Matched cdp #{cdp.id}")
+		# print(f"+ Matched cdp #{cdp.id}")
 
 
 # main
