@@ -347,11 +347,11 @@ void buck::run_liquidation(uint8_t max) {
       return;
     }
     
-    // PRINT_("\nliquidator")
-    // liquidator_itr->p();
+    PRINT_("\nliquidator")
+    liquidator_itr->p();
     
-    // PRINT_("debtor")
-    // debtor_itr->p();
+    PRINT_("debtor")
+    debtor_itr->p();
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
@@ -375,11 +375,11 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     // check acr
-    if (liquidator_itr->acr < CR) {
+    if (liquidator_itr->acr == 0) {
       PRINT_("NO ACR")
-      liquidator_itr->p();
-      liquidator_itr++;
-      continue;
+      set_liquidation_status(LiquidationStatus::failed);
+      run_requests(max - processed);
+      return;
     }
     
     processed++;
@@ -395,21 +395,13 @@ void buck::run_liquidation(uint8_t max) {
       liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
     }
     
-    // PRINT("ccr", liquidator_ccr)
+    PRINT("ccr", liquidator_ccr)
     
-    if (liquidator_ccr < CR) {
+    if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
       PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
       set_liquidation_status(LiquidationStatus::failed);
       run_requests(max - processed);
       return;
-    }
-    
-    // check liquidator ccr
-    if (liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
-      PRINT_("CCR LOWER THAN ACR\n")
-      liquidator_itr->p();
-      liquidator_itr++;
-      continue;
     }
     
     int64_t liquidation_fee = LF;

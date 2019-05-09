@@ -161,14 +161,16 @@ def cdp_index(id):
 			return i
 	return False
 
-def print_table():
+def print_table(t=None):
 	global table
-	if table == []:
+	if t == None: t = table
+	if t == []:
 		print("table is empty")
 	else:
 		print("\nfull table:")
-		for i in range(0,len(table)):
-			print(table[i])	
+		for i in range(0,len(t)):
+			print(t[i])
+	print("---")
 
 # Helper functions for calculations
 
@@ -240,30 +242,44 @@ def update_tax(cdp, price):
 
 # Contract functions
 
+def liq_sort(x):
+	MAX = 100_000_000_000_000;
+
+	if x.acr == 0 or x.collateral == 0:
+		return MAX * 3
+
+	if x.debt == 0:
+		return MAX + x.collateral * 100_000_000 // x.acr
+
+	cd = x.collateral * 100_000_000 // x.debt
+	return MAX * 2 - cd // x.acr
+
 def liquidation(price, cr, lf):	
 	print("liquidation")
 	global TEC, table
 	if table == []: return
 	i = 0
 
-	# print_table()
-
 	while True:
 
-		debtor = table.pop(len(table)-1)
+		liquidators = sorted(table, key=liq_sort)
+		print_table(liquidators)
 
-		if i >= len(table) or debtor.id == table[i].id: 
+		debtor = table.pop(len(table)-1)
+		idx = cdp_index(liquidators[i])
+
+		if i >= len(table) or debtor.id == table[idx].id: 
 			cdp_insert(debtor)
 
 			print("\n\n")
-			print(f"liquidator", table[i])
+			print(f"liquidator", table[idx])
 			print("debtor", debtor)
 			print("FAILED: END")
 			return # failed
 
 		debtor = add_tax(debtor, price)
 
-		print("\nliquidator\n", table[i])
+		print("\nliquidator\n", table[idx])
 		print("debtor\n", debtor)
 
 		if debtor.debt <= epsilon(debtor.debt):
@@ -276,14 +292,13 @@ def liquidation(price, cr, lf):
 			print("DONE2")
 			return # done
 	
-		if table[i].acr < CR:
-			print(table[i])
+		if table[idx].acr == 0:
+			print(table[idx])
 			print("NO ACR\n")
 			cdp_insert(debtor)
-			i += 1
-			continue
+			return
 
-		liquidator = table.pop(i)
+		liquidator = table.pop(idx)
 		if liquidator.debt <= epsilon(liquidator.debt):
 			TEC -= liquidator.collateral * 100 // liquidator.acr
 		liquidator = update_tax(liquidator, price)
@@ -293,19 +308,11 @@ def liquidation(price, cr, lf):
 			liq_ccr = liquidator.collateral * price // liquidator.debt
 		print("ccr", liq_ccr)
 
-		if liq_ccr < CR:
+		if liq_ccr < CR or liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
 			print("FAILED: NO MORE GOOD LIQUIDATORS\n")
 			cdp_insert(liquidator)
 			cdp_insert(debtor)
 			return
-
-		if liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
-			print(liquidator)
-			print("CCR LOWER THAN ACR\n")
-			i += 1
-			cdp_insert(debtor)
-			cdp_insert(liquidator)
-			continue
 
 		l = calc_lf(debtor, price, cr, lf)
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
@@ -329,6 +336,10 @@ def liquidation(price, cr, lf):
 		liquidator.add_debt(use_d)
 		liquidator.add_collateral(use_c)
 
+		liquidators[i].add_debt(use_d)
+		liquidators[i].add_collateral(use_c)
+
+
 		if debtor.debt <= epsilon(debtor.debt):
 			debtor.new_cd(9999999)
 		else:
@@ -337,8 +348,10 @@ def liquidation(price, cr, lf):
 		if liquidator.debt <= epsilon(liquidator.debt):
 			TEC += liquidator.collateral * 100 // liquidator.acr
 			liquidator.new_cd(9999999)
+			liquidators[i].new_cd(9999999)
 		else:
 			liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
+			liquidators[i].new_cd(liquidator.collateral * 100 / liquidator.debt)
 
 		cdp_insert(liquidator)
 
@@ -508,7 +521,7 @@ def run_round(balance):
 
 	LIQUIDATION = True
 	REDEMPTION 	= False
-	ACR 		= True
+	ACR 		= False
 	REPARAM 	= False
 
 	actions = []
@@ -606,7 +619,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 5
+	x = 2
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

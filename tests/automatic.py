@@ -86,6 +86,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Initial matching")
 			
+			test.print_table()
 			self.compare(buck, test.table)
 
 			##################################
@@ -153,15 +154,12 @@ class Test(unittest.TestCase):
 
 				# match cdps
 
-				print("\nfull table")
 				test.print_table()
-				print("\n")
 				self.compare(buck, test.table)
 
 				# match supply
 
 				COMMENT(f"Round {round_i+1} complete")
-
 
 
 	def compare(self, buck, cdp_table):
@@ -174,11 +172,12 @@ class Test(unittest.TestCase):
 			self.match(test.table[i * -1 - 1], debtor)
 
 		print("liquidators")
+		test_liquidators = sorted(test.table, key=test.liq_sort)
 		top_liquidators = get_liquidators(buck, limit=30)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
-			if amount(liquidator["acr"]) == 0: break # unsorted end of the table
-			self.match(test.table[i], liquidator)
+			if liquidator["acr"] == 0: break # unsorted end of the table
+			self.match(test_liquidators[i], liquidator)
 
 
 
