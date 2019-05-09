@@ -54,7 +54,7 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(100_0000,1_000_0000, 1_0000)
+	rand = random.randrange(100_0000, 10_000_0000, 1)
 	rand2 = random.randint(150,200)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
@@ -69,7 +69,7 @@ def generate_liquidators(k):
 
 def generate_debtors(k, n):
 	global time, price
-	rand = random.randrange(1000000,10000000,10000) # collateral
+	rand = random.randrange(100_0000, 10_000_0000, 1) # collateral
 	rand2 = random.randint(150,155) # cd
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
@@ -77,12 +77,10 @@ def generate_debtors(k, n):
 	debtor.new_cd(debtor.collateral * price / debtor.debt)
 	debtors = [debtor]
 	for i in range (k+1,n):
-		rand = random.randrange(1000000,10000000,10000)
+		rand = random.randrange(100_0000, 10_000_0000, 1)
 		helper = ccr
-
 		acr = random.randint(100, 160)
 		if acr < 150: acr = 0
-
 		rand2 = random.randint(helper+1, helper + 2)
 		ccr = rand2
 		debtor = CDP(rand, 0, rand2, acr, i+1, time)
@@ -99,55 +97,62 @@ def gen(k, n):
 
 # Function for inserting CDP into the table
 
-def cdp_insert(cdp):
+def cdp_insert(cdp): # add id primary sorting to all debtors
 	global table
+	table.append(cdp)
+	table = sorted(table, key=deb_sort)
 
-	if table == []:
-		table = [cdp]
-		return
-	c = cdp.collateral
-	d = cdp.debt
-	acr = cdp.acr
-	cd = cdp.cd
-	len_table = len(table)
+	# if table == []:
+	# 	table = [cdp]
+	# 	return
+	# c = cdp.collateral
+	# d = cdp.debt
+	# acr = cdp.acr
+	# cd = cdp.cd
+	# len_table = len(table)
+	# id = cdp.id / 100_000 # cdp id to the end of the index to match multi_index
 
-	if (d <= epsilon(d)) and acr == 0:
-		return
-	elif (d <= epsilon(d)) and acr != 0:
-		for i in range(0, len_table):
-			cdp2 = table[i]
-			c2 = cdp2.collateral
-			d2 = cdp2.debt
-			if d2 > epsilon(d2):
-				table.insert(i, cdp)
-				return
-			acr2 = cdp2.acr
-			cd2 = cdp2.cd
-			if acr2 == 0:
-				table.insert(i, cdp)
-				return
-			else:
-				if c * 10_000_000 // acr > c2 * 10_000_000 // acr2:
-					table.insert(i, cdp)
-					return
-		table.append(cdp)
-		return
-	else:
-		# debtors
-		for i in range(len(table)-1, -1, -1):
-			cdp2 = table[i]
-			d2 = cdp2.debt
-			if d2 <= epsilon(d2): # debt 0
-				table.insert(i+1, cdp)
-				return 
-			c2 = cdp2.collateral
-			d2 = cdp2.debt
+	# if (d <= epsilon(d)) and acr == 0:
+	# 	return
+	# elif (d <= epsilon(d)) and acr != 0:
+	# 	for i in range(0, len_table):
+	# 		cdp2 = table[i]
+	# 		id2 = cdp2.id / 100_000 # cdp id to the end of the index to match multi_index
+	# 		c2 = cdp2.collateral
+	# 		d2 = cdp2.debt
+	# 		if d2 > epsilon(d2):
+	# 			if (c * 100_000_000 // d) // acr + id > (c2 * 100_000_000 // d2) // acr2 + id2:
+	# 				table.insert(i, cdp)
+	# 				return
+	# 		acr2 = cdp2.acr
+	# 		cd2 = cdp2.cd
+	# 		if acr2 == 0:
+	# 			table.insert(i, cdp)
+	# 			return
+	# 		else:
+	# 			if c * 100_000_000 // acr + id > c2 * 100_000_000 // acr2 + id2:
+	# 				table.insert(i, cdp)
+	# 				return
+	# 	table.append(cdp)
+	# 	return
+	# else:
+	# 	# debtors
+	# 	for i in range(len(table)-1, -1, -1):
+	# 		cdp2 = table[i]
+	# 		d2 = cdp2.debt
+	# 		if d2 <= epsilon(d2): # debt 0
+	# 			table.insert(i+1, cdp)
+	# 			return
+	# 		c2 = cdp2.collateral
+	# 		d2 = cdp2.debt
 
-			if c * 10_000_000 // d  <  c2 * 10_000_000 // d2:
-				table.insert(i+1, cdp)
-				return 
-		table.insert(0, cdp)
-		return 
+	# 		id2 = cdp2.id / 100_000 # cdp id to the end of the index to match multi_index
+
+	# 		if c * 100_000_000 // d + id <  c2 * 100_000_000 // d2 + id2:
+	# 			table.insert(i+1, cdp)
+	# 			return 
+	# 	table.insert(0, cdp)
+	# 	return 
 
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(id):
@@ -214,7 +219,7 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
-		print("add tax", cdp.id)
+		# print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
@@ -242,17 +247,28 @@ def update_tax(cdp, price):
 
 # Contract functions
 
+def deb_sort(x): # in reverse
+	MAX = 100_000_000_000_000
+	id = x.id / 100_000
+
+	if x.debt == 0 or x.collateral == 0:
+		return -id
+
+	cd = x.collateral * 10_000_000_000_000 // x.debt
+	return MAX - cd - id
+
 def liq_sort(x):
-	MAX = 100_000_000_000_000;
+	MAX = 100_000_000_000_000
+	id = x.id / 100_000 # cdp id to the end of the index to match multi_index
 
 	if x.acr == 0 or x.collateral == 0:
 		return MAX * 3
 
 	if x.debt == 0:
-		return MAX + x.collateral * 100_000_000 // x.acr
+		return MAX + x.collateral * 100_000_000 // x.acr + id
 
-	cd = x.collateral * 1_000_000_000_000 // x.debt
-	return MAX * 2 - cd // x.acr
+	cd = x.collateral * 10_000_000_000_000 // x.debt + id
+	return MAX * 2 - cd // x.acr + id
 
 def liquidation(price, cr, lf):	
 	print("liquidation")
@@ -520,8 +536,8 @@ def run_round(balance):
 
 	LIQUIDATION = True
 	REDEMPTION 	= False
-	ACR 		= False
-	REPARAM 	= False
+	ACR 		= True
+	REPARAM 	= True
 
 	actions = []
 	old_price = price

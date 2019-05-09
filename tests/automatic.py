@@ -92,7 +92,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			rounds = 10
+			rounds = 20
 			for round_i in range(0, rounds):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1} / {rounds} of cycle {cycle_i}")
@@ -154,7 +154,7 @@ class Test(unittest.TestCase):
 
 				# match cdps
 
-				# test.print_table()
+				test.print_table()
 				self.compare(buck, test.table)
 
 				# match supply
@@ -165,7 +165,7 @@ class Test(unittest.TestCase):
 	def compare(self, buck, cdp_table):
 
 		print("debtors")
-		top_debtors = get_debtors(buck, limit=30)
+		top_debtors = get_debtors(buck, limit=100)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
@@ -174,8 +174,8 @@ class Test(unittest.TestCase):
 		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
 
-		# test.print_table(test_liquidators)
-		top_liquidators = get_liquidators(buck, limit=30)
+		test.print_table(test_liquidators)
+		top_liquidators = get_liquidators(buck, limit=100)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table

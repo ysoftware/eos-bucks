@@ -129,8 +129,6 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
       r.modified_round = now;
     });
     
-    PRINT("liq", _cdp.require_find(id)->liquidator())
-    
     if (issue_debt.amount == 0) {
       buy_r(_cdp.require_find(id));
     }
