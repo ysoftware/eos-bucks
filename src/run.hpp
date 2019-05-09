@@ -218,12 +218,6 @@ void buck::run_requests(uint8_t max) {
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
         PRINT("redeem", redeem_itr->quantity)
         
-        PRINT_("")
-        for (auto& s: debtor_index) {
-          s.p();
-        }
-        PRINT_("")
-        
         // to-do sorting
         // to-do verify timestamp
         auto redeem_quantity = redeem_itr->quantity;
@@ -340,14 +334,7 @@ void buck::run_liquidation(uint8_t max) {
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   auto liquidator_itr = liquidator_index.begin();
-    
-    
-     PRINT_("")
-        for (auto& s: debtor_index) {
-          s.p();
-        }
-        PRINT_("")
-        
+  
   // loop through liquidators
   while (max > processed) {
     
@@ -360,16 +347,16 @@ void buck::run_liquidation(uint8_t max) {
       return;
     }
     
-    PRINT_("\nliquidator")
-    liquidator_itr->p();
+    // PRINT_("\nliquidator")
+    // liquidator_itr->p();
     
-    PRINT_("debtor")
-    debtor_itr->p();
+    // PRINT_("debtor")
+    // debtor_itr->p();
     
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
     if (debtor_itr->debt.amount == 0) {
-      // PRINT_("DONE1")
+      PRINT_("DONE1")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
@@ -381,7 +368,7 @@ void buck::run_liquidation(uint8_t max) {
     
     if (debtor_ccr >= CR) {
       
-      // PRINT_("DONE2")
+      PRINT_("DONE2")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       run_requests(max - processed);
       return;
@@ -389,7 +376,7 @@ void buck::run_liquidation(uint8_t max) {
     
     // check acr
     if (liquidator_itr->acr < CR) {
-      PRINT_("L2")
+      PRINT_("NO ACR")
       liquidator_itr->p();
       liquidator_itr++;
       continue;
@@ -408,9 +395,18 @@ void buck::run_liquidation(uint8_t max) {
       liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
     }
     
+    // PRINT("ccr", liquidator_ccr)
+    
+    if (liquidator_ccr < CR) {
+      PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
+      set_liquidation_status(LiquidationStatus::failed);
+      run_requests(max - processed);
+      return;
+    }
+    
     // check liquidator ccr
     if (liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
-      PRINT_("L1\n")
+      PRINT_("CCR LOWER THAN ACR\n")
       liquidator_itr->p();
       liquidator_itr++;
       continue;

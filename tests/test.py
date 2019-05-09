@@ -20,7 +20,7 @@ def time_now():
 	time += 1_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
 	return time
 
-def epsilon(value): return value / 500
+def epsilon(value): return 0 # value / 500
 
 class CDP:
 	def __init__(self, collateral, debt, cd, acr, id, time):
@@ -110,8 +110,9 @@ def cdp_insert(cdp):
 	acr = cdp.acr
 	cd = cdp.cd
 	len_table = len(table)
+
 	if (d <= epsilon(d)) and acr == 0:
-		return 
+		return
 	elif (d <= epsilon(d)) and acr != 0:
 		for i in range(0, len_table):
 			cdp2 = table[i]
@@ -245,18 +246,17 @@ def liquidation(price, cr, lf):
 	if table == []: return
 	i = 0
 
+	# print_table()
 
 	while True:
-		print_table()
 
 		debtor = table.pop(len(table)-1)
 
 		if i >= len(table) or debtor.id == table[i].id: 
 			cdp_insert(debtor)
 
-			print("\n")
-			print("\n")
-			print(f"#{i}", table[i])
+			print("\n\n")
+			print(f"liquidator", table[i])
 			print("debtor", debtor)
 			print("FAILED: END")
 			return # failed
@@ -268,15 +268,17 @@ def liquidation(price, cr, lf):
 
 		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
+			print("DONE1")
 			return # done
 
-		if debtor.collateral * price // debtor.debt >= cr  - epsilon(cr):
+		if debtor.collateral * price // debtor.debt >= CR  - epsilon(CR):
 			cdp_insert(debtor)
+			print("DONE2")
 			return # done
 	
-		if table[i].acr < CR + epsilon(CR):
+		if table[i].acr < CR:
 			print(table[i])
-			print("L2\n")
+			print("NO ACR\n")
 			cdp_insert(debtor)
 			i += 1
 			continue
@@ -287,12 +289,19 @@ def liquidation(price, cr, lf):
 		liquidator = update_tax(liquidator, price)
 
 		liq_ccr = 9999999
-		if liquidator.debt > epsilon(liquidator.debt): 
-			liq_ccr = liquidator.collateral * price / liquidator.debt
+		if liquidator.debt > epsilon(liquidator.debt):
+			liq_ccr = liquidator.collateral * price // liquidator.debt
+		print("ccr", liq_ccr)
 
-		if liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr + epsilon(liquidator.acr):
+		if liq_ccr < CR:
+			print("FAILED: NO MORE GOOD LIQUIDATORS\n")
+			cdp_insert(liquidator)
+			cdp_insert(debtor)
+			return
+
+		if liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
 			print(liquidator)
-			print("L1\n")
+			print("CCR LOWER THAN ACR\n")
 			i += 1
 			cdp_insert(debtor)
 			cdp_insert(liquidator)
@@ -344,7 +353,7 @@ def redemption(amount, price, cr, rf):
 	global time, table
 	i = len(table)-1
 
-	print_table()
+	# print_table()
 
 	print("\n\nredeem", amount)
 
@@ -499,7 +508,7 @@ def run_round(balance):
 
 	LIQUIDATION = True
 	REDEMPTION 	= False
-	ACR 		= False
+	ACR 		= True
 	REPARAM 	= False
 
 	actions = []
@@ -535,7 +544,7 @@ def run_round(balance):
 				cdp = table[idx]
 				new_col = cdp.collateral + c
 				new_debt = cdp.debt + d
-				new_ccr = new_col * old_price / new_debt
+				new_ccr = new_col * old_price // new_debt
 				success = not (new_ccr < CR or new_debt < 50000 or new_debt < 50_0000 and new_debt != 0)
 				reparam_values.append([i, c, d, success])
 				k -= 1
@@ -597,7 +606,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

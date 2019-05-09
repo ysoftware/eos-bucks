@@ -164,8 +164,6 @@ CONTRACT buck : public contract {
       // index to search for liquidators with the highest ability to bail out bad debt
       uint64_t liquidator() const {
         
-        static const uint64_t MAX = 1'000'000'000;
-        
         // d!=0: index = cd, else 999999 + c/acr
         
         return UINT64_MAX - debtor();
