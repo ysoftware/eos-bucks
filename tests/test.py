@@ -271,7 +271,7 @@ def liq_sort(x):
 	return MAX * 2 - cd // x.acr + id
 
 def liquidation(price, cr, lf):	
-	print("liquidation")
+	# print("liquidation")
 	global TEC, table
 	if table == []: return
 	# i = 0
@@ -318,14 +318,12 @@ def liquidation(price, cr, lf):
 		liquidator = table.pop(idx)
 
 		if liquidator.debt <= epsilon(liquidator.debt):
-			print("sellr")
 			TEC -= liquidator.collateral * 100 // liquidator.acr
 		liquidator = update_tax(liquidator, price)
 
 		liq_ccr = 9999999
 		if liquidator.debt > epsilon(liquidator.debt):
 			liq_ccr = liquidator.collateral * price // liquidator.debt
-		# print("ccr", liq_ccr)
 
 		if liq_ccr < CR or liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
 			# print("FAILED: NO MORE GOOD LIQUIDATORS\n")
@@ -363,7 +361,6 @@ def liquidation(price, cr, lf):
 
 		if liquidator.debt <= epsilon(liquidator.debt):
 			TEC += liquidator.collateral * 100 // liquidator.acr
-			print("buyr")
 			liquidator.new_cd(9999999)
 		else:
 			liquidator.new_cd(liquidator.collateral * 100 / liquidator.debt)
@@ -434,11 +431,9 @@ def reparametrize(id, c, d, price):
 
 	idx = cdp_index(id)
 	if table[idx].id != id:
-		print("NO CDP FOR THIS REPARAM", id, table[idx])
 		return
 
 	cdp = table.pop(idx)
-	print("\nreparam...", "id", id, cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -448,45 +443,31 @@ def reparametrize(id, c, d, price):
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
-			print("5 change d", d)
-		else:
-			print("not enough collateral")
 
 	if c > 0:
 		cdp.add_collateral(c)
-		print("4 change c", c)
 
 	if c < 0:
 		print("ccr", calc_ccr(cdp, price))
 		if cdp.collateral + c >= 50000 + epsilon(50000):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
-				print("1 change c", -c)
 			else:
 				if calc_ccr(cdp, price) < cr:
-					print("reparam quit 1")
+					pass
 				else:
 					m = (cr-100) * cdp.debt // price
-					print("m", m)
-					print("3 change c", max(c, -m))
 					cdp.add_collateral(max(c, -m))
-		else:
-			print("not enough collateral")
-
-	print(cdp)
 
 	if d > 0:
-		print("ccr", calc_ccr(cdp, price))
 		if cdp.debt == 0:
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
-			print("2 change d", min(d, cdp.collateral * price // cr))
 		else:
 			if calc_ccr(cdp, price) < cr:
-				print("reparam quit 2")
+				pass
 			else:
 				val = (cdp.collateral * price * 100 // (cr * cdp.debt) - 100) * cdp.debt // 100
 				cdp.add_debt(min(d, val))
-				print("0 change d", min(d, val))
 	
 	if cdp.debt != 0:
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
@@ -496,7 +477,6 @@ def reparametrize(id, c, d, price):
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-	print(cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
@@ -602,8 +582,6 @@ def run_round(balance):
 		success = values[3]
 		if success: 
 			reparametrize(i, c, d, price)
-		else:
-			print("this reparam should fail", [["reparam", i, c, d], success])
 		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
@@ -634,7 +612,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time_now()

@@ -169,7 +169,9 @@ class Test(unittest.TestCase):
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
-			self.match(test.table[i * -1 - 1], debtor)
+			cdp = test.table[i * -1 - 1]
+			print("d;s:", test.deb_sort(cdp))
+			self.match(cdp, debtor)
 
 		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
@@ -179,13 +181,15 @@ class Test(unittest.TestCase):
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table
-			self.match(test_liquidators[i], liquidator)
+			cdp = test_liquidators[i]
+			print("l;s:", test.liq_sort(cdp))
+			self.match(cdp, liquidator)
 
 
 
 	def match(self, cdp, row):
-		# print(cdp)
-		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
+		print(cdp)
+		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"], row["modified_round"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
