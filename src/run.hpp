@@ -335,6 +335,10 @@ void buck::run_liquidation(uint8_t max) {
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   auto liquidator_itr = liquidator_index.begin();
   
+  if (liquidator_itr == liquidator_index.end()) {
+    return; // no cdp exist, quit
+  }
+  
   // loop through liquidators
   while (max > processed) {
     const auto liquidator_itr = liquidator_index.begin();
