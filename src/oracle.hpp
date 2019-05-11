@@ -3,15 +3,15 @@
 // Created by Yaroslav Erohin.
 
 void buck::update(uint32_t eos_price) {
-  #if !DEBUG
-  require_auth(_self);
-  #endif
+  require_auth(permission_level(_self, "oracle"_n));
   
   init();
   process_taxes();
   
   const auto& stats = *_stat.begin();
   const uint32_t previous_price = stats.oracle_eos_price;
+  
+  // to-do shave off price change if don't have a special permission
   
   _stat.modify(stats, same_payer, [&](auto& r) {
     r.oracle_timestamp = get_current_time_point();
