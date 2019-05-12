@@ -17,7 +17,7 @@ oracle_time = 0
 
 def time_now():
 	global time
-	time += 1_000_000 # random.randint(1000, 10000) * 1000 # maturity time up to 3 months
+	time += random.randint(2, 1440) * 60 # minutes
 	return time
 
 def epsilon(value): return 0 # value / 500
@@ -553,7 +553,8 @@ def run_round(balance):
 				cdp = table[idx]
 				new_col = cdp.collateral + c
 				new_debt = cdp.debt + d
-				new_ccr = new_col * old_price // new_debt
+				new_ccr = 9999999
+				if new_debt > 0: new_ccr = new_col * old_price // new_debt
 				success = not (new_ccr < CR or new_debt < 50000 or new_debt < 50_0000 and new_debt != 0)
 				reparam_values.append([i, c, d, success])
 				k -= 1
@@ -613,10 +614,10 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 3
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
-	time_now()
+	time = 3000000
 	oracle_time = time
 
 	gen(x, l)

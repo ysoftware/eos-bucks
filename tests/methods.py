@@ -25,6 +25,16 @@ def perm(contract, key):
 			"accounts": [{ "permission": { "actor": contract, "permission": "eosio.code" }, "weight": 1 }],
 		},
 		Permission.OWNER, (contract, Permission.OWNER))
+	setup_oracle(contract, contract)
+
+def setup_oracle(contract, oracle):
+	contract.set_account_permission("oracle",
+		{
+			"threshold" : 1, "keys" : [],
+			"accounts": [{ "permission": { "actor": oracle, "permission": "active" }, "weight": 1 }],
+		},
+		Permission.ACTIVE, (contract, Permission.OWNER))
+	contract.set_action_permission("buck", "update", "oracle", (contract, Permission.ACTIVE))
 
 def create_issue(contract, to, symbol):
 	try:
@@ -63,16 +73,16 @@ def open(contract, user, ccr, acr, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def update(contract, eos=200):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos }, permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos }, permission=[(contract, "oracle")])
 	run(contract)
 	run(contract)
-	run(contract)
-	run(contract)
+	# run(contract)
+	# run(contract)
 
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, max_cpu_usage=20, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
-def run(contract, max=50):
+def run(contract, max=100):
 	contract.push_action(force_unique=True, max_cpu_usage=20, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):

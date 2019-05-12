@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		for cycle_i in range(1, 50):
+		for cycle_i in range(1, 500):
 
 			##################################
 			COMMENT(f"Cycle {cycle_i}")
@@ -92,7 +92,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			rounds = 20
+			rounds = 50 # random.randint(10, 10)
 			for round_i in range(0, rounds):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i+1} / {rounds} of cycle {cycle_i}")
