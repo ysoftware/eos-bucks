@@ -26,7 +26,6 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
 
 void buck::withdraw(const name& from, const asset& quantity) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-  
   require_auth(from);
   
   check(quantity.symbol == REX, "you have to transfer REX");
@@ -36,17 +35,16 @@ void buck::withdraw(const name& from, const asset& quantity) {
   time_point_sec maturity_time = get_amount_maturity(from, quantity);
   check(current_time_point_sec() > maturity_time, "insufficient mature rex");
   
+  sub_funds(from, quantity);
   sell_rex(from, quantity);
-  
   run(5);
 }
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
-  if (to != _self || from == _self || memo != "deposit") { return; }
+  if (to != _self || from == _self) { return; }
   
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-
   require_auth(from);
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
   check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
@@ -55,12 +53,10 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
 	check(quantity.amount > 0, "must transfer positive quantity");
   
   buy_rex(from, quantity);
-
   run(3);
 }
 
 void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
-  
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
   

@@ -108,7 +108,7 @@ def redeem(contract, user, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def withdraw(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="redeem",
+	contract.push_action(force_unique=True, max_cpu_usage=20, action="withdraw",
 		data={
 			"from": user,
 			"quantity": quantity
