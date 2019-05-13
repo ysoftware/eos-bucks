@@ -28,29 +28,29 @@ def perm(contract, key):
 	setup_oracle(contract, contract)
 
 def setup_oracle(contract, oracle):
-	contract.set_account_permission("oracle",
+	contract.set_account_permission("admin",
 		{
 			"threshold" : 1, "keys" : [],
 			"accounts": [{ "permission": { "actor": oracle, "permission": "active" }, "weight": 1 }],
 		},
 		Permission.ACTIVE, (contract, Permission.OWNER))
-	contract.set_action_permission("buck", "update", "oracle", (contract, Permission.ACTIVE))
+	contract.set_action_permission("buck", "update", "admin", (contract, Permission.ACTIVE))
 
 def create_issue(contract, to, symbol):
 	try:
-		contract.push_action(force_unique=True, max_cpu_usage=20, action="create",
+		contract.push_action(force_unique=True, max_cpu_usage=25, action="create",
 			data={ "issuer": to, "maximum_supply": "1000000000000.0000 {}".format(symbol) }, permission=[(contract, Permission.ACTIVE)])
 	except: pass
 	try:
-		contract.push_action(force_unique=True, max_cpu_usage=20, action="issue",
+		contract.push_action(force_unique=True, max_cpu_usage=25, action="issue",
 			data={ "to": to, "quantity": "1000000000000.0000 {}".format(symbol), "memo": "" }, permission=[(to, Permission.ACTIVE)])
 	except: pass
 
 def destroy(contract):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
 
 def transfer(contract, fromAccount, to, quantity, memo=""):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="transfer",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="transfer",
 		data={
 			"from": fromAccount,
 			"to": to,
@@ -59,12 +59,12 @@ def transfer(contract, fromAccount, to, quantity, memo=""):
 		}, permission=[(fromAccount, Permission.ACTIVE)])
 
 def buyram(contract):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="buyram", data="[]", permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="buyram", data="[]", permission=[(contract, Permission.ACTIVE)])
 
 # contract actions
 
 def open(contract, user, ccr, acr, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="open",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="open",
 		data={
 			"account": user,
 			"ccr": ccr,
@@ -73,20 +73,20 @@ def open(contract, user, ccr, acr, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def update(contract, eos=200):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos }, permission=[(contract, "oracle")])
+	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos, "force": True }, permission=[(contract, "admin")])
 	run(contract)
 	run(contract)
 	run(contract)
 	run(contract)
 
 def close(contract, user, cdp_id):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
 def run(contract, max=100):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="change",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="change",
 		data={
 			"cdp_id": cdp_id,
 			"change_debt": change_debt,
@@ -94,42 +94,42 @@ def reparam(contract, user, cdp_id, change_debt, change_collat):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def changeacr(contract, user, cdp_id, acr):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="changeacr",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="changeacr",
 		data={
 			"cdp_id": cdp_id,
 			"acr": acr
 		}, permission=[(user, Permission.ACTIVE)])
 
 def redeem(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="redeem",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="redeem",
 		data={
 			"account": user,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def withdraw(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="withdraw",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="withdraw",
 		data={
 			"from": user,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def save(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="save",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="save",
 		data={
 			"account": user,
 			"value": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def take(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="take",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="take",
 		data={
 			"account": user,
 			"value": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def maketime(contract, time):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="zmaketime",
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="zmaketime",
 		data={ "seconds": time }, permission=[(contract, Permission.ACTIVE)])
 
 def fundbalance(buck, user):

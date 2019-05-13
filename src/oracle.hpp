@@ -16,11 +16,11 @@ void buck::update(uint32_t eos_price, bool force) {
   
   const auto& stats = *_stat.begin();
   const uint32_t previous_price = stats.oracle_eos_price;
-  uint32_t new_price = eos_price;
+  int32_t new_price = eos_price;
   
   // shave off price change if don't have a special permission
-  if (!force) {
-    const uint32_t difference = std::abs(int32_t(previous_price) - new_price);
+  if (!force && previous_price != 0) {
+    const uint32_t difference = std::abs(int32_t(previous_price) - int32_t(new_price));
     const uint32_t percent = difference * 100 / previous_price;
     
     // handle situations when price was below 17? (so it's impossible to increment by less than 5%)
@@ -31,7 +31,7 @@ void buck::update(uint32_t eos_price, bool force) {
   }
   
   // protect from 0 price
-  new_price = std::min(1, new_price);
+  new_price = std::max(1, new_price);
   
   _stat.modify(stats, same_payer, [&](auto& r) {
     r.oracle_timestamp = get_current_time_point();

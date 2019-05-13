@@ -38,12 +38,11 @@ int64_t buck::to_buck(int64_t quantity) const {
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
-  if (pool_itr == _pool.end()) { return quantity * EU; } // test net case (1 rex = 1 eos)
+  if (pool_itr == _pool.end()) return quantity * EU; // test net case (1 rex = 1 eos)
   
   static const int64_t S0 = pool_itr->total_lendable.amount;
   static const int64_t R0 = pool_itr->total_rex.amount;
-  const int64_t p  = (uint128_t(quantity) * S0 * EU) / R0;
-  return p;
+  return (uint128_t(quantity) * S0 * EU) / R0;
 }
 
 int64_t buck::to_rex(int64_t quantity, int64_t tax) const {
@@ -51,12 +50,11 @@ int64_t buck::to_rex(int64_t quantity, int64_t tax) const {
   
   rex_pool_i _pool(REX_ACCOUNT, REX_ACCOUNT.value);
   const auto pool_itr = _pool.begin();
-  if (pool_itr == _pool.end()) { return quantity / (EU + tax); } // test net case (1 rex = 1 eos)
+  if (pool_itr == _pool.end()) return quantity / (EU + tax); // test net case (1 rex = 1 eos)
   
   static const int64_t S0 = pool_itr->total_lendable.amount;
   static const int64_t R0 = pool_itr->total_rex.amount;
-  const int64_t p  = ((uint128_t(quantity) * R0) / S0) / EU;
-  return p;
+  return ((uint128_t(quantity) * R0) / S0) / EU;
 }
 
 asset buck::get_rex_balance() const {

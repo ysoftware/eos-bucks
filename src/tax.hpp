@@ -66,7 +66,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
   PRINT("add tax", cdp_itr->id)
-  PRINT("added", accrued_debt)
+  // PRINT("added", accrued_debt)
   
   update_supply(accrued_debt);
 
