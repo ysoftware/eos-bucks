@@ -78,6 +78,8 @@ def update(contract, eos=200):
 	run(contract)
 	run(contract)
 	run(contract)
+	run(contract)
+	run(contract)
 
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, max_cpu_usage=25, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])

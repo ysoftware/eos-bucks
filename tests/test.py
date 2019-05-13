@@ -386,17 +386,17 @@ def redemption(amount, price):
 	print("\n\nredeem", amount)
 
 	debtors_failed = 0
-	while amount > epsilon(amount) and i != -1 and debtors_failed < 20:
+	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		print(cdp.debt)
+		print(cdp)
 
 		if cdp.debt < 500000 + epsilon(500000):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			print("debtor failed debt", cdp)
+			print("debtor failed debt", debtors_failed)
 			continue
 
 		rf = 1
@@ -404,7 +404,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			print("debtor failed ccr", cdp.collateral * price // cdp.debt)
+			print("debtor failed ccr", debtors_failed)
 			continue
 
 		if cdp.debt > amount:
@@ -433,7 +433,7 @@ def redemption(amount, price):
 
 			amount -= d
 			i -= 1
-
+	print("redeem left over", amount)
 	return
 
 def reparametrize(id, c, d, price):
@@ -569,7 +569,7 @@ def run_round(balance):
 				new_debt = cdp.debt + d
 				new_ccr = 9999999
 				if new_debt > 0: new_ccr = new_col * old_price // new_debt
-				success = not (new_ccr < CR or new_debt < 50000 or new_debt < 50_0000 and new_debt != 0)
+				success = new_ccr > CR and new_debt > 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
 				reparam_values.append([i, c, d, success])
 				k -= 1
 			if k == 0:

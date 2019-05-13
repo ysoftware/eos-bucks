@@ -253,7 +253,7 @@ void buck::run_requests(uint8_t max) {
         uint8_t debtors_failed = 0;
         
         // loop through available debtors until all amount is redeemed or our of debtors
-        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed < 20) {
+        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed < 30) {
           
           if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
             debtor_itr->p();
@@ -263,10 +263,10 @@ void buck::run_requests(uint8_t max) {
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
-            debtor_itr->p();
-            PRINT("debtor failed debt", debtor_itr->debt)
-            debtor_itr++;
             debtors_failed++;
+            debtor_itr->p();
+            PRINT("debtor failed debt", debtors_failed)
+            debtor_itr++;
             continue;
           }
           
@@ -274,9 +274,9 @@ void buck::run_requests(uint8_t max) {
           
           // all further debtors have even worse ccr
           if (ccr < 100 - RF) { 
-            debtor_itr++;
             debtors_failed++;
-            PRINT("debtor failed ccr", ccr)
+            debtor_itr++;
+            PRINT("debtor failed ccr", debtors_failed)
             continue;
           }
           
@@ -340,8 +340,10 @@ void buck::run_requests(uint8_t max) {
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         
-        // in extreme situation, only do 1 request per run
-        if (debtors_failed > 10) break;
+        PRINT("redeem left over", redeem_quantity)
+        
+        // in extreme situations, only do 1 request per run
+        if (debtors_failed > 20) return;
       }
       else {
         // no more redemption requests
