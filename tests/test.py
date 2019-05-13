@@ -569,7 +569,8 @@ def run_round(balance):
 				new_debt = cdp.debt + d
 				new_ccr = 9999999
 				if new_debt > 0: new_ccr = new_col * old_price // new_debt
-				success = new_ccr > CR and new_debt > 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
+				success = new_ccr > CR and new_col > 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
+				if not success: print("reparam values:", new_ccr, new_col, new_debt)
 				reparam_values.append([i, c, d, success])
 				k -= 1
 			if k == 0:
