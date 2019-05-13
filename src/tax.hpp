@@ -31,16 +31,10 @@ void buck::process_taxes() {
     r.insurance_pool += insurance_amount;
     r.savings_pool += savings_amount;
     
-    // PRINT("CIT", r.r_collected)
-    // PRINT("AEC+", r.r_total * delta_t)
-    
     r.r_aggregated += r.r_total * delta_t;
     r.r_collected = 0;
     
-    if (r.e_supply > 0) {
-      r.e_price += savings_amount * PO / r.e_supply;
-      r.e_collected = 0;
-    }
+    r.e_collected = 0;
   });
   
   // PRINT("add to pool", insurance_amount)
@@ -146,8 +140,7 @@ void buck::save(const name& account, const asset& value) {
   sub_balance(account, value, false);
   
   // buy E
-  const uint64_t received_e = ((uint128_t) value.amount * PO) / tax.e_price;
-  
+  const uint64_t received_e = ((uint128_t) value.amount * tax.savings_pool / tax.e_supply;
   check(received_e > 0, "to-do remove. this is probably wrong (save)");
   
   _accounts.modify(account_itr, account, [&](auto& r) {
@@ -174,12 +167,12 @@ void buck::take(const name& account, const asset& value) {
   const auto account_itr = _accounts.find(BUCK.code().raw());
 
   // sell E
-  const uint64_t selling_e = ((uint128_t) value.amount * PO) / tax.e_price;
+  const uint64_t selling_e = (uint128_t(value.amount) * tax.savings_pool / tax.e_supply;
   check(account_itr->e_balance >= selling_e, "overdrawn savings balance");
   
   // to-do check supply not 0
   
-  const int64_t pool_part = selling_e * tax.e_price / PO;
+  const int64_t pool_part = uint128_t(selling_e) * tax.savings_pool / tax.e_supply;
   const int64_t received_bucks_amount = pool_part * tax.savings_pool / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   

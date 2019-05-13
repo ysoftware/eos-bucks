@@ -77,7 +77,6 @@ CONTRACT buck : public contract {
       
       // savings 
       uint64_t e_supply;
-      uint64_t e_price;
       uint64_t e_collected; // REX this round
       
       uint64_t primary_key() const { return 0; }

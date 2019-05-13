@@ -60,7 +60,6 @@ bool buck::init() {
     r.r_collected = 0;
     
     r.e_supply = 0;
-    r.e_price = PO;
     r.e_collected = 0;
   });
   
