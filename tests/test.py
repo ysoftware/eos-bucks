@@ -54,13 +54,13 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(1_000_0000, 100_000_0000, 1)
+	rand = random.randrange(100_0000, 100_000_0000, 1)
 	rand2 = random.randint(150, 500)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
 	for i in range (0,k):
-		rand = random.randrange(1_000_0000, 100_000_0000, 1)
+		rand = random.randrange(100_0000, 100_000_0000, 1)
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
@@ -70,7 +70,7 @@ def generate_liquidators(k):
 
 def generate_debtors(k, n):
 	global time, price
-	rand = random.randrange(100_0000, 10_000_0000, 1) # collateral
+	rand = random.randrange(100_0000, 100_000_0000, 1) # collateral
 	rand2 = random.randint(150, 500) # cd
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
@@ -78,7 +78,7 @@ def generate_debtors(k, n):
 	debtor.new_cd(debtor.collateral * price / debtor.debt)
 	debtors = [debtor]
 	for i in range (k+1,n):
-		rand = random.randrange(100_0000, 10_000_0000, 1)
+		rand = random.randrange(100_0000, 100_000_0000, 1)
 		helper = ccr
 		acr = random.randint(100, 160)
 		if acr < 150: acr = 0
@@ -569,7 +569,7 @@ def run_round(balance):
 				new_debt = cdp.debt + d
 				new_ccr = 9999999
 				if new_debt > 0: new_ccr = new_col * old_price // new_debt
-				success = new_ccr > CR and new_col > 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
+				success = new_ccr >= CR and new_col >= 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
 				if not success: print("reparam values:", new_ccr, new_col, new_debt)
 				reparam_values.append([i, c, d, success])
 				k -= 1
@@ -629,7 +629,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 15
+	x = 30
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000

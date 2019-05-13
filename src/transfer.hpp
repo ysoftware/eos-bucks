@@ -28,8 +28,8 @@ void buck::withdraw(const name& from, const asset& quantity) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(from);
   
-  check(quantity.symbol == REX, "you have to transfer REX");
   check(quantity.symbol.is_valid(), "invalid quantity");
+  check(quantity.symbol == REX, "specify withdraw amount in REX");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
   time_point_sec maturity_time = get_amount_maturity(from, quantity);
@@ -37,7 +37,7 @@ void buck::withdraw(const name& from, const asset& quantity) {
   
   sub_funds(from, quantity);
   sell_rex(from, quantity);
-  run(5);
+  run(10);
 }
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
@@ -62,6 +62,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   
   // to-do validate
   
+  check(quantity.is_valid(), "invalid quantity");
   check(quantity.amount > 0, "can not use negative value");
   check(quantity.symbol == REX, "can not use asset with different symbol");
   
@@ -133,5 +134,5 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     }
   }
   
-  run(5);
+  run(10);
 }

@@ -17,7 +17,7 @@ CONTRACT buck : public contract {
     ACTION redeem(const name& account, const asset& quantity);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION save(const name& account, const asset& value);
-    ACTION take(const name& account, const int64_t value);
+    ACTION take(const name& account, const uint64_t value);
     ACTION run(uint8_t max);
     
     // admin

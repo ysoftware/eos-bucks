@@ -65,7 +65,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
   
-  PRINT("add tax", cdp_itr->id)
+  // PRINT("add tax", cdp_itr->id)
   // PRINT("added", accrued_debt)
   
   update_supply(accrued_debt);
@@ -137,6 +137,7 @@ void buck::save(const name& account, const asset& value) {
   
   // to-do validate all
   
+  check(value.is_valid(), "invalid quantity");
   check(value.amount > 0, "can not use negative value");
   check(value.symbol == BUCK, "can not use asset with different symbol");
   
@@ -164,7 +165,7 @@ void buck::save(const name& account, const asset& value) {
   run(3);
 }
 
-void buck::take(const name& account, const int64_t value) {
+void buck::take(const name& account, const uint64_t value) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
