@@ -42,7 +42,7 @@ int64_t buck::to_buck(int64_t quantity) const {
   
   static const int64_t S0 = pool_itr->total_lendable.amount;
   static const int64_t R0 = pool_itr->total_rex.amount;
-  const int64_t p  = (uint128_t(quantity) * S0) / R0 / EU;
+  const int64_t p  = (uint128_t(quantity) * S0 * EU) / R0;
   return p;
 }
 
@@ -55,7 +55,7 @@ int64_t buck::to_rex(int64_t quantity, int64_t tax) const {
   
   static const int64_t S0 = pool_itr->total_lendable.amount;
   static const int64_t R0 = pool_itr->total_rex.amount;
-  const int64_t p  = (uint128_t(quantity) * R0 * EU) / S0;
+  const int64_t p  = ((uint128_t(quantity) * R0) / S0) / EU;
   return p;
 }
 
