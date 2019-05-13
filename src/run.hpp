@@ -15,6 +15,8 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
+  PRINT("run req", max)
+  
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
@@ -368,8 +370,8 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
+  PRINT("liquidation", max)
   uint64_t processed = 0;
-  PRINT_("liquidation")
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
