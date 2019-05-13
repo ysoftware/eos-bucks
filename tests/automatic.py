@@ -146,10 +146,10 @@ class Test(unittest.TestCase):
 				taxation = table(buck, "taxation")
 
 				# print("idp", test.IDP, "cit", test.CIT, "aec", test.AEC, "tec", test.TEC)
-				self.assertAlmostEqual(unpack(test.IDP), unpack(taxation["insurance_pool"]), 4, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 4, "insurance pools don't match")
 				self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["r_aggregated"]), 0, "aggregated excesses don't match")
 				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["r_total"]), 0, "total excesses don't match")
-				self.assertAlmostEqual(test.CIT, taxation["r_collected"], 0, "collected insurances don't match")
+				self.assertAlmostEqual(unpack(test.CIT), amount(taxation["r_collected"]), 0, "collected insurances don't match")
 				print("+ Matched insurance pools")
 
 				# match cdps
@@ -189,7 +189,7 @@ class Test(unittest.TestCase):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table
 			cdp = test_liquidators[i]
-			
+
 			# print("\nl1", cdp.id, test.liq_sort(cdp))
 			# print("l2", debtor["id"], test.ls(
 			# 	amount(liquidator["collateral"]) * 10000, 

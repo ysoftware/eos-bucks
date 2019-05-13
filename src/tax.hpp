@@ -168,8 +168,7 @@ void buck::take(const name& account, const int64_t value) {
   
   // to-do validate all
   
-  check(value.amount > 0, "can not use negative value");
-  check(value.symbol == REX, "can not use asset with different symbol");
+  check(value > 0, "can not use negative value");
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());

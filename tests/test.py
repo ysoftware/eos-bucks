@@ -384,7 +384,7 @@ def redemption(amount, price):
 	print("\n\nredeem", amount)
 
 	debtors_failed = 0
-	while amount > epsilon(amount) and i != -1 and debtors_failed > 20:
+	while amount > epsilon(amount) and i != -1 and debtors_failed < 20:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
@@ -521,8 +521,8 @@ def run_round(balance):
 
 	LIQUIDATION = True
 	REDEMPTION 	= True
-	ACR 		= False
-	REPARAM 	= False
+	ACR 		= True
+	REPARAM 	= True
 
 	actions = []
 	old_price = price

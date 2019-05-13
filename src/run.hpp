@@ -240,9 +240,10 @@ void buck::run_requests(uint8_t max) {
         uint8_t debtors_failed = 0;
         
         // loop through available debtors until all amount is redeemed or our of debtors
-        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed > 20) {
+        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed < 20) {
           
           if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
+            debtor_itr->p();
             break;
           }
           
@@ -316,16 +317,17 @@ void buck::run_requests(uint8_t max) {
           // return unredeemed amount
           add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
         }
-        else if (redeem_itr->quantity == redeem_quantity) {
-          // complete and remove redemption request only if anything was redeemed in the process
+        
+        if (redeem_itr->quantity != redeem_quantity) {
           
+          // complete and remove redemption request only if anything was redeemed in the process
           update_supply(burned_debt);
           add_funds(redeem_itr->account, collateral_return, same_payer);
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         
         // in extreme situation, only do 1 request per run
-        if (debtors_failed > 20) break;
+        if (debtors_failed > 10) break;
       }
       else {
         // no more redemption requests
