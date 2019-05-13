@@ -388,31 +388,11 @@ void buck::run_liquidation(uint8_t max) {
     const auto liquidator_itr = liquidator_index.begin();
     const auto debtor_itr = debtor_index.begin();
     
-    // PRINT_("LIQS")
-    // for (auto& s: liquidator_index) { s.p(); }
-    // PRINT_("---")
-    
-    // if (liquidator_itr == liquidator_index.end() || debtor_itr->id == liquidator_itr->id) {
-    //   PRINT_("FAILED: END")
-    //   set_liquidation_status(LiquidationStatus::failed);
-    //   run_requests(max - processed);
-    //   return;
-    // }
-    
-    // PRINT_("\nliquidator")
-    // liquidator_itr->p();
-    
-    // PRINT("liq sort", liquidator_itr->liquidator())
-    
-    // PRINT_("debtor")
-    // debtor_itr->p();
-    
     accrue_interest(_cdp.require_find(debtor_itr->id));
     
     if (debtor_itr->debt.amount == 0) {
       PRINT_("DONE1")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
-      run_requests(max - processed);
       return;
     }
     
@@ -424,7 +404,6 @@ void buck::run_liquidation(uint8_t max) {
       
       PRINT_("DONE2")
       set_liquidation_status(LiquidationStatus::liquidation_complete);
-      run_requests(max - processed);
       return;
     }
     
@@ -432,7 +411,6 @@ void buck::run_liquidation(uint8_t max) {
     if (liquidator_itr->acr == 0) {
       PRINT_("NO ACR")
       set_liquidation_status(LiquidationStatus::failed);
-      run_requests(max - processed);
       return;
     }
     
@@ -449,12 +427,9 @@ void buck::run_liquidation(uint8_t max) {
       liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
     }
     
-    PRINT("liq, ccr", liquidator_ccr)
-    
     if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
       PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
       set_liquidation_status(LiquidationStatus::failed);
-      run_requests(max - processed);
       return;
     }
     
@@ -479,22 +454,6 @@ void buck::run_liquidation(uint8_t max) {
     
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
-    
-    // PRINT("\nbad debt", bad_debt)
-    // PRINT("bailable", bailable)
-    // PRINT("used d", used_debt_amount)
-    // PRINT("use c", used_collateral_amount)
-    // PRINT_("")
-    
-    // if (used_debt_amount <= 0) {
-    //   PRINT_("L3")
-    //   liquidator_itr->p();
-    //   buy_r(_cdp.require_find(liquidator_itr->id));
-    //   liquidator_itr++;
-    //   continue;
-    // }
-    
-    // PRINT("used_debt", used_debt_amount)
     
     const bool removed = debtor_itr->debt == used_debt;
     if (removed) {
@@ -523,7 +482,6 @@ void buck::run_liquidation(uint8_t max) {
     check(liquidator_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
     check(liquidator_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
     
-    // PRINT_(".\n")
-    // liquidator_itr = liquidator_index.begin();
+    processed++;
   }
 }
