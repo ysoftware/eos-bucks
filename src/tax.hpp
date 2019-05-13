@@ -136,7 +136,7 @@ void buck::save(const name& account, const asset& value) {
   // to-do validate all
   
   check(value.amount > 0, "can not use negative value");
-  check(value.symbol == REX, "can not use asset with different symbol");
+  check(value.symbol == BUCK, "can not use asset with different symbol");
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
