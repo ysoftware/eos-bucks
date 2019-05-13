@@ -21,7 +21,7 @@ CONTRACT buck : public contract {
     ACTION run(uint8_t max);
     
     // admin
-    ACTION update(uint32_t eos_price);
+    ACTION update(uint32_t eos_price, bool force);
     ACTION processrex();
   
     #if TEST_TIME
