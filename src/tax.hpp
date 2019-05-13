@@ -6,16 +6,16 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
-  const uint64_t scruge_insurance_amount = tax.r_collected * SP / 100;
-  const uint64_t insurance_amount = tax.r_collected - scruge_insurance_amount;
+  const int64_t scruge_insurance_amount = tax.r_collected.amount * SP / 100;
+  const int64_t insurance_amount = tax.r_collected.amount - scruge_insurance_amount;
   const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
   }
   
   // send part of collected savings to Scruge
-  const uint64_t scruge_savings_amount = tax.e_collected * SP / 100;
-  const uint64_t savings_amount = tax.e_collected - scruge_savings_amount;
+  const int64_t scruge_savings_amount = tax.e_collected.amount * SP / 100;
+  const int64_t savings_amount = tax.e_collected.amount - scruge_savings_amount;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
     add_balance(SCRUGE, scruge_savings, _self, true);
@@ -28,13 +28,13 @@ void buck::process_taxes() {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     
-    r.insurance_pool += insurance_amount;
-    r.savings_pool += savings_amount;
+    r.insurance_pool += asset(insurance_amount, REX);
+    r.savings_pool += asset(savings_amount, BUCK);
     
     r.r_aggregated += r.r_total * delta_t;
-    r.r_collected = 0;
+    r.r_collected = ZERO_REX;
     
-    r.e_collected = 0;
+    r.e_collected = ZERO_BUCK;
   });
   
   // PRINT("add to pool", insurance_amount)
@@ -71,8 +71,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.e_collected += accrued_debt_amount;
-    r.r_collected += accrued_collateral_amount;
+    r.e_collected += accrued_debt;
+    r.r_collected += accrued_collateral;
   });
   
   // to-do check ccr for liquidation
@@ -108,15 +108,15 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const uint64_t agec = excess * delta_t;
   
-  uint64_t dividends_amount = 0;
+  int64_t dividends_amount = 0;
   if (tax.r_aggregated > 0) {
-    dividends_amount = uint128_t(agec) * tax.insurance_pool / tax.r_aggregated;
+    dividends_amount = uint128_t(agec) * tax.insurance_pool.amount / tax.r_aggregated;
   }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.r_total -= excess;
     r.r_aggregated -= agec;
-    r.insurance_pool -= dividends_amount;
+    r.insurance_pool -= asset(dividends_amount, REX);
   });
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -140,7 +140,11 @@ void buck::save(const name& account, const asset& value) {
   sub_balance(account, value, false);
   
   // buy E
-  const uint64_t received_e = ((uint128_t) value.amount * tax.savings_pool / tax.e_supply;
+  int64_t received_e = value.amount * 100;
+  if (tax.e_supply > 0) {
+    received_e = (uint128_t) value.amount * tax.savings_pool.amount / tax.e_supply;
+  }
+  
   check(received_e > 0, "to-do remove. this is probably wrong (save)");
   
   _accounts.modify(account_itr, account, [&](auto& r) {
@@ -154,7 +158,7 @@ void buck::save(const name& account, const asset& value) {
   run(3);
 }
 
-void buck::take(const name& account, const asset& value) {
+void buck::take(const name& account, const int64_t value) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
@@ -167,13 +171,13 @@ void buck::take(const name& account, const asset& value) {
   const auto account_itr = _accounts.find(BUCK.code().raw());
 
   // sell E
-  const uint64_t selling_e = (uint128_t(value.amount) * tax.savings_pool / tax.e_supply;
+  const int64_t selling_e = uint128_t(value) * tax.e_supply / tax.savings_pool.amount;
   check(account_itr->e_balance >= selling_e, "overdrawn savings balance");
   
   // to-do check supply not 0
   
-  const int64_t pool_part = uint128_t(selling_e) * tax.savings_pool / tax.e_supply;
-  const int64_t received_bucks_amount = pool_part * tax.savings_pool / tax.e_supply;
+  const int64_t pool_part = uint128_t(selling_e) * tax.savings_pool.amount / tax.e_supply;
+  const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
   _accounts.modify(account_itr, account, [&](auto& r) {
@@ -182,7 +186,7 @@ void buck::take(const name& account, const asset& value) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.e_supply -= selling_e;
-    r.savings_pool -= received_bucks_amount;
+    r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
   add_balance(account, received_bucks, same_payer, false);

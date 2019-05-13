@@ -52,15 +52,15 @@ bool buck::init() {
   
   _tax.emplace(_self, [&](auto& r) {
     
-    r.insurance_pool = 0;
-    r.savings_pool = 0;
+    r.insurance_pool = ZERO_REX;
+    r.savings_pool = ZERO_BUCK;
   
     r.r_total = 0;
     r.r_aggregated = 0;
-    r.r_collected = 0;
+    r.r_collected = ZERO_REX;
     
     r.e_supply = 0;
-    r.e_collected = 0;
+    r.e_collected = ZERO_BUCK;
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self, false);

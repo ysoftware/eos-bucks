@@ -17,7 +17,7 @@ CONTRACT buck : public contract {
     ACTION redeem(const name& account, const asset& quantity);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
     ACTION save(const name& account, const asset& value);
-    ACTION take(const name& account, const asset& value);
+    ACTION take(const name& account, const int64_t value);
     ACTION run(uint8_t max);
     
     // admin
@@ -67,17 +67,17 @@ CONTRACT buck : public contract {
     TABLE taxation_stats {
       
       // actual processed taxes
-      uint64_t insurance_pool;
-      uint64_t savings_pool;
+      asset insurance_pool;
+      asset savings_pool;
       
       // insurance
       uint64_t r_total;
       uint64_t r_aggregated;
-      uint64_t r_collected; // BUCK this round
+      asset r_collected; // BUCK this round
       
       // savings 
       uint64_t e_supply;
-      uint64_t e_collected; // REX this round
+      asset e_collected; // REX this round
       
       uint64_t primary_key() const { return 0; }
     };
