@@ -168,11 +168,12 @@ void buck::redeem(const name& account, const asset& quantity) {
   const auto redeem_itr = _redeemreq.find(account.value);
   
   if (redeem_itr != _redeemreq.end()) {
+    
     // return previous request
     add_balance(account, redeem_itr->quantity, account, false);
     
     _redeemreq.modify(redeem_itr, same_payer, [&](auto& r) {
-      r.quantity += quantity;
+      r.quantity = quantity;
       r.timestamp = get_current_time_point();
     });
   }
