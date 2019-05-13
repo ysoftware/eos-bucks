@@ -37,6 +37,10 @@ void buck::process_taxes() {
     r.e_collected = ZERO_BUCK;
   });
   
+  // sanity check
+  check(tax.insurance_pool.amount >= 0, "programmer error, pools can't go below 0");
+  check(tax.savings_pool.amount >= 0, "programmer error, pools can't go below 0");
+  
   // PRINT("add to pool", insurance_amount)
 }
 

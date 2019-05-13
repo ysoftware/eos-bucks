@@ -145,6 +145,10 @@ void buck::run_requests(uint8_t max) {
           r.debt += change_debt;
         });
         
+        // sanity check
+        check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
+        check(cdp_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
+        
         cdp_itr->p();
       
         buy_r(cdp_itr);
@@ -198,6 +202,11 @@ void buck::run_requests(uint8_t max) {
           r.debt += change_debt;
           r.modified_round = now;
         });
+        
+        // sanity check
+        check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
+        check(cdp_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
+        
         
         buy_r(cdp_itr);
         
@@ -287,6 +296,10 @@ void buck::run_requests(uint8_t max) {
               r.debt -= using_debt;
               r.collateral -= using_collateral;
             });
+            
+            // sanity check
+            check(debtor_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
+            check(debtor_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
             
             PRINT("redeem updating", using_debt)
             debtor_itr->p();
@@ -476,12 +489,21 @@ void buck::run_liquidation(uint8_t max) {
         r.collateral -= used_collateral;
         r.debt -= used_debt;
       });
+      
+      // sanity check
+      check(debtor_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
+      check(debtor_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
+      
     }
     
     liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
       r.collateral += used_collateral;
       r.debt += used_debt;
     });
+    
+    // sanity check
+    check(liquidator_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
+    check(liquidator_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
     
     // PRINT_(".\n")
     // liquidator_itr = liquidator_index.begin();
