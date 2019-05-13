@@ -54,12 +54,13 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(100_0000, 10_000_0000, 1)
+	rand = random.randrange(1_000_0000, 100_000_0000, 1)
 	rand2 = random.randint(150, 500)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
 	for i in range (0,k):
+		rand = random.randrange(1_000_0000, 100_000_0000, 1)
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
@@ -229,7 +230,7 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
-		print("added", interest * SR // 100)
+		# print("added", interest * SR // 100)
 	return cdp
 
 def update_tax(cdp, price):
@@ -625,7 +626,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 10
+	x = 15
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000

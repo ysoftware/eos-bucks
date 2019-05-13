@@ -5,7 +5,7 @@
 void buck::run(uint8_t max) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  const uint8_t value = std::min(max, (uint8_t) 250);
+  const uint8_t value = std::min(max, (uint8_t) 50);
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
     run_liquidation(value);
   }
