@@ -33,8 +33,14 @@ void buck::zdestroy() {
 #endif
 
 #if TEST_TIME
-void buck::zmaketime(uint64_t seconds) {
+void buck::zmaketime(int64_t seconds) {
   time_test_i _time(_self, _self.value);
+  
+  if (seconds < 0) {
+    _time.erase(_time.begin());
+    return;
+  }
+  
   if (_time.begin() != _time.end()) {
     _time.modify(_time.begin(), same_payer, [&](auto& r) {
       r.now = time_point(time_point_sec(seconds));

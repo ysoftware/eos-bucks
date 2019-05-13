@@ -25,7 +25,7 @@ CONTRACT buck : public contract {
     ACTION processrex();
   
     #if TEST_TIME
-    ACTION zmaketime(uint64_t seconds);
+    ACTION zmaketime(int64_t seconds);
     #endif
     
     #if DEBUG
