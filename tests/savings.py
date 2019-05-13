@@ -50,6 +50,7 @@ class Test(unittest.TestCase):
 		create_account("user1", master, "user1")
 		create_account("user2", master, "user2")
 		transfer(eosio_token, master, user1, "1000000000.0000 EOS", "")
+		transfer(eosio_token, master, user2, "1000000000.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -60,51 +61,67 @@ class Test(unittest.TestCase):
 
 		time = 0
 		maketime(buck, time)
-		update(buck, 1)
+		update(buck, 100)
 
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
+		transfer(eosio_token, user2, buck, "1000000000.0000 EOS", "deposit")
 
 		# mature rex
 		time += 3_000_000
 		maketime(buck, time)
 
-		open(buck, user1, 200, 0, "100000000.0000 REX")
-		open(buck, user1, 200, 0, "100000000.0000 REX")
-		open(buck, user1, 200, 0, "100000000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX") # 1000.0000 BUCK
+		open(buck, user2, 1000, 0, "10000.0000 REX") # 1000.0000 BUCK
+
+		##############################
+		COMMENT("Initial")
+
+		maketime(buck, time)
+		update(buck, 100)
+
+		##############################
+		COMMENT("Save")
+
+		save(buck, user1, "1000.0000 BUCK")
 
 		# save
+		time += 3_000_000
 		maketime(buck, time)
-		update(buck)
+		update(buck, 100)
 
-		save(buck, user1, "100.0000 BUCK")
+		save(buck, user2, "1000.0000 BUCK")
 
-		table(buck, "taxation")
+		# assert money went away
+		self.assertEqual(0, balance(buck, user1))
+		self.assertEqual(0, balance(buck, user2))
 
 		# save more
-		time += 1_000
+		time += 3_000_000
 		maketime(buck, time)
-		update(buck)
+		update(buck, 100)
 
-		save(buck, user1, "100000.0000 BUCK")
-
-		tax = table(buck, "taxation")
-
-		# take savings
-		balance(buck, user1)
-		take(buck, user1, 1000000)
-		take(buck, user1, "100000.0000 BUCK")
-
-		# oracle
-		time += 1_000
-		maketime(buck, time)
-		update(buck)
+		tax1 = table(buck, "taxation")
 
 		balance(buck, user1)
-		tax = table(buck, "taxation")
+		balance(buck, user2)
 
-		self.assertAlmostEqual(0, amount(tax["savings_pool"]), -1, "Savings pool is not empty")
+		##############################
+		COMMENT("Take")
 
-		table(buck, "accounts", user1)
+		take(buck, user1, 10000000)
+		take(buck, user2, 9939383)
+
+		##############################
+		COMMENT("Match")
+
+		tax2 = table(buck, "taxation")
+
+		self.assertEqual(0, amount(tax2["savings_pool"]), "savings pool is not empty")
+
+		balance1 = balance(buck, user1)
+		balance2 = balance(buck, user2)
+		difference = balance1 + balance2 - amount(tax1["savings_pool"])
+		self.assertEqual(0, difference, "savings pool doesn't match balances")
 
 
 

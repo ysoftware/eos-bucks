@@ -16,9 +16,9 @@ inline time_point buck::get_current_time_point() const {
 }
 
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
-  // #if DEBUG
-  // if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
-  // #endif
+  #if DEBUG
+  if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
+  #endif
   
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
@@ -41,9 +41,9 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   
   if (quantity.amount == 0) return;
   
-  // #if DEBUG
-  // eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
-  // #endif
+  #if DEBUG
+  eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
+  #endif
   
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
   check(fund_itr->matured_rex >= quantity.amount, "your rex is not mature enough to be used");
@@ -55,9 +55,9 @@ void buck::sub_funds(const name& from, const asset& quantity) {
 }
 
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
-  // #if DEBUG
-  // if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
-  // #endif
+  #if DEBUG
+  if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
+  #endif
   
   accounts_i accounts(_self, owner.value);
   auto account_itr = accounts.find(value.symbol.code().raw());
@@ -82,20 +82,23 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
 void buck::sub_balance(const name& owner, const asset& value, bool change_supply) {
   if (value.amount == 0) return;
   
-  // #if DEBUG
-  // eosio::print("-"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
-  // #endif
+  #if DEBUG
+  eosio::print("-"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
+  #endif
   
   accounts_i accounts(_self, owner.value);
   const auto account_itr = accounts.require_find(value.symbol.code().raw(), "no balance object found");
   check(account_itr->balance.amount >= value.amount, "overdrawn buck balance");
 
   const auto payer = has_auth(owner) ? owner : same_payer;
-
-  // to-do ram payer should always be replaced by owner when possible
+  
+  PRINT("was balance", account_itr->balance)
+  
   accounts.modify(account_itr, payer, [&](auto& r) {
     r.balance -= value;
   });
+  
+  PRINT("new balance", account_itr->balance)
   
   if (change_supply) {
     update_supply(-value);

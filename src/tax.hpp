@@ -143,23 +143,27 @@ void buck::save(const name& account, const asset& value) {
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
+  check(account_itr != _accounts.end(), "balance object doesn't exist");
   
-  sub_balance(account, value, false);
   
-  // buy E
-  int64_t received_e = value.amount * 100;
+  int64_t received_e = value.amount;
   if (tax.e_supply > 0) {
-    received_e = (uint128_t) value.amount * tax.savings_pool.amount / tax.e_supply;
+    received_e = (uint128_t) value.amount * tax.e_supply / tax.savings_pool.amount;
   }
   
   check(received_e > 0, "to-do remove. this is probably wrong (save)");
   
+  PRINT("bough", received_e)
+  PRINT("for", value)
+  
   _accounts.modify(account_itr, account, [&](auto& r) {
     r.e_balance += received_e;
+    r.balance -= value;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.e_supply += received_e;
+    r.savings_pool += value;
   });
   
   run(3);
@@ -169,32 +173,30 @@ void buck::take(const name& account, const uint64_t value) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
-  // to-do validate all
-  
   check(value > 0, "can not use negative value");
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
-
-  // sell E
-  const int64_t selling_e = uint128_t(value) * tax.e_supply / tax.savings_pool.amount;
-  check(account_itr->e_balance >= selling_e, "overdrawn savings balance");
+  check(account_itr != _accounts.end(), "balance object doesn't exist");
+  check(account_itr->e_balance >= value, "overdrawn savings balance");
   
-  // to-do check supply not 0
-  
-  const int64_t pool_part = uint128_t(selling_e) * tax.savings_pool.amount / tax.e_supply;
-  const int64_t received_bucks_amount = pool_part * tax.savings_pool.amount / tax.e_supply;
+  const int64_t received_bucks_amount = uint128_t(value) * tax.savings_pool.amount / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
+  PRINT("pool", tax.savings_pool)
+  PRINT("taking %", received_bucks_amount * 100 / tax.savings_pool.amount)
+  PRINT("sold", value)
+  PRINT("for", received_bucks)
+  
   _accounts.modify(account_itr, account, [&](auto& r) {
-    r.e_balance -= selling_e;
+    r.e_balance -= value;
+    r.balance += received_bucks;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.e_supply -= selling_e;
+    r.e_supply -= value;
     r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
-  add_balance(account, received_bucks, same_payer, false);
   run(3);
 }
