@@ -85,14 +85,14 @@ class Test(unittest.TestCase):
 		maketime(buck, time)
 		update(buck)
 
-		# save(buck, user1, "100000.0000 BUCK")
+		save(buck, user1, "100000.0000 BUCK")
 
 		tax = table(buck, "taxation")
 
 		# take savings
 		balance(buck, user1)
 		take(buck, user1, 1000000)
-		# take(buck, user1, "100000.0000 BUCK")
+		take(buck, user1, "100000.0000 BUCK")
 
 		# oracle
 		time += 1_000
@@ -102,7 +102,7 @@ class Test(unittest.TestCase):
 		balance(buck, user1)
 		tax = table(buck, "taxation")
 
-		self.assertAlmostEqual(0, tax["savings_pool"], -1, "Savings pool is not empty")
+		self.assertAlmostEqual(0, amount(tax["savings_pool"]), -1, "Savings pool is not empty")
 
 		table(buck, "accounts", user1)
 

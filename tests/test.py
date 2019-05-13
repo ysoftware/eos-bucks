@@ -219,7 +219,7 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
-		# print("add tax", cdp.id)
+		print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
@@ -229,6 +229,7 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
+		print("added", interest * SR // 100)
 	return cdp
 
 def update_tax(cdp, price):
@@ -272,7 +273,7 @@ def ls(collateral, debt, acr, id):
 	return (MAX * 2 - cd // acr)   * 1_000 + id
 
 def liquidation(price, cr, lf):	
-	# print("liquidation")
+	print("liquidation")
 	global TEC, table
 	if table == []: return
 	# i = 0
@@ -289,11 +290,11 @@ def liquidation(price, cr, lf):
 		# if i >= len(table) or debtor.id == table[idx].id: 
 		# 	cdp_insert(debtor)
 
-		# 	print("\n\n")
-		# 	print(f"liquidator", table[idx])
-		# 	print("debtor", debtor)
-		# 	print("FAILED: END")
-		# 	return # failed
+			# print("\n\n")
+			# print(f"liquidator", table[idx])
+			# print("debtor", debtor)
+			# print("FAILED: END")
+			# return # failed
 
 		debtor = add_tax(debtor, price)
 
@@ -302,17 +303,17 @@ def liquidation(price, cr, lf):
 
 		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
-			# print("DONE1")
+			print("DONE1")
 			return # done
 
 		if debtor.collateral * price // debtor.debt >= CR  - epsilon(CR):
 			cdp_insert(debtor)
-			# print("DONE2")
+			print("DONE2")
 			return # done
 	
 		if table[idx].acr == 0:
 			print(table[idx])
-			# print("NO ACR\n")
+			print("NO ACR\n")
 			cdp_insert(debtor)
 			return
 
@@ -327,7 +328,7 @@ def liquidation(price, cr, lf):
 			liq_ccr = liquidator.collateral * price // liquidator.debt
 
 		if liq_ccr < CR or liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
-			# print("FAILED: NO MORE GOOD LIQUIDATORS\n")
+			print("FAILED: NO MORE GOOD LIQUIDATORS\n")
 			cdp_insert(liquidator)
 			cdp_insert(debtor)
 			return
@@ -392,6 +393,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
+			print("debtor failed debt", cdp)
 			continue
 
 		rf = 1
@@ -399,6 +401,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
+			print("debtor failed ccr", cdp.collateral * price // cdp.debt)
 			continue
 
 		if cdp.debt > amount:
@@ -412,7 +415,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			amount = 0
 
-			print("redeem updating", d, c)
+			print("redeem updating", c, d)
 			print(cdp)
 		else:
 			d = cdp.debt
@@ -422,7 +425,7 @@ def redemption(amount, price):
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
 
-			print("redeem removing", d, c)
+			print("redeem removing", c, d)
 			print(cdp)
 
 			amount -= d
@@ -439,6 +442,7 @@ def reparametrize(id, c, d, price):
 		return
 
 	cdp = table.pop(idx)
+	print("reparam", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -448,6 +452,7 @@ def reparametrize(id, c, d, price):
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
+		else: print("not removing d below min")
 
 	if c > 0:
 		cdp.add_collateral(c)
@@ -463,6 +468,7 @@ def reparametrize(id, c, d, price):
 				else:
 					m = (cr-100) * cdp.debt // price
 					cdp.add_collateral(max(c, -m))
+		else: print("not removing c below min")
 
 	if d > 0:
 		if cdp.debt == 0:
@@ -482,6 +488,7 @@ def reparametrize(id, c, d, price):
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
+	print("done", cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price

@@ -117,7 +117,6 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   });
   
   buy_r(cdp_itr);
-  
   run_requests(10);
 }
 
@@ -186,6 +185,5 @@ void buck::redeem(const name& account, const asset& quantity) {
   }
   
   sub_balance(account, quantity, false);
-  
   run(10);
 }

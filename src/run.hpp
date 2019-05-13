@@ -75,8 +75,14 @@ void buck::run_requests(uint8_t max) {
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
         
-        if (reparam_itr->change_debt.amount < 0 && reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) { // removing debt
-          change_debt = reparam_itr->change_debt; // add negative value
+        if (reparam_itr->change_debt.amount < 0) { // removing debt
+          if (reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) {
+            change_debt = reparam_itr->change_debt; // add negative value
+          }
+          else {
+            PRINT_("not removing debt below min")
+            PRINT("new debt", reparam_itr->change_debt + cdp_itr->debt)
+          }
         }
         
         if (reparam_itr->change_collateral.amount > 0) { // adding collateral
@@ -85,25 +91,31 @@ void buck::run_requests(uint8_t max) {
         
         
         
-        if (reparam_itr->change_collateral.amount < 0 && cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) { // removing collateral
+        if (reparam_itr->change_collateral.amount < 0) { // removing collateral
           
-          const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
-
-          // check ccr with new collateral
-          int32_t ccr = CR;
-          if (new_debt_amount > 0) {
-            ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
-          }
-          
-          PRINT("ccr", ccr)
-          if (ccr >= CR) {
-            const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
-            const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
-            const asset change = asset(change_amount, REX);
-            change_collateral = change;
+          if (cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) {
+            const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
+  
+            // check ccr with new collateral
+            int32_t ccr = CR;
+            if (new_debt_amount > 0) {
+              ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
+            }
+            
+            PRINT("reparam c<0, ccr", ccr)
+            if (ccr >= CR) {
+              const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
+              const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
+              const asset change = asset(change_amount, REX);
+              change_collateral = change;
+            }
+            else {
+              PRINT_("reparam quit 1")
+            }
           }
           else {
-            PRINT_("reparam quit 1")
+            PRINT_("not removing collateral below min")
+            PRINT("new c", cdp_itr->collateral + reparam_itr->change_collateral)
           }
         }
         
@@ -116,9 +128,8 @@ void buck::run_requests(uint8_t max) {
             ccr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
           }
           
-          PRINT("ccr", ccr)
+          PRINT("reparam d > 0, ccr", ccr)
           if (ccr >= CR) {
-            PRINT_("YEEES")
             
             const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
             const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
@@ -252,6 +263,7 @@ void buck::run_requests(uint8_t max) {
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
             debtor_itr++;
             debtors_failed++;
+            debtor_itr->p();
             PRINT("debtor failed debt", debtor_itr->debt)
             continue;
           }
@@ -433,7 +445,7 @@ void buck::run_liquidation(uint8_t max) {
       liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
     }
     
-    PRINT("ccr", liquidator_ccr)
+    PRINT("liq, ccr", liquidator_ccr)
     
     if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
       PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
@@ -486,7 +498,7 @@ void buck::run_liquidation(uint8_t max) {
       debtor_index.erase(debtor_itr);
     }
     else {
-      // PRINT_("updating debtor")
+      PRINT_("updating debtor")
       debtor_index.modify(debtor_itr, same_payer, [&](auto& r) {
         r.collateral -= used_collateral;
         r.debt -= used_debt;
