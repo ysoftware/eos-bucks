@@ -390,7 +390,9 @@ def redemption(amount, price):
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		if cdp.debt < 50000 + epsilon(50000):
+		print(cdp.debt)
+
+		if cdp.debt < 500000 + epsilon(500000):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1

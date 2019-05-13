@@ -263,10 +263,10 @@ void buck::run_requests(uint8_t max) {
           accrue_interest(_cdp.require_find(debtor_itr->id));
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
-            debtor_itr++;
-            debtors_failed++;
             debtor_itr->p();
             PRINT("debtor failed debt", debtor_itr->debt)
+            debtor_itr++;
+            debtors_failed++;
             continue;
           }
           
