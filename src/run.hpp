@@ -227,8 +227,11 @@ void buck::run_requests(uint8_t max) {
         asset burned_debt = ZERO_BUCK; // used up
         debtor_itr = debtor_index.begin();
         
+        // loop protection
+        uint8_t debtors_failed = 0;
+        
         // loop through available debtors until all amount is redeemed or our of debtors
-        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end()) {
+        while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed > 20) {
           
           if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
             break;
@@ -238,15 +241,19 @@ void buck::run_requests(uint8_t max) {
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
             debtor_itr++;
+            debtors_failed++;
+            PRINT("debtor failed debt", debtor_itr->debt)
             continue;
           }
           
           const int32_t ccr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
-          // skip to the next debtor
+          // all further debtors have even worse ccr
           if (ccr < 100 - RF) { 
             debtor_itr++;
-            continue; 
+            debtors_failed++;
+            PRINT("debtor failed ccr", ccr)
+            continue;
           }
           
           const int64_t using_debt_amount = std::min(redeem_quantity.amount, debtor_itr->debt.amount);
@@ -255,9 +262,9 @@ void buck::run_requests(uint8_t max) {
           const asset using_debt = asset(using_debt_amount, BUCK);
           const asset using_collateral = asset(using_collateral_amount, REX);
           
-          // PRINT("redeem_quantity", redeem_quantity)
-          // PRINT_("after tax") debtor_itr->p();
-          // PRINT("available debt", debtor_itr->debt)
+          PRINT("redeem_quantity", redeem_quantity)
+          PRINT_("after tax") debtor_itr->p();
+          PRINT("available debt", debtor_itr->debt)
           PRINT("using_debt", using_debt)
           PRINT("using_collateral", using_collateral)
           
@@ -296,10 +303,16 @@ void buck::run_requests(uint8_t max) {
           // return unredeemed amount
           add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
         }
+        else if (redeem_itr->quantity == redeem_quantity) {
+          // complete and remove redemption request only if anything was redeemed in the process
+          
+          update_supply(burned_debt);
+          add_funds(redeem_itr->account, collateral_return, same_payer);
+          redeem_itr = _redeemreq.erase(redeem_itr);
+        }
         
-        update_supply(burned_debt);
-        add_funds(redeem_itr->account, collateral_return, same_payer);
-        redeem_itr = _redeemreq.erase(redeem_itr);
+        // in extreme situation, only do 1 request per run
+        if (debtors_failed > 20) break;
       }
       else {
         // no more redemption requests
@@ -408,7 +421,7 @@ void buck::run_liquidation(uint8_t max) {
     PRINT("ccr", liquidator_ccr)
     
     if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
-      // PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
+      PRINT_("FAILED: NO MORE GOOD LIQUIDATORS")
       set_liquidation_status(LiquidationStatus::failed);
       run_requests(max - processed);
       return;

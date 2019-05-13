@@ -170,14 +170,14 @@ class Test(unittest.TestCase):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
 			cdp = test.table[i * -1 - 1]
-			print("d;s:", test.deb_sort(cdp))
+			# print("d;s:", test.deb_sort(cdp))
 
-			print("\nd1", cdp.id, test.deb_sort(cdp))
-			print("d2", debtor["id"], test.ds(
-				amount(debtor["collateral"]) * 10000,
-				amount(debtor["debt"]) * 10000,
-				int(debtor["id"])), 
-			"\n")
+			# print("\nd1", cdp.id, test.deb_sort(cdp))
+			# print("d2", debtor["id"], test.ds(
+			# 	amount(debtor["collateral"]) * 10000,
+			# 	amount(debtor["debt"]) * 10000,
+			# 	int(debtor["id"])), 
+			# "\n")
 			self.match(cdp, debtor)
 
 		print("liquidators")
@@ -189,13 +189,14 @@ class Test(unittest.TestCase):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table
 			cdp = test_liquidators[i]
-			print("\nl1", cdp.id, test.liq_sort(cdp))
-			print("l2", debtor["id"], test.ls(
-				amount(liquidator["collateral"]) * 10000, 
-				amount(liquidator["debt"]) * 10000, 
-				int(liquidator["acr"]), 
-				int(liquidator["id"])),
-			"\n")
+			
+			# print("\nl1", cdp.id, test.liq_sort(cdp))
+			# print("l2", debtor["id"], test.ls(
+			# 	amount(liquidator["collateral"]) * 10000, 
+			# 	amount(liquidator["debt"]) * 10000, 
+			# 	int(liquidator["acr"]), 
+			# 	int(liquidator["id"])),
+			# "\n")
 			self.match(cdp, liquidator)
 
 

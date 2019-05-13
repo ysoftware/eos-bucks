@@ -17,7 +17,7 @@ oracle_time = 0
 
 def time_now():
 	global time
-	time += random.randint(2, 1440) * 60 # minutes
+	time += random.randint(1, 1440) * 60 # minutes
 	return time
 
 def epsilon(value): return 0 # value / 500
@@ -375,7 +375,7 @@ def liquidation(price, cr, lf):
 		# i = 0
 		# print(".\n")
 
-def redemption(amount, price, cr, rf):
+def redemption(amount, price):
 	global time, table
 	i = len(table)-1
 
@@ -383,18 +383,22 @@ def redemption(amount, price, cr, rf):
 
 	print("\n\nredeem", amount)
 
-	while amount > epsilon(amount) and i != -1:
+	debtors_failed = 0
+	while amount > epsilon(amount) and i != -1 and debtors_failed > 20:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
 		if cdp.debt < 50000 + epsilon(50000):
 			cdp_insert(cdp)
 			i -= 1
+			debtors_failed += 1
 			continue
 
+		rf = 1
 		if cdp.collateral * price // cdp.debt < 100 - rf:
 			cdp_insert(cdp)
 			i -= 1
+			debtors_failed += 1
 			continue
 
 		if cdp.debt > amount:
@@ -516,9 +520,9 @@ def run_round(balance):
 	global time, CR, LF, IR, r, SR, IDP, TEC, CIT, time, oracle_time, price, table
 
 	LIQUIDATION = True
-	REDEMPTION 	= False
-	ACR 		= True
-	REPARAM 	= True
+	REDEMPTION 	= True
+	ACR 		= False
+	REPARAM 	= False
 
 	actions = []
 	old_price = price
@@ -589,7 +593,7 @@ def run_round(balance):
 	if REDEMPTION:
 		v1 = random.randrange(100, 10_00_0000)
 		success = v1 <= balance
-		if success: redemption(v1, price, 150, 101)
+		if success: redemption(v1, price)
 		actions.append([["redeem", v1], success])
 
 	# accrue taxes
@@ -614,7 +618,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 5
+	x = 10
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000

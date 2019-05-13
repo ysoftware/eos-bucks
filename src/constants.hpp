@@ -43,7 +43,7 @@ static const name& REX_ACCOUNT  = EOSIO;
 
 const uint8_t CR = 150; /// minimal collateral ratio
 const uint8_t LF = 10;  /// liquidation fee
-const uint8_t RF = 101;   /// redemption fee
+const uint8_t RF = 1;   /// redemption fee
 const uint8_t SP = 20;  /// part of taxes for scruge
 const uint8_t SR = 80;   /// savings ratio
 const uint8_t IR = 20;   /// insurance ratio
