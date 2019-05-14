@@ -138,17 +138,21 @@ void buck::save(const name& account, const asset& value) {
   check(value.is_valid(), "invalid quantity");
   check(value.amount > 0, "can not use negative value");
   check(value.symbol == BUCK, "can not use asset with different symbol");
+  check(value.amount > 1'0000, "not enough value to put in savings");
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
   check(account_itr != _accounts.end(), "balance object doesn't exist");
   
-  int64_t received_e = value.amount;
+  uint64_t received_e = value.amount;
   if (tax.e_supply > 0) {
     received_e = (uint128_t) value.amount * tax.e_supply / tax.savings_pool.amount;
   }
   
-  check(received_e > 0, "to-do remove. this is probably wrong (save)");
+  PRINT("supply", tax.e_supply)
+  PRINT("pool", tax.savings_pool.amount)
+  
+  check(received_e > 0, "not enough value to receive minimum amount of savings");
   
   _accounts.modify(account_itr, account, [&](auto& r) {
     r.e_balance += received_e;

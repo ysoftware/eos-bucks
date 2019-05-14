@@ -49,6 +49,7 @@ class Test(unittest.TestCase):
 
 		create_account("user1", master, "user1")
 		create_account("user2", master, "user2")
+		create_account("user3", master, "user3")
 		transfer(eosio_token, master, user1, "1000000000.0000 EOS", "")
 		transfer(eosio_token, master, user2, "1000000000.0000 EOS", "")
 
@@ -82,14 +83,19 @@ class Test(unittest.TestCase):
 		##############################
 		COMMENT("Save")
 
-		save(buck, user1, "1000.0000 BUCK")
+		save(buck, user1, "1.0000 BUCK")
+		balance(buck, user1)
 
 		# save
 		time += 3_000_000
 		maketime(buck, time)
 		update(buck, 100)
 
-		save(buck, user2, "1000.0000 BUCK")
+		save(buck, user2, "1.0000 BUCK")
+		balance(buck, user2)
+
+		transfer(buck, user1, user3, "999.0000 BUCK", "")
+		transfer(buck, user2, user3, "999.0000 BUCK", "")
 
 		# assert money went away
 		self.assertEqual(0, balance(buck, user1))
@@ -108,8 +114,8 @@ class Test(unittest.TestCase):
 		##############################
 		COMMENT("Take")
 
-		take(buck, user1, 10000000)
-		take(buck, user2, 9939383)
+		take(buck, user1, 10000)
+		take(buck, user2, 1408)
 
 		##############################
 		COMMENT("Match")
