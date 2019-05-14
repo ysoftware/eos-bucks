@@ -2,14 +2,17 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::update(uint32_t eos_price, bool force) {
-  
-  if (force) {
-    require_auth(permission_level(_self, "admin"_n));
-  }
-  else {
-    require_auth(permission_level(_self, "oracle"_n));
-  }
+void buck::forceupdate(uint32_t eos_price) {
+  require_auth(permission_level(_self, "admin"_n));
+  _update(eos_price, true);
+}
+
+void buck::update(uint32_t eos_price) {
+  require_auth(permission_level(_self, "oracle"_n));
+  _update(eos_price, false);
+}
+
+void buck::_update(uint32_t eos_price, bool force) {
   
   init();
   process_taxes();

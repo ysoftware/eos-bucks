@@ -22,7 +22,8 @@ CONTRACT buck : public contract {
     ACTION exchange(const name& from, const asset value);
     
     // admin
-    ACTION update(uint32_t eos_price, bool force);
+    ACTION update(uint32_t eos_price);
+    ACTION forceupdate(uint32_t eos_price);
     ACTION processrex();
   
     #if TEST_TIME
@@ -298,6 +299,7 @@ CONTRACT buck : public contract {
     void process_maturities(const fund_i::const_iterator& fund_itr);
     void run_exchange(uint8_t max);
     void collect_taxes(uint32_t max);
+    void _update(uint32_t eos_price, bool force);
     
     // getters
     int64_t to_buck(int64_t quantity) const;
