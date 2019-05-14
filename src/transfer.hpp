@@ -3,12 +3,12 @@
 // Created by Yaroslav Erohin.
 
 void buck::transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
+  require_auth(from);
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   check(from != to, "cannot transfer to self");
   check(is_account(to), "to account does not exist");
   
-  require_auth(from);
   require_recipient(from);
   require_recipient(to);
   
@@ -25,25 +25,33 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
 }
 
 void buck::withdraw(const name& from, const asset& quantity) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(from);
+  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   check(quantity.symbol.is_valid(), "invalid quantity");
-  check(quantity.symbol == REX, "specify withdraw amount in REX");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  time_point_sec maturity_time = get_amount_maturity(from, quantity);
-  check(current_time_point_sec() > maturity_time, "insufficient mature rex");
-  
-  sub_funds(from, quantity);
-  sell_rex(from, quantity);
+  if (quantity.symbol == REX) {
+    time_point_sec maturity_time = get_amount_maturity(from, quantity);
+    check(current_time_point_sec() > maturity_time, "insufficient matured rex");
+    
+    sub_funds(from, quantity);
+    sell_rex(from, quantity);
+  }
+  else if (quantity.symbol == EOS) {
+    sub_exchange_funds(from, quantity);
+    inline_transfer(from, quantity, "buck: withdraw from exchange funds", EOSIO_TOKEN);
+  }
+  else {
+    check(false, "symbol mismatch");
+  }
   run(10);
 }
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
+  require_auth(from);
   if (to != _self || from == _self) { return; }
   
-  require_auth(from);
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
@@ -52,7 +60,15 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
-  buy_rex(from, quantity);
+  if (memo == "deposit") {
+    buy_rex(from, quantity);
+  }
+  else if (memo == "exchange") {
+    add_exchange_funds(from, quantity, _self);
+  }
+  else {
+    check(false, "do not send tokens in the contract without correct memo");
+  }
   run(3);
 }
 

@@ -94,6 +94,7 @@ CONTRACT buck : public contract {
       asset balance;
       int64_t matured_rex = 0;
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities;
+      asset exchange_balance;
       
       uint64_t primary_key() const { return account.value; }
     };
@@ -265,6 +266,8 @@ CONTRACT buck : public contract {
     void sub_balance(const name& owner, const asset& value, bool change_supply);
     void add_funds(const name& from, const asset& quantity, const name& ram_payer);
     void sub_funds(const name& from, const asset& quantity);
+    void add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer);
+    void sub_exchange_funds(const name& from, const asset& quantity);
     
     void process_taxes();
     void add_savings_pool(const asset& value);

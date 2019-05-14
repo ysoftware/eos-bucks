@@ -20,6 +20,7 @@ static const symbol& REX   = symbol("REX", 4);
 
 static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
+static const asset& ZERO_EOS   = asset(0, EOS);
 
 /// minimal collateral is 5 EOS
 static const asset& MIN_COLLATERAL = asset(5'0000, REX);
