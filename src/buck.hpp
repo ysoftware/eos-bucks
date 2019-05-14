@@ -134,13 +134,15 @@ CONTRACT buck : public contract {
     };
     
     TABLE cdp {
-      uint64_t  id;
-      uint16_t  acr;
-      name      account;
-      asset     debt;
-      asset     collateral;
-      uint32_t  modified_round; // accrual round
+      uint64_t    id;
+      uint16_t    acr;
+      name        account;
+      asset       debt;
+      asset       collateral;
+      uint32_t    modified_round; // accrual round
+      time_point  maturity;       // maturity of REX collateral
       
+      #if DEBUG
       void p() const {
         eosio::print("#");eosio::print(id);
         eosio::print(" c: ");eosio::print(collateral);
@@ -149,6 +151,7 @@ CONTRACT buck : public contract {
         eosio::print(" time: ");eosio::print(modified_round);
         eosio::print("\n");
       }
+      #endif
       
       uint64_t primary_key() const { return id; }
       uint64_t by_account() const { return account.value; }
