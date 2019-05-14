@@ -84,8 +84,6 @@ void buck::run_requests(uint8_t max) {
           change_collateral = reparam_itr->change_collateral;
         }
         
-        
-        
         if (reparam_itr->change_collateral.amount < 0) { // removing collateral
           
           if (cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) {
@@ -264,6 +262,7 @@ void buck::run_requests(uint8_t max) {
 
 void buck::run_liquidation(uint8_t max) {
   uint64_t processed = 0;
+  const auto now = get_current_time_point();
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
@@ -341,6 +340,16 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
+    liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
+      r.collateral += used_collateral;
+      r.debt += used_debt;
+      
+      // if debtor maturity more than liquidator maturity and more than current time
+      if (debtor_itr->maturity > now && debtor_itr->maturity > liquidator_itr->maturity) {
+        r.maturity = cdp_itr->maturity; // pass maturity
+      }
+    });
+    
     const bool removed = debtor_itr->debt == used_debt;
     if (removed) {
       debtor_index.erase(debtor_itr);
@@ -355,11 +364,6 @@ void buck::run_liquidation(uint8_t max) {
       check(debtor_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
       check(debtor_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
     }
-    
-    liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
-      r.collateral += used_collateral;
-      r.debt += used_debt;
-    });
     
     // sanity check
     check(liquidator_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
