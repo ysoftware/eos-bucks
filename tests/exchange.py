@@ -71,22 +71,24 @@ class Test(unittest.TestCase):
 		maketime(buck, 3_000_000)
 		open(buck, user1, 200, 0, "100000.0000 REX")
 
-		transfer(buck, user1, user4, "1000.0000 BUCK", "")
+		transfer(buck, user1, user4, "5000.0000 BUCK", "")
+
+		table(buck, "stat")
 
 		###################################
 		COMMENT("Exchange")
 
 		maketime(buck, 3_000_001)
-		exchange(buck, user2, "10.0000 EOS")
+		exchange(buck, user2, "15.0000 EOS")
 
 		maketime(buck, 3_000_002)
-		exchange(buck, user3, "10.0000 EOS")
+		exchange(buck, user3, "5.0000 EOS")
 
 		maketime(buck, 3_000_003)
-		exchange(buck, user1, "10.0000 BUCK")
+		exchange(buck, user1, "1000.0000 BUCK")
 
 		maketime(buck, 3_000_004)
-		exchange(buck, user4, "10.0000 BUCK")
+		exchange(buck, user4, "3000.0000 BUCK")
 
 		#################################
 		COMMENT("Check")
@@ -95,8 +97,11 @@ class Test(unittest.TestCase):
 
 		#################################
 		COMMENT("Complete")
-
+		
+		maketime(buck, 4_000_000)
 		update(buck)
+
+		table(buck, "exchange")
 
 
 

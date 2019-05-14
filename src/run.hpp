@@ -343,7 +343,7 @@ void buck::run_requests(uint8_t max) {
         PRINT("redeem left over", redeem_quantity)
         
         // in extreme situations, only do 1 request per run
-        if (debtors_failed > 20) return;
+        if (debtors_failed > 10) break;
       }
       else {
         // no more redemption requests
@@ -369,6 +369,8 @@ void buck::run_requests(uint8_t max) {
     // PRINT("running accrual?", accrual_itr->id)
     // PRINT("modified", accrual_itr->modified_round)
   }
+  
+  run_exchange(max);
 }
 
 void buck::run_liquidation(uint8_t max) {
@@ -379,9 +381,8 @@ void buck::run_liquidation(uint8_t max) {
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
   auto liquidator_itr = liquidator_index.begin();
   
-  if (liquidator_itr == liquidator_index.end()) {
-    return; // no cdp exist, quit
-  }
+  // no cdp exist, quit
+  if (liquidator_itr == liquidator_index.end()) return; 
   
   // loop through liquidators
   while (max > processed) {

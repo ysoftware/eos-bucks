@@ -121,13 +121,9 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
 
   const auto payer = has_auth(owner) ? owner : same_payer;
   
-  PRINT("was balance", account_itr->balance)
-  
   accounts.modify(account_itr, payer, [&](auto& r) {
     r.balance -= value;
   });
-  
-  PRINT("new balance", account_itr->balance)
   
   if (change_supply) {
     update_supply(-value);
