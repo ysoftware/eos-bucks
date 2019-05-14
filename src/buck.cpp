@@ -56,9 +56,9 @@ bool buck::init() {
     r.insurance_pool = ZERO_REX;
     r.savings_pool = ZERO_BUCK;
   
-    r.r_total = 0;
-    r.r_aggregated = 0;
-    r.r_collected = ZERO_REX;
+    r.total_excess = 0;
+    r.aggregated_excess = 0;
+    r.collected_excess = ZERO_REX;
     
     r.e_supply = 0;
     r.e_collected = ZERO_BUCK;

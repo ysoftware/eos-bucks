@@ -6,8 +6,8 @@ void buck::process_taxes() {
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
-  const int64_t scruge_insurance_amount = tax.r_collected.amount * SP / 100;
-  const int64_t insurance_amount = tax.r_collected.amount - scruge_insurance_amount;
+  const int64_t scruge_insurance_amount = tax.collected_excess.amount * SP / 100;
+  const int64_t insurance_amount = tax.collected_excess.amount - scruge_insurance_amount;
   const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
     add_funds(SCRUGE, scruge_insurance, _self);
@@ -31,8 +31,8 @@ void buck::process_taxes() {
     r.insurance_pool += asset(insurance_amount, REX);
     r.savings_pool += asset(savings_amount, BUCK);
     
-    r.r_aggregated += r.r_total * delta_t;
-    r.r_collected = ZERO_REX;
+    r.aggregated_excess += r.total_excess * delta_t;
+    r.collected_excess = ZERO_REX;
     
     r.e_collected = ZERO_BUCK;
   });
@@ -90,7 +90,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.e_collected += accrued_debt;
-    r.r_collected += accrued_collateral;
+    r.collected_excess += accrued_collateral;
   });
   
   // to-do check ccr for liquidation
@@ -110,7 +110,7 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.r_total += excess;
+    r.total_excess += excess;
   });
 }
 
@@ -127,13 +127,13 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const uint64_t agec = excess * delta_t;
   
   int64_t dividends_amount = 0;
-  if (tax.r_aggregated > 0) {
-    dividends_amount = uint128_t(agec) * tax.insurance_pool.amount / tax.r_aggregated;
+  if (tax.aggregated_excess > 0) {
+    dividends_amount = uint128_t(agec) * tax.insurance_pool.amount / tax.aggregated_excess;
   }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.r_total -= excess;
-    r.r_aggregated -= agec;
+    r.total_excess -= excess;
+    r.aggregated_excess -= agec;
     r.insurance_pool -= asset(dividends_amount, REX);
   });
   

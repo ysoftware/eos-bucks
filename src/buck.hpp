@@ -5,8 +5,7 @@
 CONTRACT buck : public contract {
   public:
     using contract::contract;
-         
-          buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
+    buck(eosio::name receiver, eosio::name code, datastream<const char*> ds);
     
     // user
     ACTION withdraw(const name& from, const asset& quantity);
@@ -73,9 +72,9 @@ CONTRACT buck : public contract {
       asset savings_pool;
       
       // insurance
-      uint64_t r_total;
-      uint64_t r_aggregated;
-      asset r_collected; // BUCK this round
+      uint64_t  total_excess;
+      uint64_t  aggregated_excess;
+      asset     collected_excess; // BUCK this round
       
       // savings 
       uint64_t e_supply;
