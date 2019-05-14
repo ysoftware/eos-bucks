@@ -34,7 +34,7 @@ def setup_oracle(contract, oracle):
 			"accounts": [{ "permission": { "actor": oracle, "permission": "active" }, "weight": 1 }],
 		},
 		Permission.ACTIVE, (contract, Permission.OWNER))
-	contract.set_action_permission("buck", "update", "admin", (contract, Permission.ACTIVE))
+	contract.set_action_permission("buck", "forceupdate", "admin", (contract, Permission.ACTIVE))
 
 def create_issue(contract, to, symbol):
 	try:
@@ -73,7 +73,7 @@ def open(contract, user, ccr, acr, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def update(contract, eos=200):
-	contract.push_action(force_unique=True, max_cpu_usage=20, action="update", data={ "eos_price": eos, "force": True }, permission=[(contract, "admin")])
+	contract.push_action(force_unique=True, max_cpu_usage=20, action="forceupdate", data={ "eos_price": eos }, permission=[(contract, "admin")])
 	run(contract)
 	run(contract)
 	run(contract)
