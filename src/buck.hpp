@@ -19,6 +19,7 @@ CONTRACT buck : public contract {
     ACTION save(const name& account, const asset& value);
     ACTION take(const name& account, const uint64_t value);
     ACTION run(uint8_t max);
+    ACTION exchange(const name& from, const asset value);
     
     // admin
     ACTION update(uint32_t eos_price, bool force);
@@ -134,6 +135,25 @@ CONTRACT buck : public contract {
       uint64_t by_time() const { return time_point_sec(maturity_timestamp).utc_seconds; }
     };
     
+    TABLE order {
+      name        account;
+      asset       quantity;
+      time_point  timestamp;
+      
+      uint64_t primary_key() const { return account.value; }
+      
+      uint64_t by_type() const {
+        
+        const uint32_t seconds = time_point_sec(timestamp).utc_seconds;
+        
+        // buyers
+        if (quantity.symbol == EOS) return seconds;
+        
+        // sellers
+        return UINT64_MAX - seconds;
+      }
+    };
+    
     TABLE cdp {
       uint64_t    id;
       uint16_t    acr;
@@ -208,6 +228,10 @@ CONTRACT buck : public contract {
       indexed_by<"accrued"_n, const_mem_fun<cdp, uint64_t, &cdp::by_accrued_time>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
+    
+    typedef multi_index<"exchange"_n, order,
+      indexed_by<"type"_n, const_mem_fun<order, uint64_t, &order::by_type>>
+        > exchange_i;
     
     // rex 
     
@@ -311,4 +335,5 @@ CONTRACT buck : public contract {
     redeem_req_i        _redeemreq;
     cdp_maturity_req_i  _maturityreq;
     processing_i        _process;
+    exchange_i          _exchange;
 };

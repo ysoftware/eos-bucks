@@ -21,6 +21,7 @@ using namespace eosio;
 #include "transfer.hpp"
 #include "request.hpp"
 #include "tax.hpp"
+#include "exchange.hpp"
 
 buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
     :contract(receiver, code, ds),
@@ -32,7 +33,8 @@ buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
       _maturityreq(_self, _self.value),
       _process(_self, _self.value),
       _fund(_self, _self.value),
-      _tax(_self, _self.value)
+      _tax(_self, _self.value),
+      _exchange(_self, _self.value)
    {}
 
 bool buck::init() {
