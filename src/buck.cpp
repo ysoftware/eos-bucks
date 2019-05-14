@@ -60,8 +60,8 @@ bool buck::init() {
     r.aggregated_excess = 0;
     r.collected_excess = ZERO_REX;
     
-    r.e_supply = 0;
-    r.e_collected = ZERO_BUCK;
+    r.savings_supply = 0;
+    r.collected_savings = ZERO_BUCK;
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self, false);

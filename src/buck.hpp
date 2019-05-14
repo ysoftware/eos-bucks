@@ -44,7 +44,6 @@ CONTRACT buck : public contract {
 
     TABLE account {
       asset     balance;
-      uint64_t  e_balance;
     
       uint64_t primary_key() const { return balance.symbol.code().raw(); }
     };
@@ -74,11 +73,11 @@ CONTRACT buck : public contract {
       // insurance
       uint64_t  total_excess;
       uint64_t  aggregated_excess;
-      asset     collected_excess; // BUCK this round
+      asset     collected_excess;  // BUCK this round
       
-      // savings 
-      uint64_t e_supply;
-      asset e_collected; // REX this round
+      // savings
+      uint64_t  savings_supply;    // virtual toke
+      asset     collected_savings; // REX this round
       
       uint64_t primary_key() const { return 0; }
     };
@@ -91,11 +90,13 @@ CONTRACT buck : public contract {
     };
     
     TABLE fund {
-      name  account;
-      asset balance;
-      int64_t matured_rex = 0;
+      name      account;
+      asset     balance;          // REX
+      asset     exchange_balance; // EOS
+      uint64_t  savings_balance;  // virtual toke
+      int64_t   matured_rex = 0;
+      
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities;
-      asset exchange_balance;
       
       uint64_t primary_key() const { return account.value; }
     };

@@ -14,8 +14,8 @@ void buck::process_taxes() {
   }
   
   // send part of collected savings to Scruge
-  const int64_t scruge_savings_amount = tax.e_collected.amount * SP / 100;
-  const int64_t savings_amount = tax.e_collected.amount - scruge_savings_amount;
+  const int64_t scruge_savings_amount = tax.collected_savings.amount * SP / 100;
+  const int64_t savings_amount = tax.collected_savings.amount - scruge_savings_amount;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
     add_balance(SCRUGE, scruge_savings, _self, true);
@@ -34,7 +34,7 @@ void buck::process_taxes() {
     r.aggregated_excess += r.total_excess * delta_t;
     r.collected_excess = ZERO_REX;
     
-    r.e_collected = ZERO_BUCK;
+    r.collected_savings = ZERO_BUCK;
   });
   
   // sanity check
@@ -89,7 +89,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.e_collected += accrued_debt;
+    r.collected_savings += accrued_debt;
     r.collected_excess += accrued_collateral;
   });
   
@@ -152,23 +152,23 @@ void buck::save(const name& account, const asset& value) {
   check(value.symbol == BUCK, "can not use asset with different symbol");
   check(value.amount > 1'0000, "not enough value to put in savings");
   
-  accounts_i _accounts(_self, account.value);
-  const auto account_itr = _accounts.find(BUCK.code().raw());
-  check(account_itr != _accounts.end(), "balance object doesn't exist");
-  
-  uint64_t received_e = value.amount;
-  if (tax.e_supply > 0) {
-    received_e = (uint128_t) value.amount * tax.e_supply / tax.savings_pool.amount;
+  uint64_t received_amount = value.amount;
+  if (tax.savings_supply > 0) {
+    received_amount = (uint128_t) value.amount * tax.savings_supply / tax.savings_pool.amount;
   }
   
-  check(received_e > 0, "not enough value to receive minimum amount of savings");
+  check(received_amount > 0, "not enough value to receive minimum amount of savings");
   
-  _accounts.modify(account_itr, account, [&](auto& r) {
-    r.e_balance += received_e;
+  // create funds if doesn't exist
+  add_funds(account, ZERO_REX, account);
+  const auto fund_itr = _fund.require_find(account.value);
+  
+  _fund.modify(fund_itr, account, [&](auto& r) {
+    r.savings_balance += received_amount;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.e_supply += received_e;
+    r.savings_supply += received_amount;
     r.savings_pool += value;
   });
   
@@ -184,18 +184,18 @@ void buck::take(const name& account, const uint64_t value) {
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
-  check(account_itr != _accounts.end(), "balance object doesn't exist");
-  check(account_itr->e_balance >= value, "overdrawn savings balance");
+  const auto fund_itr = _fund.require_find(account.value, "fund object doesn't exist");
+  check(fund_itr->savings_balance >= value, "overdrawn savings balance");
   
-  const int64_t received_bucks_amount = uint128_t(value) * tax.savings_pool.amount / tax.e_supply;
+  const int64_t received_bucks_amount = uint128_t(value) * tax.savings_pool.amount / tax.savings_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
-  _accounts.modify(account_itr, account, [&](auto& r) {
-    r.e_balance -= value;
+  _fund.modify(fund_itr, account, [&](auto& r) {
+    r.savings_balance -= value;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.e_supply -= value;
+    r.savings_supply -= value;
     r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
