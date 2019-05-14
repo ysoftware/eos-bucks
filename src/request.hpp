@@ -3,26 +3,24 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
-  
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  // to-do validation
+  check(change_debt.symbol.is_valid(), "invalid debt quantity");
+  check(change_collateral.symbol.is_valid(), "invalid collateral quantity");
+  check(change_debt.amount != 0 || change_collateral.amount != 0, "empty request does not make sense");
   
-  const auto cdp_itr = _cdp.find(cdp_id);
-  check(cdp_itr != _cdp.end(), "debt position does not exist");
-  
-  check(change_debt.amount != 0 || change_collateral.amount != 0, 
-    "can not create empty reparametrization request");
-      
+  const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   check(cdp_itr->debt.symbol == change_debt.symbol, "debt symbol mismatch");
   check(cdp_itr->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
-    
+  
   const auto account = cdp_itr->account;
   require_auth(account);
+  
   // to-do maturity
   
-  
   // to-do cancel and return previous request
+
+  // to-do remove close request
   
   const auto reparam_itr = _reparamreq.find(cdp_id);
   if (reparam_itr != _reparamreq.end()) {
@@ -36,8 +34,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     
     _reparamreq.erase(reparam_itr); // remove existing request
   }
-  
-  // to-do validate arguments
   
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
@@ -88,15 +84,10 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
 void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  // to-do validation
-  
-  // to-do collision
-  
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr < 1000'00, "acr value is too high");
   
-  const auto cdp_itr = _cdp.find(cdp_id);
-  check(cdp_itr != _cdp.end(), "debt position does not exist");
+  const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   check(cdp_itr->acr != acr, "acr is already set to this value");
   
   require_auth(cdp_itr->account);
@@ -115,24 +106,18 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
 void buck::close(uint64_t cdp_id) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  // to-do validation
+  // to-do collision (undo reparam request)
   
-  // to-do collision
+  check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
   
-  // to-do maturity
-  
-  const auto cdp_itr = _cdp.find(cdp_id);
-  check(cdp_itr != _cdp.end(), "debt position does not exist");
+  const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   
   const auto close_itr = _closereq.find(cdp_id);
-  check(close_itr == _closereq.end(), "request already exists");
+  check(close_itr == _closereq.end(), "close request already exists");
 
   require_auth(cdp_itr->account);
   
   accrue_interest(cdp_itr);
-  
-  
-  // check oracle??
   
   sub_balance(cdp_itr->account, cdp_itr->debt, true);
   
