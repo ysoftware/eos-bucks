@@ -14,7 +14,8 @@ void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
 
 time_point_sec buck::get_amount_maturity(const name& account, const asset& quantity) const {
   const time_point_sec now = current_time_point_sec();
-  auto fund_itr = _fund.require_find(account.value, "to-do should not happen? get_amount_maturity");
+  const auto fund_itr = _fund.require_find(account.value);
+  
   int64_t i = 0;
   for (auto maturity: fund_itr->rex_maturities) {
     i += maturity.second;
@@ -69,11 +70,6 @@ asset buck::get_eos_rex_balance() const {
   const auto balance_itr = _balance.find(_self.value);
   if (balance_itr == _balance.end()) return asset(0, EOS);
   return balance_itr->balance;
-}
-
-bool buck::is_mature(uint64_t cdp_id) const {
-  const auto maturity_itr = _maturityreq.find(cdp_id);
-  return maturity_itr == _maturityreq.end() || maturity_itr->maturity_timestamp < get_current_time_point();
 }
 
 void buck::processrex() {

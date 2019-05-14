@@ -75,7 +75,6 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   #endif
   
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
-  check(fund_itr->matured_rex >= quantity.amount, "your rex is not mature enough to be used");
   
   _fund.modify(fund_itr, from, [&](auto& r) {
     r.balance -= quantity;

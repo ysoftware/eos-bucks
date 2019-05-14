@@ -19,9 +19,10 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     
   const auto account = cdp_itr->account;
   require_auth(account);
-  check(is_mature(cdp_id), "can not reparametrize this debt position yet");
+  // to-do maturity
   
-  // revert previous request to replace it with the new one
+  
+  // to-do cancel and return previous request
   
   const auto reparam_itr = _reparamreq.find(cdp_id);
   if (reparam_itr != _reparamreq.end()) {
@@ -30,14 +31,10 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     if (reparam_itr->change_debt.amount < 0) {
       add_balance(account, -reparam_itr->change_debt, account, true);
     }
-    _reparamreq.erase(reparam_itr); // remove existing request
-  }
-  
-  const auto maturity_itr = _maturityreq.find(cdp_id);
-  if (maturity_itr != _maturityreq.end()) {
     
-    // to-do
-    // fail? request has been paid for already (from fund)
+    // to-do what about collateral?
+    
+    _reparamreq.erase(reparam_itr); // remove existing request
   }
   
   // to-do validate arguments
@@ -52,39 +49,38 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     check(ccr >= CR, "can not reparametrize below 150% CCR");
   }
   
-  
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
+  
   // to-do check min collateral in EOS
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
     sub_balance(account, -change_debt, false);
   }
-  
+
   if (change_collateral.amount > 0) {
     sub_funds(cdp_itr->account, change_collateral);
   }
   
-  // if rex is not matured, create maturity request
-  if (get_amount_maturity(cdp_itr->account, change_collateral) > get_current_time_point()) {
-    
-    _maturityreq.emplace(account, [&](auto& r) {
-      r.maturity_timestamp = get_amount_maturity(cdp_itr->account, change_collateral);
-      r.add_collateral = change_collateral;
-      r.change_debt = change_debt;
-      r.cdp_id = cdp_id;
-      r.ccr = 0;
-    });
-  }
-  else {
+  const auto now = get_current_time_point();
+  check(cdp_itr->maturity <= now || change_collateral.amount > 0, "can not remove immature cdp collateral");
   
-    _reparamreq.emplace(account, [&](auto& r) {
-      r.cdp_id = cdp_id;
-      r.timestamp = get_current_time_point();
-      r.change_collateral = change_collateral;
-      r.change_debt = change_debt;
-    });
-  }
+  _reparamreq.emplace(account, [&](auto& r) {
+    r.cdp_id = cdp_id;
+    r.timestamp = get_current_time_point();
+    r.change_collateral = change_collateral;
+    r.change_debt = change_debt;
+    
+    const auto maturity = get_amount_maturity(cdp_itr->account, change_collateral);
+    
+    // if adding collateral and amount is not matured yet
+    if (change_collateral.amount > 0 && maturity > now) {
+      r.maturity = maturity;
+    }
+    else {
+      r.maturity = time_point(microseconds(0));
+    }
+  });
   
   run_requests(10);
 }
@@ -94,8 +90,7 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   // to-do validation
   
-  const auto maturity_itr = _maturityreq.find(cdp_id);
-  check(maturity_itr == _maturityreq.end(), "cdp is being updated right now");
+  // to-do collision
   
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr < 1000'00, "acr value is too high");
@@ -122,16 +117,15 @@ void buck::close(uint64_t cdp_id) {
   
   // to-do validation
   
-  const auto maturity_itr = _maturityreq.find(cdp_id);
-  check(maturity_itr == _maturityreq.end(), "cdp is being updated right now");
+  // to-do collision
+  
+  // to-do maturity
   
   const auto cdp_itr = _cdp.find(cdp_id);
   check(cdp_itr != _cdp.end(), "debt position does not exist");
   
   const auto close_itr = _closereq.find(cdp_id);
   check(close_itr == _closereq.end(), "request already exists");
-
-  check(is_mature(cdp_id), "can not close this debt position yet");
 
   require_auth(cdp_itr->account);
   

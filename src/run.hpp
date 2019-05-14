@@ -20,14 +20,12 @@ void buck::run_requests(uint8_t max) {
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
   
-  auto maturity_index = _maturityreq.get_index<"bytimestamp"_n>();
   auto debtor_index = _cdp.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
   
   auto close_itr = _closereq.begin();
   auto reparam_itr = _reparamreq.begin();
   auto redeem_itr = _redeemreq.begin(); // to-do redeem sorting
   auto debtor_itr = debtor_index.begin();
-  auto maturity_itr = maturity_index.begin();
   
   // loop until any requests exist and not over limit
   for (int i = 0; i < max; i++) {
@@ -130,7 +128,7 @@ void buck::run_requests(uint8_t max) {
         }
         
         if (change_collateral.amount < 0) {
-          sub_funds(cdp_itr->account, -change_collateral);
+          sub_funds(cdp_itr->account, -change_collateral); // to-do wtf is this? 
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -147,62 +145,6 @@ void buck::run_requests(uint8_t max) {
         buy_r(cdp_itr);
         
         reparam_itr = _reparamreq.erase(reparam_itr);
-        did_work = true;
-      }
-      
-      // maturity requests (issue bucks, add/remove cdp debt, add collateral)
-      // look for a first valid request
-      while (maturity_itr != maturity_index.end() 
-              && !(maturity_itr->maturity_timestamp < oracle_timestamp)) { maturity_itr++; }
-
-      if (maturity_itr != maturity_index.end() && maturity_itr->maturity_timestamp < oracle_timestamp) {
-        
-        // to-do remove cdp if all collateral is 0 (and cdp was just created) ???
-         
-        // find cdp
-        const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
-        if (cdp_itr == _cdp.end()) {
-          maturity_itr = maturity_index.erase(maturity_itr);
-          did_work = true;
-          continue;
-        }
-        
-        // calculate new debt and collateral
-        asset change_debt = maturity_itr->change_debt; // changing debt explicitly (or 0)
-        const asset add_collateral = maturity_itr->add_collateral;
-        
-        // to-do validate new debt, new collateral, new ccr
-        
-        if (maturity_itr->ccr > 0) {
-          // opening cdp, issue debt
-          const int64_t debt_amount = (to_buck(add_collateral.amount) / maturity_itr->ccr);
-          change_debt = asset(debt_amount, BUCK);
-        }
-        
-        if (change_debt.amount > 0) {
-          add_balance(cdp_itr->account, change_debt, same_payer, true);
-        }
-        else {
-          change_debt += change_debt;
-          update_supply(-change_debt);
-        }
-        
-        sell_r(cdp_itr);
-        
-        _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-          r.collateral += add_collateral;
-          r.debt += change_debt;
-          r.modified_round = now;
-        });
-        
-        // sanity check
-        check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
-        check(cdp_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
-        
-        
-        buy_r(cdp_itr);
-        
-        maturity_itr = maturity_index.erase(maturity_itr); // remove request
         did_work = true;
       }
       

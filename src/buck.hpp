@@ -113,6 +113,7 @@ CONTRACT buck : public contract {
       asset       change_collateral;
       asset       change_debt;
       time_point  timestamp;
+      time_point  maturity;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -122,17 +123,6 @@ CONTRACT buck : public contract {
       name  account;
       
       uint64_t primary_key() const { return 0; }
-    };
-    
-    TABLE cdp_maturity_req {
-      uint64_t        cdp_id;
-      asset           change_debt;
-      asset           add_collateral;
-      uint16_t        ccr;
-      time_point      maturity_timestamp;
-      
-      uint64_t primary_key() const { return cdp_id; }
-      uint64_t by_time() const { return time_point_sec(maturity_timestamp).utc_seconds; }
     };
     
     TABLE order {
@@ -215,10 +205,6 @@ CONTRACT buck : public contract {
     typedef multi_index<"closereq"_n, close_req> close_req_i;
     typedef multi_index<"reparamreq"_n, reparam_req> reparam_req_i;
     typedef multi_index<"redeemreq"_n, redeem_req> redeem_req_i;
-    
-    typedef multi_index<"maturityreq"_n, cdp_maturity_req,
-      indexed_by<"bytimestamp"_n, const_mem_fun<cdp_maturity_req, uint64_t, &cdp_maturity_req::by_time>>
-        > cdp_maturity_req_i;
     
     typedef multi_index<"process"_n, processing> processing_i;
     
@@ -324,7 +310,6 @@ CONTRACT buck : public contract {
     time_point get_current_time_point() const;
     time_point_sec current_time_point_sec() const;
     time_point_sec get_maturity() const;
-    bool is_mature(uint64_t cdp_id) const;
     time_point_sec get_amount_maturity(const name& account, const asset& quantity) const;
     
     // tables
@@ -335,7 +320,6 @@ CONTRACT buck : public contract {
     close_req_i         _closereq;
     reparam_req_i       _reparamreq;
     redeem_req_i        _redeemreq;
-    cdp_maturity_req_i  _maturityreq;
     processing_i        _process;
     exchange_i          _exchange;
 };
