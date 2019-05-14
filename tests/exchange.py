@@ -65,30 +65,37 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		transfer(eosio_token, user1, buck, "1000000.0000 EOS", "deposit")
-		transfer(eosio_token, user2, buck, "1000000.0000 EOS", "exchange")
-		transfer(eosio_token, user3, buck, "1000000.0000 EOS", "exchange")
+		transfer(eosio_token, user2, buck, "15.0000 EOS", "exchange")
+		transfer(eosio_token, user3, buck, "15.0000 EOS", "exchange")
 
 		maketime(buck, 3_000_000)
 		open(buck, user1, 200, 0, "100000.0000 REX")
 
-		transfer(buck, user1, user4, "5000.0000 BUCK", "")
+		transfer(buck, user1, user4, "4000.0000 BUCK", "")
+		transfer(buck, user1, master, "95000.0000 BUCK", "") # get rid of the rest of the money
 
-		table(buck, "stat")
+		balance(buck, user1)
+		balance(buck, user2)
+		balance(buck, user3)
+		balance(buck, user4)
+
+		table(buck, "fund")
 
 		###################################
 		COMMENT("Exchange")
 
 		maketime(buck, 3_000_001)
-		exchange(buck, user2, "15.0000 EOS")
+		exchange(buck, user2, "5.0000 EOS")
+		exchange(buck, user1, "500.0000 BUCK")
 
 		maketime(buck, 3_000_002)
-		exchange(buck, user3, "5.0000 EOS")
+		exchange(buck, user2, "5.0000 EOS")
+		exchange(buck, user4, "3000.0000 BUCK")
 
 		maketime(buck, 3_000_003)
-		exchange(buck, user1, "1000.0000 BUCK")
-
-		maketime(buck, 3_000_004)
-		exchange(buck, user4, "3000.0000 BUCK")
+		exchange(buck, user3, "10.0000 EOS")
+		exchange(buck, user1, "500.0000 BUCK")
+		exchange(buck, user4, "1000.0000 BUCK")
 
 		#################################
 		COMMENT("Check")
@@ -102,6 +109,14 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		table(buck, "exchange")
+
+		balance(buck, user1)
+		balance(buck, user2)
+		balance(buck, user3)
+		balance(buck, user4)
+
+		table(buck, "fund")
+
 
 
 

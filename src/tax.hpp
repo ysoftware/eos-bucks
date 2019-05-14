@@ -44,6 +44,23 @@ void buck::process_taxes() {
   // PRINT("add to pool", insurance_amount)
 }
 
+void buck::collect_taxes(uint32_t max) {
+  auto accrual_index = _cdp.get_index<"accrued"_n>();
+  auto accrual_itr = accrual_index.begin();
+  
+  const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
+  const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
+  
+  int i = 0;
+  while (i < max && accrual_itr != accrual_index.end()
+          && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
+  
+    accrue_interest(_cdp.require_find(accrual_itr->id));
+    accrual_itr = accrual_index.begin(); // take first element after index updated
+    i++;
+  }
+}
+
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();

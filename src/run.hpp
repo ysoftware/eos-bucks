@@ -354,22 +354,7 @@ void buck::run_requests(uint8_t max) {
     else { break; }
   }
   
-  auto accrual_index = _cdp.get_index<"accrued"_n>();
-  auto accrual_itr = accrual_index.begin();
-  
-  int i = 0;
-  while (i < max && accrual_itr != accrual_index.end()
-          && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
-  
-    // PRINT("i", i)
-    accrue_interest(_cdp.require_find(accrual_itr->id));
-    accrual_itr = accrual_index.begin(); // take first element after index updated
-    i++;
-    
-    // PRINT("running accrual?", accrual_itr->id)
-    // PRINT("modified", accrual_itr->modified_round)
-  }
-  
+  collect_taxes(max);
   run_exchange(max);
 }
 

@@ -15,9 +15,11 @@ void buck::exchange(const name& from, const asset value) {
   
   // take tokens
   if (value.symbol == BUCK) {
+    check(value.amount > 25'0000, "minimum amount is 25 BUCK");
     sub_balance(from, value, false);
   }
   else {
+    check(value.amount > 5'0000, "minimum amount is 5 EOS");
     sub_exchange_funds(from, value);
   }
   
@@ -87,9 +89,6 @@ void buck::run_exchange(uint8_t max) {
     
     const asset buck = asset(buck_amount, BUCK);
     const asset eos = asset(eos_amount, EOS);
-    
-    PRINT("seller", sell_itr->account)
-    PRINT("buyer", buy_itr->account)
     
     // update balances
     add_balance(sell_itr->account, buck, same_payer, false);

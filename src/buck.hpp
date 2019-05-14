@@ -311,6 +311,7 @@ CONTRACT buck : public contract {
     void sell_rex(const name& account, const asset& quantity);
     void process_maturities(const fund_i::const_iterator& fund_itr);
     void run_exchange(uint8_t max);
+    void collect_taxes(uint32_t max);
     
     // getters
     int64_t to_buck(int64_t quantity) const;
