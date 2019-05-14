@@ -40,8 +40,6 @@ void buck::process_taxes() {
   // sanity check
   check(tax.insurance_pool.amount >= 0, "programmer error, pools can't go below 0");
   check(tax.savings_pool.amount >= 0, "programmer error, pools can't go below 0");
-  
-  // PRINT("add to pool", insurance_amount)
 }
 
 void buck::collect_taxes(uint32_t max) {
@@ -81,9 +79,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
-  
-  // PRINT("add tax", cdp_itr->id)
-  // PRINT("added", accrued_debt)
   
   update_supply(accrued_debt);
 
@@ -165,9 +160,6 @@ void buck::save(const name& account, const asset& value) {
   if (tax.e_supply > 0) {
     received_e = (uint128_t) value.amount * tax.e_supply / tax.savings_pool.amount;
   }
-  
-  PRINT("supply", tax.e_supply)
-  PRINT("pool", tax.savings_pool.amount)
   
   check(received_e > 0, "not enough value to receive minimum amount of savings");
   

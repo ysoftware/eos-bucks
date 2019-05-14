@@ -68,8 +68,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   // if rex is not matured, create maturity request
   if (get_amount_maturity(cdp_itr->account, change_collateral) > get_current_time_point()) {
     
-    // PRINT("adding maturity request, until", time_point_sec(get_amount_maturity(cdp_itr->account, change_collateral)).utc_seconds)
-    
     _maturityreq.emplace(account, [&](auto& r) {
       r.maturity_timestamp = get_amount_maturity(cdp_itr->account, change_collateral);
       r.add_collateral = change_collateral;
@@ -79,7 +77,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     });
   }
   else {
-    // PRINT_("adding reparam request")
   
     _reparamreq.emplace(account, [&](auto& r) {
       r.cdp_id = cdp_id;
