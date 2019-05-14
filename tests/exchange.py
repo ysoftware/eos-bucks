@@ -61,61 +61,67 @@ class Test(unittest.TestCase):
 	
 	def test(self):
 
+		###################################
+		COMMENT("Setup")
+
 		maketime(buck, 0)
 		update(buck)
 
 		transfer(eosio_token, user1, buck, "1000000.0000 EOS", "deposit")
-		transfer(eosio_token, user2, buck, "15.0000 EOS", "exchange")
-		transfer(eosio_token, user3, buck, "15.0000 EOS", "exchange")
+		transfer(eosio_token, user2, buck, "1000.0000 EOS", "exchange")
+		transfer(eosio_token, user3, buck, "1000.0000 EOS", "exchange")
 
 		maketime(buck, 3_000_000)
 		open(buck, user1, 200, 0, "100000.0000 REX")
 
-		transfer(buck, user1, user4, "4000.0000 BUCK", "")
-		transfer(buck, user1, master, "95000.0000 BUCK", "") # get rid of the rest of the money
-
-		balance(buck, user1)
-		balance(buck, user2)
-		balance(buck, user3)
-		balance(buck, user4)
-
-		table(buck, "fund")
+		# send bucks to user4
+		transfer(buck, user1, user4, "2000.0000 BUCK", "")
 
 		###################################
 		COMMENT("Exchange")
 
 		maketime(buck, 3_000_001)
-		exchange(buck, user2, "5.0000 EOS")
-		exchange(buck, user1, "500.0000 BUCK")
+		exchange(buck, user2, "500.0000 EOS")
+		exchange(buck, user1, "2000.0000 BUCK")
 
 		maketime(buck, 3_000_002)
-		exchange(buck, user2, "5.0000 EOS")
-		exchange(buck, user4, "3000.0000 BUCK")
-
-		maketime(buck, 3_000_003)
-		exchange(buck, user3, "10.0000 EOS")
-		exchange(buck, user1, "500.0000 BUCK")
+		exchange(buck, user2, "500.0000 EOS")
 		exchange(buck, user4, "1000.0000 BUCK")
 
-		#################################
-		COMMENT("Check")
+		maketime(buck, 3_000_003)
+		exchange(buck, user3, "500.0000 EOS")
+		exchange(buck, user1, "500.0000 BUCK")
 
-		table(buck, "exchange")
+		maketime(buck, 3_000_004)
+		exchange(buck, user3, "500.0000 EOS")
+		exchange(buck, user4, "1000.0000 BUCK") # 500 BUCK excess
 
-		#################################
-		COMMENT("Complete")
-		
+		# get rid of the rest of the bucks
+		transfer(buck, user1, master, balance(buck, user1, unwrap=False), "")
+
+		# run exchange
 		maketime(buck, 4_000_000)
 		update(buck)
 
-		table(buck, "exchange")
+		#################################
+		COMMENT("Match")
 
-		balance(buck, user1)
-		balance(buck, user2)
-		balance(buck, user3)
-		balance(buck, user4)
+		# user1 sells 2.5K BUCK
+		# user4 sells 1.5K BUCK
+		# user2 buys 1K EOS worth
+		# user3 buys 1K EOS worth
 
-		table(buck, "fund")
+		ex = table(buck, "exchange")
+		self.assertEqual(500, amount(ex["quantity"]))
+		self.assertEqual("user4", ex["account"])
+
+		# sellers
+		self.assertEqual(2500, balance(buck, user1))
+		self.assertEqual(1500, balance(buck, user4))
+
+		# buyers
+		self.assertEqual(1000, fundexbalance(buck, user2))
+		self.assertEqual(1000, fundexbalance(buck, user3))
 
 
 
