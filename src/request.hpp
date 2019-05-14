@@ -108,9 +108,8 @@ void buck::close(uint64_t cdp_id) {
   
   // to-do collision (undo reparam request)
   
-  check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
-  
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
+  check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
   
   const auto close_itr = _closereq.find(cdp_id);
   check(close_itr == _closereq.end(), "close request already exists");

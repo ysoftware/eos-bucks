@@ -346,7 +346,7 @@ void buck::run_liquidation(uint8_t max) {
       
       // if debtor maturity more than liquidator maturity and more than current time
       if (debtor_itr->maturity > now && debtor_itr->maturity > liquidator_itr->maturity) {
-        r.maturity = cdp_itr->maturity; // pass maturity
+        r.maturity = debtor_itr->maturity; // pass maturity
       }
     });
     
