@@ -15,11 +15,11 @@ void buck::exchange(const name& from, const asset value) {
   
   // take tokens
   if (value.symbol == BUCK) {
-    check(value.amount > 25'0000, "minimum amount is 25 BUCK");
+    check(value.amount >= 25'0000, "minimum amount is 25 BUCK");
     sub_balance(from, value, false);
   }
   else {
-    check(value.amount > 5'0000, "minimum amount is 5 EOS");
+    check(value.amount >= 5'0000, "minimum amount is 5 EOS");
     sub_exchange_funds(from, value);
   }
   
@@ -84,10 +84,10 @@ void buck::run_exchange(uint8_t max) {
     if (buy_itr->timestamp > oracle_timestamp || sell_itr->timestamp > oracle_timestamp) return;
     
     // proceed
-    const int64_t buck_amount = std::min(sell_itr->quantity.amount, buy_itr->quantity.amount * price);
+    const int64_t buck_amount = std::min(sell_itr->quantity.amount * 100, buy_itr->quantity.amount * price);
     const int64_t eos_amount = buck_amount / price;
     
-    const asset buck = asset(buck_amount, BUCK);
+    const asset buck = asset(buck_amount / 100, BUCK);
     const asset eos = asset(eos_amount, EOS);
     
     // update balances
@@ -95,7 +95,7 @@ void buck::run_exchange(uint8_t max) {
     add_exchange_funds(buy_itr->account, eos, same_payer);
     
     // update orders
-    if (sell_itr->quantity.amount == buck_amount) {
+    if (sell_itr->quantity.amount == buck.amount) {
       index.erase(sell_itr);
     }
     else {
