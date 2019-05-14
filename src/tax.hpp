@@ -135,8 +135,6 @@ void buck::save(const name& account, const asset& value) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
-  // to-do validate all
-  
   check(value.is_valid(), "invalid quantity");
   check(value.amount > 0, "can not use negative value");
   check(value.symbol == BUCK, "can not use asset with different symbol");
@@ -145,7 +143,6 @@ void buck::save(const name& account, const asset& value) {
   const auto account_itr = _accounts.find(BUCK.code().raw());
   check(account_itr != _accounts.end(), "balance object doesn't exist");
   
-  
   int64_t received_e = value.amount;
   if (tax.e_supply > 0) {
     received_e = (uint128_t) value.amount * tax.e_supply / tax.savings_pool.amount;
@@ -153,12 +150,8 @@ void buck::save(const name& account, const asset& value) {
   
   check(received_e > 0, "to-do remove. this is probably wrong (save)");
   
-  PRINT("bough", received_e)
-  PRINT("for", value)
-  
   _accounts.modify(account_itr, account, [&](auto& r) {
     r.e_balance += received_e;
-    r.balance -= value;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
@@ -166,6 +159,7 @@ void buck::save(const name& account, const asset& value) {
     r.savings_pool += value;
   });
   
+  sub_balance(account, value, false);
   run(3);
 }
 
@@ -183,14 +177,8 @@ void buck::take(const name& account, const uint64_t value) {
   const int64_t received_bucks_amount = uint128_t(value) * tax.savings_pool.amount / tax.e_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
-  PRINT("pool", tax.savings_pool)
-  PRINT("taking %", received_bucks_amount * 100 / tax.savings_pool.amount)
-  PRINT("sold", value)
-  PRINT("for", received_bucks)
-  
   _accounts.modify(account_itr, account, [&](auto& r) {
     r.e_balance -= value;
-    r.balance += received_bucks;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
@@ -198,5 +186,6 @@ void buck::take(const name& account, const uint64_t value) {
     r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
+  add_balance(account, received_bucks, same_payer, false);
   run(3);
 }
