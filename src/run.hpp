@@ -231,7 +231,7 @@ void buck::run_requests(uint8_t max) {
         i--; // don't count this pass
         set_processing_status(ProcessingStatus::processing_redemption_requests);
         status = ProcessingStatus::processing_redemption_requests;
-        continue;
+        break; // to-do split cdp and redemption requests?
       }
     }
     else if (status == ProcessingStatus::processing_redemption_requests) {
