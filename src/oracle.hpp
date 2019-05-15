@@ -50,6 +50,5 @@ void buck::_update(uint32_t eos_price, bool force) {
 
 uint32_t buck::get_eos_usd_price() const {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
-  const auto eos_usd_price = _stat.begin()->oracle_eos_price;
-  return eos_usd_price;
+  return _stat.begin()->oracle_eos_price;
 }

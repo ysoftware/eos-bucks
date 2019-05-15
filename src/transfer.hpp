@@ -94,7 +94,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   auto issue_debt = ZERO_BUCK;
   
   const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
-  check(quantity.amount >= min_collateral, "can not reparametrize collateral below the limit");
+  check(quantity.amount >= min_collateral, "not enough collateral");
   
   if (ccr > 0) {
     
