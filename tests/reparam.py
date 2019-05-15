@@ -61,52 +61,83 @@ class Test(unittest.TestCase):
 	### check rex values when selling rex
 
 	def test(self):
-		MATURE = 1000000
 		SCENARIO("Test cdp reparametrization")
 
 		time = 0
-		price = 100
-		self.update(price, time)
+		maketime(buck, time)
+		update(buck, 100)
 
 		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
 
 		# mature rex
-		time += MATURE
-		self.update(price, time)
-
-		open(buck, user1, 200, 0, "100000.0000 REX")
-		
-		cdp = test.CDP(100000*10**4, 50000*10**4, 200, 0, 0, test.get_time()) # collateral, debt, cd, acr, id, time
-		test.table = [cdp]
-
-		# match opened cdp
-		self.match(cdp, get_cdp(buck, 0))
-
-		# create request
-		reparam(buck, user1, 0, "0.0000 BUCK", "-10.0000 REX")
-
-		time += 10000
-		self.update(price, time)
-
-		# run reparam
-		test.reparametrize(0, -10*10**4, 0, 100, 100) # c, d, price, old_price
-
-		self.match(cdp, get_cdp(buck, 0))
-
-
-	def match(self, cdp, row):
-		# print(cdp)
-		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
-		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
-		print(f"+ Matched cdp #{cdp.id}")
-
-
-	def update(self, price, time):
+		time += 3_000_000
 		maketime(buck, time)
-		update(buck, price)
-		test.update(price, time)
+		update(buck, 100)
+
+		open(buck, user1, 0, 200, "10000.0000 REX") # 1000.0000 BUCK
+		open(buck, user1, 0, 200, "10000.0000 REX")
+		open(buck, user1, 0, 200, "10000.0000 REX")
+		open(buck, user1, 0, 200, "10000.0000 REX")
+		open(buck, user1, 0, 200, "10000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX")
+		open(buck, user1, 1000, 0, "10000.0000 REX")
+		
+
+		##############################
+		COMMENT("Reparam liquidator CDPs")
+
+		# remove debt - error
+		# reparam(buck, user1, 0, "-50.0000 BUCK", "0.0000 REX")
+
+		# add debt
+		reparam(buck, user1, 1, "50.0000 BUCK", "0.0000 REX")
+
+		# remove collateral
+		reparam(buck, user1, 2, "0.0000 BUCK", "-1000.0000 REX")
+
+		# add collateral
+		reparam(buck, user1, 3, "0.0000 BUCK", "1000.0000 REX")
+
+		# both
+		reparam(buck, user1, 4, "50.0000 BUCK", "-1000.0000 REX")
+
+		##############################
+		COMMENT("Reparam debtor CDPs")
+
+		# remove debt
+		reparam(buck, user1, 5, "-50.0000 BUCK", "0.0000 REX")
+
+		# add debt
+		reparam(buck, user1, 6, "50.0000 BUCK", "0.0000 REX")
+
+		# remove collateral
+		reparam(buck, user1, 7, "0.0000 BUCK", "-1000.0000 REX")
+
+		# add collateral
+		reparam(buck, user1, 8, "0.0000 BUCK", "1000.0000 REX")
+
+		# both
+		reparam(buck, user1, 9, "50.0000 BUCK", "-1000.0000 REX")
+
+		table(buck, "reparamreq")
+
+		table(buck, "stat")
+
+		# mature rex
+		time += 10_000
+		maketime(buck, time)
+		update(buck, 100)
+
+		table(buck, "reparamreq")
+
+		table(buck, "cdp")
+
+		table(buck, "stat")
+
+
 
 # main
 
