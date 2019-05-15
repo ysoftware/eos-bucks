@@ -5,7 +5,7 @@
 void buck::run(uint8_t max) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  const uint8_t value = std::min(max, (uint8_t) 100);
+  const uint8_t value = std::max(uint8_t(1), std::min(max, uint8_t(70)));
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
     run_liquidation(value);
   }
@@ -15,6 +15,7 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
+  PRINT("run req", max)
   
   // check if request processing have been frozen
   if (!check_operation_status(0)) return;
@@ -59,7 +60,8 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
-      
+        PRINT_("reparam")
+        
         // find cdp
         const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
         if (cdp_itr == _cdp.end()) {
@@ -95,21 +97,23 @@ void buck::run_requests(uint8_t max) {
         
         if (reparam_itr->change_collateral.amount < 0) { // removing collateral
           
+          // check for min new collateral
           const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
           if ((cdp_itr->collateral + reparam_itr->change_collateral).amount >= min_collateral) {
             const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
-  
-            // check ccr with new collateral
-            int32_t ccr = CR;
-            if (new_debt_amount > 0) {
-              ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
-            }
             
-            if (ccr >= CR) {
-              const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
-              const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
-              const asset change = asset(change_amount, REX);
-              change_collateral = change;
+            if (new_debt_amount > 0) {
+              int32_t ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
+              
+              if (ccr >= CR) {
+                const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
+                const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
+                const asset change = asset(change_amount, REX);
+                change_collateral = change;
+              }
+            }
+            else {
+              change_collateral = reparam_itr->change_collateral;
             }
           }
           
@@ -119,22 +123,24 @@ void buck::run_requests(uint8_t max) {
         if (reparam_itr->change_debt.amount > 0) { // adding debt
         
           const auto new_collateral_amount = change_collateral.amount + cdp_itr->collateral.amount;
+          const auto new_debt = reparam_itr->change_debt + cdp_itr->debt;
 
-          int32_t ccr = CR;
-          if (cdp_itr->debt.amount > 0) {
-            ccr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
-          }
-          
-          if (ccr >= CR) {
+          // check if above min debt limit
+          if (new_debt > MIN_DEBT) {
             
-            const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
-            const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
-            change_debt = asset(change_amount, BUCK);
+            int32_t ccr = to_buck(new_collateral_amount) / new_debt.amount;
+            
+            // don't add if below CR
+            if (ccr >= CR) {
+              const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * new_debt.amount) - 100) * cdp_itr->debt.amount / 100;
+              const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
+              change_debt = asset(change_amount, BUCK);
+            }
+            
+            // issue bucks
+            add_balance(cdp_itr->account, change_debt, same_payer);
+            update_supply(change_debt);
           }
-          
-          // issue bucks
-          add_balance(cdp_itr->account, change_debt, same_payer);
-          update_supply(change_debt);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -163,6 +169,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
+        PRINT_("redeem")
         
         // to-do sorting
         // to-do verify timestamp
@@ -260,11 +267,13 @@ void buck::run_requests(uint8_t max) {
     else { break; }
   }
   
-  collect_taxes(max);
-  run_exchange(max);
+  const uint8_t m = std::min(uint8_t(30), max);
+  collect_taxes(m);
+  run_exchange(m);
 }
 
 void buck::run_liquidation(uint8_t max) {
+  PRINT("run liq", max)
   
   // check if liquidation processing have been frozen
   if (!check_operation_status(1)) return;

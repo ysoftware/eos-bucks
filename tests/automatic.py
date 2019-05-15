@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			rounds = 100
+			rounds = 50
 			for round_i in range(1, rounds):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i} / {rounds} of cycle {cycle_i}")

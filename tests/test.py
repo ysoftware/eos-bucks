@@ -17,7 +17,7 @@ oracle_time = 0
 
 def time_now():
 	global time
-	time += random.randint(1, 1440) * 60 # minutes
+	time += random.randint(1, 30 * 1440) * 60 # minutes
 	return time
 
 def epsilon(value): return 0 # value / 500
@@ -559,8 +559,8 @@ def run_round(balance):
 		for i in range(0, random.randint(1, length-1)):
 			idx = cdp_index(i) 
 			if idx != False:
-				c = random.randrange(-1000, 1000)
-				d = random.randrange(-1000, 1000)
+				c = random.randrange(-1_000_000, 1_000_000)
+				d = random.randrange(-1_000_000, 1_000_000)
 
 				# verify change with old price first (request creation step)
 				cdp = table[idx]
@@ -569,13 +569,15 @@ def run_round(balance):
 				new_ccr = 9999999
 				if new_debt > 0: new_ccr = new_col * old_price // new_debt
 				success = new_ccr >= CR and new_col >= 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
-				if not success: print("reparam values:", new_ccr, new_col, new_debt)
+				if not success: 
+					print("--- was d. c", cdp.debt, cdp.collateral)
+					print("reparam values:", new_ccr, new_col, new_debt)
 				reparam_values.append([i, c, d, success])
 				k -= 1
 			if k == 0:
 				break
 
-	new_price = random.randint(-price // 3, price // 3) if LIQUIDATION else 1
+	new_price = random.randint(-price // 10, price // 10) if LIQUIDATION else 1
 	if new_price == 0: new_price = 100
 	price += new_price
 

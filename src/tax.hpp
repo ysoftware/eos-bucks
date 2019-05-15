@@ -50,13 +50,13 @@ void buck::collect_taxes(uint32_t max) {
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   
-  int i = 0;
-  while (i < max && accrual_itr != accrual_index.end()
+  int processed = 0;
+  while (max > processed && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
   
     accrue_interest(_cdp.require_find(accrual_itr->id));
     accrual_itr = accrual_index.begin(); // take first element after index updated
-    i++;
+    processed++;
   }
 }
 
