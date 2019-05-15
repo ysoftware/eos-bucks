@@ -180,10 +180,10 @@ CONTRACT buck : public contract {
         
         if (acr == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
         
-        if (debt.amount == 0) return MAX + uint128_t(collateral.amount) * 10'000 / acr; // ascending c/acr
+        if (debt.amount == 0) return MAX - uint128_t(collateral.amount) * 10'000 / acr; // descending c/acr
 
         const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000 / debt.amount;
-        return MAX * 2 - cd / acr; // ascending cd/acr
+        return MAX * 2 - cd / acr; // descending cd/acr
       }
       
       // index to search for debtors with highest ccr
