@@ -6,7 +6,6 @@ void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
   const time_point_sec now = current_time_point_sec();
   _fund.modify(fund_itr, same_payer, [&](auto& r) {
     while (!r.rex_maturities.empty() && r.rex_maturities.front().first <= now) {
-      r.matured_rex += r.rex_maturities.front().second;
       r.rex_maturities.pop_front();
     }
   });
