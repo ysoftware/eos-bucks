@@ -68,8 +68,6 @@ void buck::run_requests(uint8_t max) {
         accrue_interest(cdp_itr);
         sell_r(cdp_itr);
         
-        PRINT_("reparam")
-        cdp_itr->p();
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
@@ -137,8 +135,6 @@ void buck::run_requests(uint8_t max) {
         // sanity check
         check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
         check(cdp_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
-        
-        cdp_itr->p();
       
         buy_r(cdp_itr);
         
@@ -157,7 +153,6 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT_("redeem")
         
         // to-do sorting
         // to-do verify timestamp
@@ -175,7 +170,6 @@ void buck::run_requests(uint8_t max) {
         while (redeem_quantity.amount > 0 && debtor_itr != debtor_index.end() && debtors_failed < 30) {
           
           if (debtor_itr->collateral.amount == 0 || debtor_itr->debt.amount == 0) { // reached end of the table
-            debtor_itr->p();
             break;
           }
           
