@@ -55,8 +55,8 @@ int64_t buck::convert(uint128_t quantity, bool to_rex) const {
   static const int64_t R0 = pool_itr->total_rex.amount;
   static const int64_t S0 = pool_itr->total_lendable.amount;
   
-  if (to_rex) return quantity * S0 / R0;
-  else return quantity * R0 / S0;
+  if (to_rex) return quantity * R0 / S0;
+  else return quantity * S0 / R0;
 }
 
 asset buck::get_rex_balance() const {
