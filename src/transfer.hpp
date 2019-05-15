@@ -50,7 +50,7 @@ void buck::withdraw(const name& account, const asset& quantity) {
 
 void buck::notify_transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   require_auth(from);
-  if (to != _self || from == _self) { return; }
+  if (to != _self || from == _self || from == "eosio.rex"_n) { return; }
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
