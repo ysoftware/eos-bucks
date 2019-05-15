@@ -22,6 +22,9 @@ static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
 static const asset& ZERO_EOS   = asset(0, EOS);
 
+/// max % of price change available to oracle
+static const uint8_t ORACLE_MAX_PERCENT = 8;
+
 /// minimal collateral is 5 EOS
 static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 
