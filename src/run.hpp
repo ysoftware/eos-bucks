@@ -67,6 +67,7 @@ void buck::run_requests(uint8_t max) {
         accrue_interest(cdp_itr);
         sell_r(cdp_itr);
         
+        PRINT_("reparam")
         cdp_itr->p();
         
         asset change_debt = ZERO_BUCK;
@@ -76,8 +77,8 @@ void buck::run_requests(uint8_t max) {
           if (reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) {
             change_debt = reparam_itr->change_debt; // add negative value
           }
-          else {
-          }
+          
+          add_balance(cdp_itr->account, change_debt, same_payer, true);
         }
         
         if (reparam_itr->change_collateral.amount > 0) { // adding collateral
@@ -86,7 +87,8 @@ void buck::run_requests(uint8_t max) {
         
         if (reparam_itr->change_collateral.amount < 0) { // removing collateral
           
-          if (cdp_itr->collateral + reparam_itr->change_collateral >= MIN_COLLATERAL) {
+          const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
+          if ((cdp_itr->collateral + reparam_itr->change_collateral).amount >= min_collateral) {
             const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
   
             // check ccr with new collateral
@@ -102,6 +104,8 @@ void buck::run_requests(uint8_t max) {
               change_collateral = change;
             }
           }
+          
+          add_funds(cdp_itr->account, -change_collateral, cdp_itr->account);
         }
         
         if (reparam_itr->change_debt.amount > 0) { // adding debt
@@ -119,14 +123,6 @@ void buck::run_requests(uint8_t max) {
             const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
             change_debt = asset(change_amount, BUCK);
           }
-        }
-        
-        if (change_debt.amount > 0) {
-          add_balance(cdp_itr->account, change_debt, same_payer, true);
-        }
-        
-        if (change_collateral.amount < 0) {
-          add_funds(cdp_itr->account, -change_collateral, cdp_itr->account);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {

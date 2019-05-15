@@ -220,7 +220,7 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
-		print("add tax", cdp.id)
+		# print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
@@ -274,7 +274,7 @@ def ls(collateral, debt, acr, id):
 	return (MAX * 2 - cd // acr)   * 1_000 + id
 
 def liquidation(price, cr, lf):	
-	print("liquidation")
+	# print("liquidation")
 	global TEC, table
 	if table == []: return
 	# i = 0
@@ -304,17 +304,17 @@ def liquidation(price, cr, lf):
 
 		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
-			print("DONE1")
+			# print("DONE1")
 			return # done
 
 		if debtor.collateral * price // debtor.debt >= CR  - epsilon(CR):
 			cdp_insert(debtor)
-			print("DONE2")
+			# print("DONE2")
 			return # done
 	
 		if table[idx].acr == 0:
-			print(table[idx])
-			print("NO ACR\n")
+			# print(table[idx])
+			# print("NO ACR\n")
 			cdp_insert(debtor)
 			return
 
@@ -329,7 +329,7 @@ def liquidation(price, cr, lf):
 			liq_ccr = liquidator.collateral * price // liquidator.debt
 
 		if liq_ccr < CR or liquidator.debt > epsilon(liquidator.debt) and liq_ccr <= liquidator.acr:
-			print("FAILED: NO MORE GOOD LIQUIDATORS\n")
+			# print("FAILED: NO MORE GOOD LIQUIDATORS\n")
 			cdp_insert(liquidator)
 			cdp_insert(debtor)
 			return
@@ -383,20 +383,20 @@ def redemption(amount, price):
 
 	# print_table()
 
-	print("\n\nredeem", amount)
+	# print("\n\nredeem", amount)
 
 	debtors_failed = 0
 	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		print(cdp)
+		# print(cdp)
 
 		if cdp.debt < 500000 + epsilon(500000):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			print("debtor failed debt", debtors_failed)
+			# print("debtor failed debt", debtors_failed)
 			continue
 
 		rf = 1
@@ -404,36 +404,36 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			print("debtor failed ccr", debtors_failed)
+			# print("debtor failed ccr", debtors_failed)
 			continue
 
 		if cdp.debt > amount:
 			c = (amount * 100) // (price+rf)
 			d = amount
 
-			print(cdp)
+			# print(cdp)
 			cdp.add_debt(-d)
 			cdp.add_collateral(-c)
 			cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 			cdp_insert(cdp)
 			amount = 0
 
-			print("redeem updating", c, d)
-			print(cdp)
+			# print("redeem updating", c, d)
+			# print(cdp)
 		else:
 			d = cdp.debt
 			c = (d * 100) // (price+rf)
 
-			print(cdp)
+			# print(cdp)
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
 
-			print("redeem removing", c, d)
-			print(cdp)
+			# print("redeem removing", c, d)
+			# print(cdp)
 
 			amount -= d
 			i -= 1
-	print("redeem left over", amount)
+	# print("redeem left over", amount)
 	return
 
 def reparametrize(id, c, d, price):
@@ -445,7 +445,7 @@ def reparametrize(id, c, d, price):
 		return
 
 	cdp = table.pop(idx)
-	print("reparam", cdp)
+	# print("reparam", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -455,13 +455,13 @@ def reparametrize(id, c, d, price):
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
-		else: print("not removing d below min")
+		# else: print("not removing d below min")
 
 	if c > 0:
 		cdp.add_collateral(c)
 
 	if c < 0:
-		print("ccr", calc_ccr(cdp, price))
+		# print("ccr", calc_ccr(cdp, price))
 		if cdp.collateral + c >= 50000 + epsilon(50000):
 			if cdp.debt == 0:
 				cdp.add_collateral(-c)
@@ -471,7 +471,7 @@ def reparametrize(id, c, d, price):
 				else:
 					m = (cr-100) * cdp.debt // price
 					cdp.add_collateral(max(c, -m))
-		else: print("not removing c below min")
+		# else: print("not removing c below min")
 
 	if d > 0:
 		if cdp.debt == 0:
@@ -560,8 +560,8 @@ def run_round(balance):
 		for i in range(0, random.randint(1, length-1)):
 			idx = cdp_index(i) 
 			if idx != False:
-				c = random.randrange(-10000, 10000)
-				d = random.randrange(-10000, 10000)
+				c = random.randrange(-1000, 1000)
+				d = random.randrange(-1000, 1000)
 
 				# verify change with old price first (request creation step)
 				cdp = table[idx]
@@ -629,7 +629,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 20
+	x = 5
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
