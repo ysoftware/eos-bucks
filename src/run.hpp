@@ -47,7 +47,7 @@ void buck::run_requests(uint8_t max) {
           continue;
         }
         
-        sell_r(cdp_itr);
+        remove_excess_collateral(cdp_itr);
         update_supply(-cdp_itr->debt);
         
         _cdp.erase(cdp_itr);
@@ -69,7 +69,7 @@ void buck::run_requests(uint8_t max) {
         }
         
         accrue_interest(cdp_itr);
-        sell_r(cdp_itr);
+        remove_excess_collateral(cdp_itr);
         
         
         asset change_debt = ZERO_BUCK;
@@ -139,7 +139,7 @@ void buck::run_requests(uint8_t max) {
         check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
         check(cdp_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
       
-        buy_r(cdp_itr);
+        set_excess_collateral(cdp_itr);
         
         reparam_itr = _reparamreq.erase(reparam_itr);
         did_work = true;
@@ -303,7 +303,7 @@ void buck::run_liquidation(uint8_t max) {
     }
     
     processed++;
-    sell_r(_cdp.require_find(liquidator_itr->id));
+    remove_excess_collateral(_cdp.require_find(liquidator_itr->id));
     accrue_interest(_cdp.require_find(liquidator_itr->id));
     
     const int64_t liquidator_collateral = liquidator_itr->collateral.amount;

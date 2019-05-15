@@ -120,7 +120,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   });
   
   if (issue_debt.amount == 0) {
-    buy_r(_cdp.require_find(id));
+    set_excess_collateral(_cdp.require_find(id));
   }
   else {
     update_supply(issue_debt);

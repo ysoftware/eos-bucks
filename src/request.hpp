@@ -104,13 +104,13 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   require_auth(cdp_itr->account);
   
   accrue_interest(cdp_itr);
-  sell_r(cdp_itr);
+  remove_excess_collateral(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.acr = acr;
   });
   
-  buy_r(cdp_itr);
+  set_excess_collateral(cdp_itr);
   run_requests(10);
 }
 

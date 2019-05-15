@@ -96,7 +96,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   // to-do check ccr for liquidation
 }
 
-void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
+void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
   
@@ -113,7 +113,7 @@ void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   });
 }
 
-void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
+void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
   
   if (cdp_itr->acr == 0 || cdp_itr->debt.amount > 0) return;
