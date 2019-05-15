@@ -66,18 +66,16 @@ CONTRACT buck : public contract {
     
     TABLE taxation_stats {
       
-      // actual processed taxes
-      asset insurance_pool;
-      asset savings_pool;
-      
       // insurance
-      uint64_t  total_excess;
-      uint64_t  aggregated_excess;
-      asset     collected_excess;  // BUCK this round
+      asset       insurance_pool;
+      uint64_t    total_excess;
+      uint128_t   aggregated_excess;
+      asset       collected_excess;  // BUCK this round
       
       // savings
-      uint64_t  savings_supply;    // virtual toke
-      asset     collected_savings; // REX this round
+      asset       savings_pool;      // saved + proceeds
+      uint64_t    savings_supply;    // virtual toke
+      asset       collected_savings; // REX this round
       
       uint64_t primary_key() const { return 0; }
     };

@@ -36,7 +36,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     }
     
     // give back rex if was positive change
-    if (reparam_itr->change_collateral > 0) {
+    if (reparam_itr->change_collateral.amount > 0) {
       add_funds(account, reparam_itr->change_collateral, account);
     }
     
@@ -58,7 +58,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
   
   const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
-  check(new_collateral >= min_collateral, "can not reparametrize collateral below the limit");
+  check(new_collateral.amount >= min_collateral, "can not reparametrize collateral below the limit");
   
   // take away debt if negative change
   if (change_debt.amount < 0) {

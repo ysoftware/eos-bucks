@@ -124,11 +124,11 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   const uint32_t delta_t = now - cdp_itr->modified_round;
   
   const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
-  const uint64_t agec = excess * delta_t;
+  const uint128_t agec = uint128_t(excess) * delta_t;
   
   int64_t dividends_amount = 0;
   if (tax.aggregated_excess > 0) {
-    dividends_amount = uint128_t(agec) * tax.insurance_pool.amount / tax.aggregated_excess;
+    dividends_amount = agec * tax.insurance_pool.amount / tax.aggregated_excess;
   }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
