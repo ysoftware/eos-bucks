@@ -235,13 +235,14 @@ void buck::run_requests(uint8_t max) {
           debtor_itr = debtor_index.begin();
         }
         
-        if (redeem_quantity.amount > 0) {
-          
-          // return unredeemed amount
-          add_balance(redeem_itr->account, redeem_quantity, same_payer);
-        }
-        
+        // done with this redemption request
         if (redeem_itr->quantity != redeem_quantity) {
+            
+          if (redeem_quantity.amount > 0) {
+            
+            // return unredeemed amount
+            add_balance(redeem_itr->account, redeem_quantity, same_payer);
+          }
           
           // complete and remove redemption request only if anything was redeemed in the process
           update_supply(-burned_debt);
