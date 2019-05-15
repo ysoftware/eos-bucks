@@ -89,11 +89,12 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   check(ccr < 1'000'00, "ccr value is too high");
   check(acr < 1'000'00, "acr value is too high");
   
-  sub_funds(account, quantity);
-  
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   auto issue_debt = ZERO_BUCK;
+  
+  const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
+  check(quantity.amount >= min_collateral, "can not reparametrize collateral below the limit");
   
   if (ccr > 0) {
     
@@ -102,6 +103,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     issue_debt = asset(debt_amount, BUCK);
     check(issue_debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
+  
+  sub_funds(account, quantity);
   
   // open account if doesn't exist
   add_balance(account, ZERO_BUCK, account);
