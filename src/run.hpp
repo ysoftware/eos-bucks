@@ -169,8 +169,6 @@ void buck::run_requests(uint8_t max) {
         auto redeem_quantity = redeem_itr->quantity;
         asset rex_return = ZERO_REX;
         asset collateral_return = ZERO_REX;
-        
-        asset burned_debt = ZERO_BUCK; // used up
         debtor_itr = debtor_index.begin();
         
         // loop protection
@@ -229,15 +227,15 @@ void buck::run_requests(uint8_t max) {
             check(debtor_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
           }
           
-          burned_debt += using_debt;
-          
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
         }
         
+        const auto burned_debt = redeem_itr->quantity - redeem_quantity;
+        
         // done with this redemption request
-        if (redeem_itr->quantity != redeem_quantity) {
-            
+        if (burned_debt.amount > 0) {
+          
           if (redeem_quantity.amount > 0) {
             
             // return unredeemed amount
@@ -251,7 +249,7 @@ void buck::run_requests(uint8_t max) {
         }
         
         // in extreme situations, only do 1 request per run
-        if (debtors_failed > 10) break;
+        if (debtors_failed > 1) break;
       }
       else {
         // no more redemption requests

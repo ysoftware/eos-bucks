@@ -91,7 +91,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Start rounds")
 
-			rounds = 20
+			rounds = 100
 			for round_i in range(1, rounds):
 				print("\n\n\n\n")
 				COMMENT(f"Round {round_i} / {rounds} of cycle {cycle_i}")
@@ -157,13 +157,15 @@ class Test(unittest.TestCase):
 				scruge_balance = balance(buck, "scrugescruge")
 				collected_savings = amount(taxation["collected_savings"])
 				savings_pool = amount(taxation["savings_pool"])
-				circulation = scruge_balance + user_balance + collected_savings + savings_pool
+				locked_in_requests = self.get_locked_in_requests_tokens()
+				circulation = scruge_balance + user_balance + collected_savings + savings_pool + locked_in_requests
 
 				print(supply, ":")
 				print(user_balance)
 				print(scruge_balance)
 				print(savings_pool)
 				print(collected_savings)
+				print(locked_in_requests)
 
 				self.assertAlmostEqual(supply, circulation, 4, "supply doesn't match total buck")
 				print("+ Matched total supply")
@@ -171,6 +173,17 @@ class Test(unittest.TestCase):
 				##################################
 				COMMENT(f"Round {round_i} / {rounds} of cycle {cycle_i} complete.")
 
+
+	def get_locked_in_requests_tokens(self):
+		tokens = 0
+		redeem = table(buck, "redeemreq", row=None)
+		for req in redeem:
+			tokens += amount(req["quantity"])
+		reparam = table(buck, "reparamreq", row=None)
+		for req in reparam:
+			debt = amount(req["change_debt"])
+			if debt < 0: tokens += debt 
+		return tokens
 
 	def compare(self, buck, cdp_table):
 		top_debtors = get_debtors(buck, limit=100)
