@@ -2,60 +2,60 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::exchange(const name& from, const asset value) {
-  require_auth(from);
+void buck::exchange(const name& account, const asset quantity) {
+  require_auth(account);
 
-  check(value.is_valid(), "invalid quantity");
-  check(value.amount > 0, "must transfer positive quantity");
-  check(value.symbol == BUCK || value.symbol == EOS, "symbol mismatch");
+  check(quantity.is_valid(), "invalid quantity");
+  check(quantity.amount > 0, "must transfer positive quantity");
+  check(quantity.symbol == BUCK || quantity.symbol == EOS, "symbol mismatch");
   
   // create accounts if not yet
-  add_balance(from, ZERO_BUCK, from, false);
-  add_exchange_funds(from, ZERO_EOS, from);
+  add_balance(account, ZERO_BUCK, account, false);
+  add_exchange_funds(account, ZERO_EOS, account);
   
   // take tokens
-  if (value.symbol == BUCK) {
-    check(value.amount >= 25'0000, "minimum amount is 25 BUCK");
-    sub_balance(from, value, false);
+  if (quantity.symbol == BUCK) {
+    check(quantity.amount >= 25'0000, "minimum amount is 25 BUCK");
+    sub_balance(account, quantity, false);
   }
   else {
-    check(value.amount >= 5'0000, "minimum amount is 5 EOS");
-    sub_exchange_funds(from, value);
+    check(quantity.amount >= 5'0000, "minimum amount is 5 EOS");
+    sub_exchange_funds(account, quantity);
   }
   
-  const auto ex_itr = _exchange.find(from.value);
+  const auto ex_itr = _exchange.find(account.value);
   if (ex_itr == _exchange.end()) {
     
     // new order
-    _exchange.emplace(from, [&](auto& r) {
-      r.account = from;
-      r.quantity = value;
+    _exchange.emplace(account, [&](auto& r) {
+      r.account = account;
+      r.quantity = quantity;
       r.timestamp = get_current_time_point();
     });
   }
   else {
     
-    if (ex_itr->quantity.symbol != value.symbol) {
+    if (ex_itr->quantity.symbol != quantity.symbol) {
       
       // return previous order
       if (ex_itr->quantity.symbol == BUCK) {
-        add_balance(from, ex_itr->quantity, from, false);
+        add_balance(account, ex_itr->quantity, account, false);
       }
       else {
-        add_exchange_funds(from, ex_itr->quantity, from);
+        add_exchange_funds(account, ex_itr->quantity, account);
       }
       
       // setup new one
-      _exchange.modify(ex_itr, from, [&](auto& r) {
-        r.quantity = value;
+      _exchange.modify(ex_itr, account, [&](auto& r) {
+        r.quantity = quantity;
         r.timestamp = get_current_time_point();
       });
     }
     else {
       
       // update existing
-      _exchange.modify(ex_itr, from, [&](auto& r) {
-        r.quantity += value;
+      _exchange.modify(ex_itr, account, [&](auto& r) {
+        r.quantity += quantity;
         r.timestamp = get_current_time_point();
       });
     }

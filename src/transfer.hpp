@@ -24,23 +24,23 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   run(3);
 }
 
-void buck::withdraw(const name& from, const asset& quantity) {
-  require_auth(from);
+void buck::withdraw(const name& account, const asset& quantity) {
+  require_auth(account);
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
   
   if (quantity.symbol == REX) {
-    time_point_sec maturity_time = get_amount_maturity(from, quantity);
+    time_point_sec maturity_time = get_amount_maturity(account, quantity);
     check(current_time_point_sec() > maturity_time, "insufficient matured rex");
     
-    sub_funds(from, quantity);
-    sell_rex(from, quantity);
+    sub_funds(account, quantity);
+    sell_rex(account, quantity);
   }
   else if (quantity.symbol == EOS) {
-    sub_exchange_funds(from, quantity);
-    inline_transfer(from, quantity, "buck: withdraw from exchange funds", EOSIO_TOKEN);
+    sub_exchange_funds(account, quantity);
+    inline_transfer(account, quantity, "buck: withdraw from exchange funds", EOSIO_TOKEN);
   }
   else {
     check(false, "symbol mismatch");

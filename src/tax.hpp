@@ -143,21 +143,21 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
   });
 }
 
-void buck::save(const name& account, const asset& value) {
+void buck::save(const name& account, const asset& quantity) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
-  check(value.is_valid(), "invalid quantity");
-  check(value.amount > 0, "can not use negative value");
-  check(value.symbol == BUCK, "can not use asset with different symbol");
-  check(value.amount >= 1'0000, "not enough value to put in savings");
+  check(quantity.is_valid(), "invalid quantity");
+  check(quantity.amount > 0, "can not use negative value");
+  check(quantity.symbol == BUCK, "can not use asset with different symbol");
+  check(quantity.amount >= 1'0000, "not enough value to put in savings");
   
-  uint64_t received_amount = value.amount;
+  uint64_t received_amount = quantity.amount;
   if (tax.savings_supply > 0) {
-    received_amount = (uint128_t) value.amount * tax.savings_supply / tax.savings_pool.amount;
+    received_amount = (uint128_t) quantity.amount * tax.savings_supply / tax.savings_pool.amount;
   }
   
-  check(received_amount > 0, "not enough value to receive minimum amount of savings");
+  check(received_amount > 0, "not enough quantity to receive minimum amount of savings");
   
   // create funds if doesn't exist
   add_funds(account, ZERO_REX, account);
@@ -169,33 +169,33 @@ void buck::save(const name& account, const asset& value) {
   
   _tax.modify(tax, same_payer, [&](auto& r) {
     r.savings_supply += received_amount;
-    r.savings_pool += value;
+    r.savings_pool += quantity;
   });
   
-  sub_balance(account, value, false);
+  sub_balance(account, quantity, false);
   run(3);
 }
 
-void buck::take(const name& account, const uint64_t value) {
+void buck::take(const name& account, const uint64_t quantity) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   
-  check(value > 0, "can not use negative value");
+  check(quantity > 0, "can not use negative value");
   
   accounts_i _accounts(_self, account.value);
   const auto account_itr = _accounts.find(BUCK.code().raw());
   const auto fund_itr = _fund.require_find(account.value, "fund object doesn't exist");
-  check(fund_itr->savings_balance >= value, "overdrawn savings balance");
+  check(fund_itr->savings_balance >= quantity, "overdrawn savings balance");
   
-  const int64_t received_bucks_amount = uint128_t(value) * tax.savings_pool.amount / tax.savings_supply;
+  const int64_t received_bucks_amount = uint128_t(quantity) * tax.savings_pool.amount / tax.savings_supply;
   const asset received_bucks = asset(received_bucks_amount, BUCK);
   
   _fund.modify(fund_itr, account, [&](auto& r) {
-    r.savings_balance -= value;
+    r.savings_balance -= quantity;
   });
   
   _tax.modify(tax, same_payer, [&](auto& r) {
-    r.savings_supply -= value;
+    r.savings_supply -= quantity;
     r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
