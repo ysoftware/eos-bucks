@@ -20,20 +20,30 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // to-do cancel and return previous request
 
-  // to-do remove close request
+  // remove close request
+  const auto close_itr = _closereq.find(cdp_id);
+  if (close_itr != _closereq.end()) {
+    _closereq.erase(close_itr);
+  }
   
+  // remove reparam request
   const auto reparam_itr = _reparamreq.find(cdp_id);
   if (reparam_itr != _reparamreq.end()) {
     
-    // give back debt if was negative change
+    // give back bucks if was negative change
     if (reparam_itr->change_debt.amount < 0) {
       add_balance(account, -reparam_itr->change_debt, account, true);
     }
     
-    // to-do what about collateral?
+    // give back rex if was positive change
+    if (reparam_itr->change_collateral > 0) {
+      add_funds(account, reparam_itr->change_collateral, account);
+    }
     
-    _reparamreq.erase(reparam_itr); // remove existing request
+    _reparamreq.erase(reparam_itr); 
   }
+  
+  // start with new request  
   
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
@@ -47,7 +57,8 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
   
-  // to-do check min collateral in EOS
+  const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
+  check(new_collateral >= min_collateral, "can not reparametrize collateral below the limit");
   
   // take away debt if negative change
   if (change_debt.amount < 0) {

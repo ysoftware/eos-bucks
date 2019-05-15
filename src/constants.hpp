@@ -23,7 +23,7 @@ static const asset& ZERO_REX   = asset(0, REX);
 static const asset& ZERO_EOS   = asset(0, EOS);
 
 /// minimal collateral is 5 EOS
-static const asset& MIN_COLLATERAL = asset(5'0000, REX);
+static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 
 /// minimal cdp debt is 50 BUCK
 static const asset& MIN_DEBT       = asset(50'0000, BUCK);

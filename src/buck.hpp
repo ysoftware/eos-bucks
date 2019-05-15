@@ -302,6 +302,7 @@ CONTRACT buck : public contract {
     void _update(uint32_t eos_price, bool force);
     
     // getters
+    int64_t convert(uint128_t quantity, bool to_rex) const;
     int64_t to_buck(int64_t quantity) const;
     int64_t to_rex(int64_t quantity, int64_t tax) const;
     uint32_t get_eos_usd_price() const;
