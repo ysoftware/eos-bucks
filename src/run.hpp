@@ -126,7 +126,7 @@ void buck::run_requests(uint8_t max) {
         }
         
         if (change_collateral.amount < 0) {
-          sub_funds(cdp_itr->account, -change_collateral); // to-do wtf is this? 
+          add_funds(cdp_itr->account, -change_collateral, cdp_itr->account);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
