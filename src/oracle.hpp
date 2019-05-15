@@ -20,7 +20,10 @@ void buck::forceupdate(uint32_t eos_price) {
 
 void buck::update(uint32_t eos_price) {
   require_auth(permission_level(_self, "oracle"_n));
-  check(check_operation_status(4), "oracle updates have been temporarily frozen");
+  
+  if (_stat.begin() != _stat.end()) {
+    check(check_operation_status(4), "oracle updates have been temporarily frozen");
+  }
   _update(eos_price, false);
 }
 
