@@ -85,22 +85,19 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1000, 0, "10000.0000 REX")
 		open(buck, user1, 1000, 0, "10000.0000 REX")
 		
+		table(buck, "cdp")
 
 		##############################
 		COMMENT("Reparam liquidator CDPs")
 
 		# remove debt - error
 		# reparam(buck, user1, 0, "-50.0000 BUCK", "0.0000 REX")
-
 		# add debt
 		reparam(buck, user1, 1, "50.0000 BUCK", "0.0000 REX")
-
 		# remove collateral
 		reparam(buck, user1, 2, "0.0000 BUCK", "-1000.0000 REX")
-
 		# add collateral
 		reparam(buck, user1, 3, "0.0000 BUCK", "1000.0000 REX")
-
 		# both
 		reparam(buck, user1, 4, "50.0000 BUCK", "-1000.0000 REX")
 
@@ -109,33 +106,57 @@ class Test(unittest.TestCase):
 
 		# remove debt
 		reparam(buck, user1, 5, "-50.0000 BUCK", "0.0000 REX")
-
 		# add debt
 		reparam(buck, user1, 6, "50.0000 BUCK", "0.0000 REX")
-
 		# remove collateral
 		reparam(buck, user1, 7, "0.0000 BUCK", "-1000.0000 REX")
-
 		# add collateral
 		reparam(buck, user1, 8, "0.0000 BUCK", "1000.0000 REX")
-
 		# both
 		reparam(buck, user1, 9, "50.0000 BUCK", "-1000.0000 REX")
 
-		table(buck, "reparamreq")
-
-		table(buck, "stat")
-
 		# mature rex
-		time += 10_000
+		time += 1
 		maketime(buck, time)
 		update(buck, 100)
 
-		table(buck, "reparamreq")
+		##############################
+		COMMENT("Match")
 
-		table(buck, "cdp")
+		cdps = table(buck, "cdp", row=None)
 
-		table(buck, "stat")
+		self.assertEqual(50, amount(cdps[1]["debt"]))
+		self.assertEqual(10000, amount(cdps[1]["collateral"]))
+
+		self.assertEqual(0, amount(cdps[2]["debt"]))
+		self.assertEqual(9000, amount(cdps[2]["collateral"]))
+
+		self.assertEqual(0, amount(cdps[3]["debt"]))
+		self.assertEqual(11000, amount(cdps[3]["collateral"]))
+
+		self.assertEqual(50, amount(cdps[4]["debt"]))
+		self.assertEqual(9000, amount(cdps[4]["collateral"]))
+
+		##############################
+
+		self.assertEqual(950, amount(cdps[5]["debt"]))
+		self.assertEqual(10000, amount(cdps[5]["collateral"]))
+
+		self.assertEqual(1050, amount(cdps[6]["debt"]))
+		self.assertEqual(10000, amount(cdps[6]["collateral"]))
+
+		self.assertEqual(1000, amount(cdps[7]["debt"]))
+		self.assertEqual(9000, amount(cdps[7]["collateral"]))
+
+		self.assertEqual(1000, amount(cdps[8]["debt"]))
+		self.assertEqual(11000, amount(cdps[8]["collateral"]))
+
+		self.assertEqual(950, amount(cdps[9]["debt"]))
+		self.assertEqual(9000, amount(cdps[9]["collateral"]))
+
+
+
+
 
 
 

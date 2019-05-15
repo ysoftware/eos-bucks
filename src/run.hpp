@@ -60,7 +60,7 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
-        PRINT_("reparam")
+        PRINT_("\nreparam")
         
         // find cdp
         const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
@@ -70,19 +70,23 @@ void buck::run_requests(uint8_t max) {
           continue;
         }
         
+        cdp_itr->p();
+        
         accrue_interest(cdp_itr);
         remove_excess_collateral(cdp_itr);
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
+        const auto new_debt = reparam_itr->change_debt + cdp_itr->debt;
         
-        if (reparam_itr->change_debt.amount < 0) { // removing debt
+         // removing debt
+        if (reparam_itr->change_debt.amount < 0) {
         
-          if (reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) {
-            change_debt = reparam_itr->change_debt; // add negative value
+          if (new_debt >= MIN_DEBT) {
+            change_debt = reparam_itr->change_debt;
             
             // remove change from supply
-            update_supply(change_debt); // negative
+            update_supply(change_debt);
           }
           else {
             
@@ -91,55 +95,69 @@ void buck::run_requests(uint8_t max) {
           }
         }
         
-        if (reparam_itr->change_collateral.amount > 0) { // adding collateral
+        // adding collateral
+        if (reparam_itr->change_collateral.amount > 0) { 
           change_collateral = reparam_itr->change_collateral;
         }
         
-        if (reparam_itr->change_collateral.amount < 0) { // removing collateral
+        // removing collateral
+        if (reparam_itr->change_collateral.amount < 0) { 
           
           // check for min new collateral
           const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
           if ((cdp_itr->collateral + reparam_itr->change_collateral).amount >= min_collateral) {
-            const auto new_debt_amount = change_debt.amount + cdp_itr->debt.amount;
             
-            if (new_debt_amount > 0) {
-              int32_t ccr = to_buck(cdp_itr->collateral.amount) / new_debt_amount;
+            if (new_debt.amount == 0) {
               
-              if (ccr >= CR) {
-                const int64_t m1 = (CR - 100) * 100 * cdp_itr->collateral.amount / ccr / 100;
-                const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount);
-                const asset change = asset(change_amount, REX);
-                change_collateral = change;
-              }
+              change_collateral = reparam_itr->change_collateral;
             }
             else {
-              change_collateral = reparam_itr->change_collateral;
+              int32_t ccr = to_buck(cdp_itr->collateral.amount) / new_debt.amount;
+              
+              if (ccr >= CR) {
+                
+                const int64_t m1 = (CR - 100) * cdp_itr->collateral.amount * 100 / ccr / 100;
+                const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount); // min out of negatives
+                change_collateral = asset(change_amount, REX);
+                
+                PRINT("ccr", ccr)
+                PRINT("m1", -m1)
+                PRINT("reparam change", reparam_itr->change_collateral)
+                PRINT("change_collateral", change_collateral)
+              }
             }
           }
           
           add_funds(cdp_itr->account, -change_collateral, cdp_itr->account);
         }
         
-        if (reparam_itr->change_debt.amount > 0) { // adding debt
+        // adding debt
+        if (reparam_itr->change_debt.amount > 0) { 
         
           const auto new_collateral_amount = change_collateral.amount + cdp_itr->collateral.amount;
-          const auto new_debt = reparam_itr->change_debt + cdp_itr->debt;
 
           // check if above min debt limit
-          if (new_debt > MIN_DEBT) {
+          if (new_debt >= MIN_DEBT) {
             
             int32_t ccr = to_buck(new_collateral_amount) / new_debt.amount;
             
             // don't add if below CR
             if (ccr >= CR) {
-              const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * new_debt.amount) - 100) * cdp_itr->debt.amount / 100;
+              
+              const int64_t max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
               const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
               change_debt = asset(change_amount, BUCK);
+              update_supply(change_debt);
+              
+              PRINT("max_debt", max_debt)
+              PRINT("reparam change", reparam_itr->change_debt)
+              PRINT("change_debt", change_debt)
             }
             
-            // issue bucks
-            add_balance(cdp_itr->account, change_debt, same_payer);
-            update_supply(change_debt);
+            // return remaining bucks
+            if (change_debt < reparam_itr->change_debt) {
+              add_balance(cdp_itr->account, reparam_itr->change_debt - change_debt, same_payer);
+            }
           }
         }
         
