@@ -18,7 +18,7 @@ void buck::process_taxes() {
   const int64_t savings_amount = tax.collected_savings.amount - scruge_savings_amount;
   const auto scruge_savings = asset(scruge_savings_amount, BUCK);
   if (scruge_savings_amount > 0) {
-    add_balance(SCRUGE, scruge_savings, _self, true);
+    add_balance(SCRUGE, scruge_savings, _self);
   }
 
   const auto oracle_time = _stat.begin()->oracle_timestamp;
@@ -79,8 +79,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
-  
-  update_supply(accrued_debt);
 
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.collateral -= accrued_collateral;
@@ -92,6 +90,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.collected_savings += accrued_debt;
     r.collected_excess += accrued_collateral;
   });
+  
+  update_supply(accrued_debt);
   
   // to-do check ccr for liquidation
 }
@@ -172,7 +172,7 @@ void buck::save(const name& account, const asset& quantity) {
     r.savings_pool += quantity;
   });
   
-  sub_balance(account, quantity, false);
+  sub_balance(account, quantity);
   run(3);
 }
 
@@ -199,6 +199,6 @@ void buck::take(const name& account, const uint64_t quantity) {
     r.savings_pool -= asset(received_bucks_amount, BUCK);
   });
   
-  add_balance(account, received_bucks, same_payer, false);
+  add_balance(account, received_bucks, same_payer);
   run(3);
 }

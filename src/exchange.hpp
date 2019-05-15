@@ -10,13 +10,13 @@ void buck::exchange(const name& account, const asset quantity) {
   check(quantity.symbol == BUCK || quantity.symbol == EOS, "symbol mismatch");
   
   // create accounts if not yet
-  add_balance(account, ZERO_BUCK, account, false);
+  add_balance(account, ZERO_BUCK, account);
   add_exchange_funds(account, ZERO_EOS, account);
   
   // take tokens
   if (quantity.symbol == BUCK) {
     check(quantity.amount >= 25'0000, "minimum amount is 25 BUCK");
-    sub_balance(account, quantity, false);
+    sub_balance(account, quantity);
   }
   else {
     check(quantity.amount >= 5'0000, "minimum amount is 5 EOS");
@@ -39,7 +39,7 @@ void buck::exchange(const name& account, const asset quantity) {
       
       // return previous order
       if (ex_itr->quantity.symbol == BUCK) {
-        add_balance(account, ex_itr->quantity, account, false);
+        add_balance(account, ex_itr->quantity, account);
       }
       else {
         add_exchange_funds(account, ex_itr->quantity, account);
@@ -91,7 +91,7 @@ void buck::run_exchange(uint8_t max) {
     const asset eos = asset(eos_amount, EOS);
     
     // update balances
-    add_balance(sell_itr->account, buck, same_payer, false);
+    add_balance(sell_itr->account, buck, same_payer);
     add_exchange_funds(buy_itr->account, eos, same_payer);
     
     // update orders

@@ -32,7 +32,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     
     // give back bucks if was negative change
     if (reparam_itr->change_debt.amount < 0) {
-      add_balance(account, -reparam_itr->change_debt, account, true);
+      add_balance(account, -reparam_itr->change_debt, account);
     }
     
     // give back rex if was positive change
@@ -62,7 +62,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   // take away debt if negative change
   if (change_debt.amount < 0) {
-    sub_balance(account, -change_debt, false);
+    sub_balance(account, -change_debt);
   }
 
   if (change_collateral.amount > 0) {
@@ -129,7 +129,7 @@ void buck::close(uint64_t cdp_id) {
   
   accrue_interest(cdp_itr);
   
-  sub_balance(cdp_itr->account, cdp_itr->debt, true);
+  sub_balance(cdp_itr->account, cdp_itr->debt);
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
     r.cdp_id = cdp_id;
@@ -155,7 +155,7 @@ void buck::redeem(const name& account, const asset& quantity) {
   if (redeem_itr != _redeemreq.end()) {
     
     // return previous request
-    add_balance(account, redeem_itr->quantity, account, false);
+    add_balance(account, redeem_itr->quantity, account);
     
     _redeemreq.modify(redeem_itr, same_payer, [&](auto& r) {
       r.quantity = quantity;
@@ -170,6 +170,6 @@ void buck::redeem(const name& account, const asset& quantity) {
     });
   }
   
-  sub_balance(account, quantity, false);
+  sub_balance(account, quantity);
   run(10);
 }

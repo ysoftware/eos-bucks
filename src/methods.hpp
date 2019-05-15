@@ -83,7 +83,7 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   });
 }
 
-void buck::add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply) {
+void buck::add_balance(const name& owner, const asset& value, const name& ram_payer) {
   #if DEBUG
   if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
   #endif
@@ -102,13 +102,9 @@ void buck::add_balance(const name& owner, const asset& value, const name& ram_pa
       r.balance += value;
     });
   }
-  
-  if (change_supply) {
-    update_supply(value);
-  }
 }
 
-void buck::sub_balance(const name& owner, const asset& value, bool change_supply) {
+void buck::sub_balance(const name& owner, const asset& value) {
   if (value.amount == 0) return;
   
   #if DEBUG
@@ -123,16 +119,17 @@ void buck::sub_balance(const name& owner, const asset& value, bool change_supply
   
   accounts.modify(account_itr, payer, [&](auto& r) {
     r.balance -= value;
+    
+    check(r.balance.amount >= 0, "programmer error, supply can't go below 0");
   });
-  
-  if (change_supply) {
-    update_supply(-value);
-  }
 }
 
 void buck::update_supply(const asset& quantity) {
+  PRINT("supply", quantity.amount)
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.supply += quantity;
+    
+    check(r.supply.amount >= 0, "programmer error, supply can't go below 0");
   });
 }
 

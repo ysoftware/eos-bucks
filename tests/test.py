@@ -220,7 +220,6 @@ def add_tax(cdp, price):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
-		# print("add tax", cdp.id)
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
@@ -230,7 +229,7 @@ def add_tax(cdp, price):
 		CIT += interest * IR // price
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
-		# print("added", interest * SR // 100)
+		print("add tax", cdp.id, interest * SR // 100)
 	return cdp
 
 def update_tax(cdp, price):
@@ -629,7 +628,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 5
+	x = 1
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000

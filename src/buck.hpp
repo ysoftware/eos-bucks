@@ -68,14 +68,14 @@ CONTRACT buck : public contract {
       
       // insurance
       asset       insurance_pool;
+      asset       collected_excess;  // BUCK this round
       uint64_t    total_excess;
       uint128_t   aggregated_excess;
-      asset       collected_excess;  // BUCK this round
       
       // savings
       asset       savings_pool;      // saved + proceeds
-      uint64_t    savings_supply;    // virtual toke
       asset       collected_savings; // REX this round
+      uint64_t    savings_supply;    // virtual toke
       
       uint64_t primary_key() const { return 0; }
     };
@@ -271,8 +271,8 @@ CONTRACT buck : public contract {
     // methods
     
     bool init();
-    void add_balance(const name& owner, const asset& value, const name& ram_payer, bool change_supply);
-    void sub_balance(const name& owner, const asset& value, bool change_supply);
+    void add_balance(const name& owner, const asset& value, const name& ram_payer);
+    void sub_balance(const name& owner, const asset& value);
     void add_funds(const name& from, const asset& quantity, const name& ram_payer);
     void sub_funds(const name& from, const asset& quantity);
     void add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer);

@@ -45,6 +45,7 @@ void buck::run_requests(uint8_t max) {
         }
         
         sell_r(cdp_itr);
+        update_supply(-cdp_itr->debt);
         
         _cdp.erase(cdp_itr);
         add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
@@ -78,7 +79,7 @@ void buck::run_requests(uint8_t max) {
             change_debt = reparam_itr->change_debt; // add negative value
           }
           
-          add_balance(cdp_itr->account, change_debt, same_payer, true);
+          add_balance(cdp_itr->account, change_debt, same_payer);
         }
         
         if (reparam_itr->change_collateral.amount > 0) { // adding collateral
@@ -123,12 +124,15 @@ void buck::run_requests(uint8_t max) {
             const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
             change_debt = asset(change_amount, BUCK);
           }
+          
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
+
+        update_supply(change_debt);
         
         // sanity check
         check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
@@ -153,6 +157,7 @@ void buck::run_requests(uint8_t max) {
 
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
+        PRINT_("redeem")
         
         // to-do sorting
         // to-do verify timestamp
@@ -229,13 +234,13 @@ void buck::run_requests(uint8_t max) {
         if (redeem_quantity.amount > 0) {
           
           // return unredeemed amount
-          add_balance(redeem_itr->account, redeem_quantity, same_payer, false);
+          add_balance(redeem_itr->account, redeem_quantity, same_payer);
         }
         
         if (redeem_itr->quantity != redeem_quantity) {
           
           // complete and remove redemption request only if anything was redeemed in the process
-          update_supply(burned_debt);
+          update_supply(-burned_debt);
           add_funds(redeem_itr->account, collateral_return, same_payer);
           redeem_itr = _redeemreq.erase(redeem_itr);
         }

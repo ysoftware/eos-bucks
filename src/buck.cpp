@@ -64,7 +64,7 @@ bool buck::init() {
     r.collected_savings = ZERO_BUCK;
   });
   
-  add_balance(SCRUGE, ZERO_BUCK, _self, false);
+  add_balance(SCRUGE, ZERO_BUCK, _self);
   add_funds(SCRUGE, ZERO_REX, _self);
   
   return true;

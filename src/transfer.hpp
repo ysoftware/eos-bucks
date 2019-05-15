@@ -18,8 +18,8 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   check(memo.size() <= 256, "memo has more than 256 bytes");
 
   const auto payer = has_auth(to) ? to : from;
-  sub_balance(from, quantity, false);
-  add_balance(to, quantity, payer, false);
+  sub_balance(from, quantity);
+  add_balance(to, quantity, payer);
 	
   run(3);
 }
@@ -104,7 +104,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   }
   
   // open account if doesn't exist
-  add_balance(account, ZERO_BUCK, account, false);
+  add_balance(account, ZERO_BUCK, account);
   add_funds(account, ZERO_REX, account);
   
   const auto id = _cdp.available_primary_key();
@@ -122,7 +122,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     buy_r(_cdp.require_find(id));
   }
   else {
-    add_balance(account, issue_debt, account, true);
+    update_supply(issue_debt);
+    add_balance(account, issue_debt, account);
   }
   
   run(5);
