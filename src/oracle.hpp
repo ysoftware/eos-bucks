@@ -44,7 +44,7 @@ void buck::_update(uint32_t eos_price, bool force) {
       const uint32_t percent = difference * 100 / previous_price;
       
       // handle situations when any price difference is too big
-      if (difference >= ORACLE_MAX_PERCENT) {
+      if (percent > ORACLE_MAX_PERCENT) {
         new_price = previous_price + (previous_price > new_price ? -1 : 1);
       }
     }
