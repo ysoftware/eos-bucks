@@ -71,16 +71,22 @@ void buck::run_requests(uint8_t max) {
         accrue_interest(cdp_itr);
         remove_excess_collateral(cdp_itr);
         
-        
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
         
         if (reparam_itr->change_debt.amount < 0) { // removing debt
+        
           if (reparam_itr->change_debt + cdp_itr->debt >= MIN_DEBT) {
             change_debt = reparam_itr->change_debt; // add negative value
+            
+            // remove change from supply
+            update_supply(change_debt); // negative
           }
-          
-          add_balance(cdp_itr->account, change_debt, same_payer);
+          else {
+            
+            // return bucks because we can't remove debt 
+            add_balance(cdp_itr->account, -change_debt, same_payer);
+          }
         }
         
         if (reparam_itr->change_collateral.amount > 0) { // adding collateral
@@ -126,14 +132,15 @@ void buck::run_requests(uint8_t max) {
             change_debt = asset(change_amount, BUCK);
           }
           
+          // issue bucks
+          add_balance(cdp_itr->account, change_debt, same_payer);
+          update_supply(change_debt);
         }
         
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
-
-        update_supply(change_debt);
         
         // sanity check
         check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
@@ -146,10 +153,10 @@ void buck::run_requests(uint8_t max) {
       }
       
       if (!did_work) {
-        i--; // don't count this pass
+        
         set_processing_status(ProcessingStatus::processing_redemption_requests);
         status = ProcessingStatus::processing_redemption_requests;
-        break; // to-do split cdp and redemption requests?
+        break;
       }
     }
     else if (status == ProcessingStatus::processing_redemption_requests) {
