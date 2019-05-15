@@ -5,7 +5,7 @@
 void buck::run(uint8_t max) {
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
-  const uint8_t value = std::min(max, (uint8_t) 50);
+  const uint8_t value = std::min(max, (uint8_t) 100);
   if (get_liquidation_status() == LiquidationStatus::processing_liquidation) {
     run_liquidation(value);
   }
@@ -15,6 +15,9 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
+  
+  // check if request processing have been frozen
+  if (!check_operation_status(0)) return;
   
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
@@ -256,6 +259,10 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
+  
+  // check if liquidation processing have been frozen
+  if (!check_operation_status(1)) return;
+  
   uint64_t processed = 0;
   const auto now = get_current_time_point();
   

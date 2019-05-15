@@ -4,7 +4,7 @@
 
 void buck::transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   require_auth(from);
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(3), "buck transfer has been temporarily frozen");
   
   check(from != to, "cannot transfer to self");
   check(is_account(to), "to account does not exist");
@@ -20,13 +20,12 @@ void buck::transfer(const name& from, const name& to, const asset& quantity, con
   const auto payer = has_auth(to) ? to : from;
   sub_balance(from, quantity);
   add_balance(to, quantity, payer);
-	
   run(3);
 }
 
 void buck::withdraw(const name& account, const asset& quantity) {
   require_auth(account);
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(2), "deposit/withdraw operations have been temporarily frozen");
   
   check(quantity.symbol.is_valid(), "invalid quantity");
 	check(quantity.amount > 0, "must transfer positive quantity");
@@ -53,6 +52,7 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   if (to != _self || from == _self || from == "eosio.rex"_n) { return; }
   
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(2), "deposit/withdraw operations have been temporarily frozen");
   
   check(quantity.symbol == EOS, "you have to transfer EOS");
   check(get_first_receiver() == "eosio.token"_n, "you have to transfer EOS");
@@ -73,10 +73,8 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
 }
 
 void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
-  
-  // to-do validate
+  check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   check(quantity.is_valid(), "invalid quantity");
   check(quantity.amount > 0, "can not use negative value");

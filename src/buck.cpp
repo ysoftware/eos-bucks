@@ -46,7 +46,9 @@ bool buck::init() {
     r.max_supply = asset(1'000'000'000'000'0000, BUCK);
     r.issuer = _self;
     
+    r.operation_status = 0;
     r.processing_status = 0;
+    
     r.oracle_timestamp = time_point(microseconds(0));
     r.oracle_eos_price = 0;
   });

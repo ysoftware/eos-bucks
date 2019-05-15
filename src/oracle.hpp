@@ -2,6 +2,17 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
+void buck::setoperation(uint8_t level) {
+  require_auth(permission_level(_self, "admin"_n));
+  _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
+    r.operation_status = level;
+  });
+}
+
+bool buck::check_operation_status(uint8_t task_number) const {
+  return !(_stat.begin()->operation_status & 1 << task_number);
+}
+
 void buck::forceupdate(uint32_t eos_price) {
   require_auth(permission_level(_self, "admin"_n));
   _update(eos_price, true);
@@ -9,6 +20,7 @@ void buck::forceupdate(uint32_t eos_price) {
 
 void buck::update(uint32_t eos_price) {
   require_auth(permission_level(_self, "oracle"_n));
+  check(check_operation_status(4), "oracle updates have been temporarily frozen");
   _update(eos_price, false);
 }
 

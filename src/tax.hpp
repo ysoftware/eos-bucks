@@ -3,6 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::process_taxes() {
+  if (!check_operation_status(6)) return;
   const auto& tax = *_tax.begin();
   
   // send part of collected insurance to Scruge
@@ -62,7 +63,6 @@ void buck::collect_taxes(uint32_t max) {
 // collect interest to insurance pool from this cdp
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
-  
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
@@ -98,7 +98,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
 
 void buck::buy_r(const cdp_i::const_iterator& cdp_itr) {
   const auto& tax = *_tax.begin();
-  
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
   
   const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
@@ -146,6 +145,7 @@ void buck::sell_r(const cdp_i::const_iterator& cdp_itr) {
 void buck::save(const name& account, const asset& quantity) {
   require_auth(account);
   const auto& tax = *_tax.begin();
+  check(check_operation_status(7), "savings operations have been temporarily frozen");
   
   check(quantity.is_valid(), "invalid quantity");
   check(quantity.amount > 0, "can not use negative value");
@@ -179,7 +179,7 @@ void buck::save(const name& account, const asset& quantity) {
 void buck::take(const name& account, const uint64_t quantity) {
   require_auth(account);
   const auto& tax = *_tax.begin();
-  
+  check(check_operation_status(7), "savings operations have been temporarily frozen");
   check(quantity > 0, "can not use negative value");
   
   accounts_i _accounts(_self, account.value);

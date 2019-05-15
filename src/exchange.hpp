@@ -4,7 +4,8 @@
 
 void buck::exchange(const name& account, const asset quantity) {
   require_auth(account);
-
+  
+  check(check_operation_status(5), "exchange has been temporarily frozen");
   check(quantity.is_valid(), "invalid quantity");
   check(quantity.amount > 0, "must transfer positive quantity");
   check(quantity.symbol == BUCK || quantity.symbol == EOS, "symbol mismatch");
@@ -64,6 +65,8 @@ void buck::exchange(const name& account, const asset quantity) {
 }
 
 void buck::run_exchange(uint8_t max) {
+  if (!check_operation_status(5)) return;
+  
   const uint32_t price = get_eos_usd_price();
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   

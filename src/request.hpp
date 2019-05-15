@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   check(change_debt.symbol.is_valid(), "invalid debt quantity");
   check(change_collateral.symbol.is_valid(), "invalid collateral quantity");
@@ -93,7 +93,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
 }
 
 void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   check(acr >= CR || acr == 0, "acr value is too small");
   check(acr < 1000'00, "acr value is too high");
@@ -115,7 +115,7 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
 }
 
 void buck::close(uint64_t cdp_id) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
+  check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   // to-do collision (undo reparam request)
   
@@ -140,8 +140,8 @@ void buck::close(uint64_t cdp_id) {
 }
 
 void buck::redeem(const name& account, const asset& quantity) {
-  check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   require_auth(account);
+  check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   // validate
   check(quantity.symbol == BUCK, "symbol mismatch");

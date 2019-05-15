@@ -21,6 +21,7 @@ CONTRACT buck : public contract {
     ACTION run(uint8_t max);
     
     // admin
+    ACTION setoperation(uint8_t level);
     ACTION update(uint32_t eos_price);
     ACTION forceupdate(uint32_t eos_price);
     ACTION processrex();
@@ -60,6 +61,17 @@ CONTRACT buck : public contract {
       // 2 bits for liquidation status
       // 2 bits for requests status
       uint8_t     processing_status;
+      
+      // restriction bitmask
+      // 0 - cdp operations
+      // 1 - liquidation processing
+      // 2 - deposit/withdraw (rex)
+      // 3 - transfer
+      // 4 - price update
+      // 5 - exchange
+      // 6 - tax processing
+      // 7 - savings operations
+      uint8_t     operation_status;
       
       uint64_t primary_key() const { return supply.symbol.code().raw(); }
     };
@@ -299,6 +311,7 @@ CONTRACT buck : public contract {
     void _update(uint32_t eos_price, bool force);
     
     // getters
+    bool check_operation_status(uint8_t task_number) const;
     int64_t convert(uint128_t quantity, bool to_rex) const;
     int64_t to_buck(int64_t quantity) const;
     int64_t to_rex(int64_t quantity, int64_t tax) const;
