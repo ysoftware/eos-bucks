@@ -36,13 +36,14 @@ void buck::run_requests(uint8_t max) {
   for (int i = 0; i < max; i++) {
     
     if (status == ProcessingStatus::processing_cdp_requests) {
+      
       bool did_work = false;
 
       // close request
       if (close_itr != _closereq.end() && close_itr->timestamp < oracle_timestamp) {
         
         // find cdp
-        const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
+        const auto cdp_itr = _cdp.find(close_itr->cdp_id);
         if (cdp_itr == _cdp.end()) {
           close_itr = _closereq.erase(close_itr);
           did_work = true;
@@ -107,6 +108,8 @@ void buck::run_requests(uint8_t max) {
               const int64_t change_amount = std::max(-m, reparam_itr->change_collateral.amount); // min out of negatives
               change_collateral = asset(change_amount, REX);
               
+              PRINT("ccr", ccr)
+              PRINT("m", m)
             }
           }
 
