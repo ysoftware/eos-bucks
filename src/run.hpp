@@ -145,12 +145,7 @@ void buck::run_requests(uint8_t max) {
           
           if (change_debt.amount > 0) {
             update_supply(change_debt);
-          }
-          
-          // return remaining bucks
-          if (reparam_itr->change_debt > change_debt) {
-            PRINT_("return remaining buck")
-            add_balance(cdp_itr->account, reparam_itr->change_debt - change_debt, same_payer);
+            add_balance(cdp_itr->account, change_debt, same_payer);
           }
         }
         

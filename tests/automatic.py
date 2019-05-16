@@ -167,7 +167,7 @@ class Test(unittest.TestCase):
 				print(collected_savings)
 				print(locked_in_requests)
 
-				# self.assertAlmostEqual(supply, circulation, 4, "supply doesn't match total buck")
+				self.assertAlmostEqual(supply, circulation, 4, "supply doesn't match total buck")
 				print("+ Matched total supply")
 
 				##################################
