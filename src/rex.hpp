@@ -85,7 +85,7 @@ void buck::processrex() {
     add_funds(rexprocess_itr->account, diff, same_payer);
     
     const time_point_sec maturity = get_maturity();
-    auto fund_itr = _fund.require_find(rexprocess_itr->account.value, "to-do should not happen? processrex");
+    auto fund_itr = _fund.require_find(rexprocess_itr->account.value);
     _fund.modify(fund_itr, same_payer, [&](auto& r) {
         if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
           r.rex_maturities.back().second += diff.amount;

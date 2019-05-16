@@ -93,8 +93,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min
   });
 
   update_supply(accrued_debt);
-  
-  // to-do check ccr for liquidation
 }
 
 void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {

@@ -40,7 +40,6 @@ void buck::sub_exchange_funds(const name& from, const asset& quantity) {
   });
 }
 
-// to-do add maturity
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
   #if DEBUG
   if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }

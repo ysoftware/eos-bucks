@@ -55,8 +55,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
   
-  // to-do what if wants to become insurer (0 debt)?
-  
   if (new_debt.amount > 0) {
     const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
     check(ccr >= CR, "can not reparametrize below 150% CCR");
@@ -124,8 +122,6 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
 
 void buck::close(uint64_t cdp_id) {
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
-  
-  // to-do collision (undo reparam request)
   
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   require_auth(cdp_itr->account);
