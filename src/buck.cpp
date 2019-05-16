@@ -26,7 +26,7 @@ using namespace eosio;
 buck::buck(eosio::name receiver, eosio::name code, datastream<const char*> ds)
     :contract(receiver, code, ds),
       _cdp(_self, _self.value),
-      _stat(_self, _self.value),
+      _stat(_self, BUCK.code().raw()),
       _reparamreq(_self, _self.value),
       _closereq(_self, _self.value),
       _redeemreq(_self, _self.value),
