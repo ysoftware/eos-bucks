@@ -476,7 +476,9 @@ def reparametrize(id, c, d, price):
 			else:
 				m = cdp.collateral - (cdp.debt * cr) // price
 				cdp.add_collateral(max(c, -m))
-				print("ccr", ccr)
+				print("deb", cdp.debt)
+				print("col", cdp.collateral)
+				print("price", price)
 				print("m", m)
 				print("change c", max(c, -m))
 
@@ -575,16 +577,18 @@ def run_round(balance):
 				d = random.randrange(-1_000_000, 100_000)
 
 				# verify change with old price first (request creation step)
-				cdp = table[idx]
+				cdp = table.pop(idx)
 				new_col = cdp.collateral + c
 				new_debt = cdp.debt + d
 				new_ccr = 9999999
 				if new_debt > 0: new_ccr = new_col * old_price // new_debt
 				success = new_ccr >= CR and new_col >= 5_0000 and (new_debt >= 50_0000 or new_debt == 0)
-				if not success: 
+				if not success:
 					print("--- was d. c", cdp.debt, cdp.collateral)
 					print("reparam values:", new_ccr, new_col, new_debt)
+				else: cdp = add_tax(cdp, price)
 				reparam_values.append([i, c, d, success])
+				cdp_insert(cdp)
 				k -= 1
 			if k == 0:
 				break

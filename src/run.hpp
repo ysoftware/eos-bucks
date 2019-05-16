@@ -108,8 +108,11 @@ void buck::run_requests(uint8_t max) {
               const int64_t change_amount = std::max(-m, reparam_itr->change_collateral.amount); // min out of negatives
               change_collateral = asset(change_amount, REX);
               
+              PRINT("deb", new_debt)
+              PRINT("col", cdp_itr->collateral)
               PRINT("ccr", ccr)
               PRINT("m", m)
+              PRINT("change_collateral", change_collateral)
             }
           }
 
