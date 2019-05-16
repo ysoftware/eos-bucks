@@ -104,13 +104,11 @@ void buck::run_requests(uint8_t max) {
           else {
             
             int32_t ccr = to_buck(cdp_itr->collateral.amount) / new_debt.amount;
-            PRINT("ccr", ccr)
             if (ccr >= CR) {
-              const int64_t m1 = (CR - 100) * cdp_itr->collateral.amount * 100 / ccr / 100;
-              const int64_t change_amount = std::max(-m1, reparam_itr->change_collateral.amount); // min out of negatives
+              const int64_t m = cdp_itr->collateral.amount - to_rex(CR * new_debt.amount, 0);
+              const int64_t change_amount = std::max(-m, reparam_itr->change_collateral.amount); // min out of negatives
               change_collateral = asset(change_amount, REX);
               
-              PRINT("m1", m1)
             }
           }
 
