@@ -46,7 +46,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "10000.0000 EOS", "")
+		transfer(eosio_token, master, user1, "10000000.0000 EOS", "")
 
 	def run(self, result=None):
 		super().run(result)
@@ -56,48 +56,73 @@ class Test(unittest.TestCase):
 	def test(self):
 		SCENARIO("Test init and open cdp")
 
-		# initialize
+		time = 0
+		maketime(buck, time)
 		update(buck)
 
-		transfer(eosio_token, user1, buck, "10000.0000 EOS", "deposit")
+		##############################
+		COMMENT("Deposit")
 
-		# create cdp, transfer collateral
-		open(buck, user1, 160, 0, "100.0000 REX")
-
-		# maturity
-		sleep(2)
-
-		# oracle update
-		update(buck)
+		transfer(eosio_token, user1, buck, "20.0000 EOS", "deposit")
 
 		# check rex
 		self.assertEqual(0, amount(table(rex, "rexfund", element="balance")))
-		self.assertEqual(100000, amount(table(rex, "rexbal", element="rex_balance")))
+		self.assertEqual(20000, amount(table(rex, "rexbal", element="rex_balance")))
+
+		##############################
+		COMMENT("Open CDP")
+
+		open(buck, user1, 165, 0, "10000.0000 REX")
 
 		# issuance formula
-		price = 2
-		col = 100
-		ccr = 1.6
-		debt = price * (col / ccr)
+		price = 200
+		col = 100000000
+		ccr = 165
+		debt = price * col // ccr / 10000
 
 		# check buck balance
 		self.assertEqual(debt, balance(buck, user1))
 
 		# check all cdp values
 		cdp = table(buck, "cdp")
-		self.assertEqual(100, amount(cdp["collateral"]))
+		self.assertEqual(10000, amount(cdp["collateral"]))
 		self.assertEqual(debt, amount(cdp["debt"]))
-		self.assertEqual(100000, amount(cdp["rex"]))
 		self.assertAlmostEqual(0, float(cdp["acr"]))
 		self.assertEqual("user1", cdp["account"])
+		self.assertEqual("1970-01-06T00:00:00.000", cdp["maturity"]) # in 5 days
 
-		# check open multiple cdps
+		##############################
+		COMMENT("Close CDP")
 
-		open(buck, user1, 170, 0, "100.0000 EOS", eosio_token)
-		open(buck, user1, 180, 0, "100.0000 EOS", eosio_token)
-		open(buck, user1, 190, 0, "100.0000 EOS", eosio_token)
+		# prepare to pay buck to close cdp #1 
+		open(buck, user1, 165, 0, "10000.0000 REX")
+		self.assertEqual(24242.4242, balance(buck, user1))
 
-		# ...
+		# not matured yet
+		assertRaises(self, lambda: close(buck, user1, 0))
+
+		self.assertEqual(0, fundbalance(buck, user1))
+
+		time += 500_000
+		maketime(buck, time)
+		update(buck)
+
+		close(buck, user1, 0)
+		table(buck, "closereq")
+
+		time += 10
+		maketime(buck, time)
+		update(buck)
+
+		cdp = table(buck, "cdp")
+
+		self.assertEqual(0, len(table(buck, "closereq")))
+
+		self.assertLess(9999, fundbalance(buck, user1))
+		self.assertGreater(10000, fundbalance(buck, user1))
+
+
+
 
 # main
 

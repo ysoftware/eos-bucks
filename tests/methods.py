@@ -89,7 +89,7 @@ def exchange(contract, user, quantity):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def close(contract, user, cdp_id):
-	contract.push_action(force_unique=True, max_cpu_usage=25, action="closecdp", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="close", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
 def run(contract, max=100):
 	contract.push_action(force_unique=True, max_cpu_usage=25, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
