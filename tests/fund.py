@@ -62,13 +62,13 @@ class Test(unittest.TestCase):
 		update(buck)
 
 		# receive 1000 REX
-		transfer(eosio_token, user1, buck, "1.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
 		assertRaises(self, lambda: withdraw(buck, user1, "1000.0000 REX"))
 
 		maketime(buck, D)
 
 		# receive 999 REX
-		transfer(eosio_token, user1, buck, "1.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
 		assertRaises(self, lambda: withdraw(buck, user1, "1000.0000 REX"))
 
 		table(buck, "fund")

@@ -84,8 +84,8 @@ def update(contract, eos=200):
 def exchange(contract, user, quantity):
 	contract.push_action(force_unique=True, max_cpu_usage=25, action="exchange",
 		data={
-			"from": user, 
-			"value": quantity,
+			"account": user, 
+			"quantity": quantity,
 		}, permission=[(user, Permission.ACTIVE)])
 
 def close(contract, user, cdp_id):
@@ -119,7 +119,7 @@ def redeem(contract, user, quantity):
 def withdraw(contract, user, quantity):
 	contract.push_action(force_unique=True, max_cpu_usage=25, action="withdraw",
 		data={
-			"from": user,
+			"account": user,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
@@ -127,14 +127,14 @@ def save(contract, user, quantity):
 	contract.push_action(force_unique=True, max_cpu_usage=25, action="save",
 		data={
 			"account": user,
-			"value": quantity
+			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
-def take(contract, user, quantity):
-	contract.push_action(force_unique=True, max_cpu_usage=25, action="take",
+def unsave(contract, user, quantity):
+	contract.push_action(force_unique=True, max_cpu_usage=25, action="unsave",
 		data={
 			"account": user,
-			"value": quantity
+			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
 def maketime(contract, time):

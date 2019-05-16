@@ -114,8 +114,8 @@ class Test(unittest.TestCase):
 		##############################
 		COMMENT("Take")
 
-		take(buck, user1, 10000)
-		take(buck, user2, 1408)
+		unsave(buck, user1, 10000)
+		unsave(buck, user2, 1408)
 
 		##############################
 		COMMENT("Match")

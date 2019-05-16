@@ -177,7 +177,7 @@ void buck::save(const name& account, const asset& quantity) {
   run(3);
 }
 
-void buck::take(const name& account, const uint64_t quantity) {
+void buck::unsave(const name& account, const uint64_t quantity) {
   require_auth(account);
   const auto& tax = *_tax.begin();
   check(check_operation_status(7), "savings operations have been temporarily frozen");
