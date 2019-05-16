@@ -114,7 +114,7 @@ void buck::run_requests(uint8_t max) {
 
           // if not 0, add funds
           if (change_collateral.amount < 0) {
-            add_funds(cdp_itr->account, -change_collateral, cdp_itr->account);
+            add_funds(cdp_itr->account, -change_collateral, same_payer);
           }
         }
         

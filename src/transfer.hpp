@@ -104,7 +104,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   
   sub_funds(account, quantity);
   
-  // open account if doesn't exist
+  // open account if doesn't exist and update ram payer
   add_balance(account, ZERO_BUCK, account);
   add_funds(account, ZERO_REX, account);
   

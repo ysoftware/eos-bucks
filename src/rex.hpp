@@ -82,7 +82,7 @@ void buck::processrex() {
     const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_rex_balance();
     const auto diff = current_balance - previos_balance; // REX
-    add_funds(rexprocess_itr->account, diff, _self);
+    add_funds(rexprocess_itr->account, diff, same_payer);
     
     const time_point_sec maturity = get_maturity();
     auto fund_itr = _fund.require_find(rexprocess_itr->account.value, "to-do should not happen? processrex");

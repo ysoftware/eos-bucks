@@ -55,7 +55,8 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
     });
   }
   else {
-    _fund.emplace(ram_payer, [&](auto& r) {
+    
+    _fund.emplace(_self, [&](auto& r) {
       r.balance = quantity;
       r.account = from;
       r.exchange_balance = ZERO_EOS;

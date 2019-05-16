@@ -11,7 +11,7 @@ void buck::process_taxes() {
   const int64_t insurance_amount = tax.collected_excess.amount - scruge_insurance_amount;
   const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
-    add_funds(SCRUGE, scruge_insurance, _self);
+    add_funds(SCRUGE, scruge_insurance, same_payer);
   }
   
   // send part of collected savings to Scruge
