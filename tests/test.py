@@ -33,7 +33,8 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time//1_000_000) + "M"
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time)
+		
 
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
@@ -223,6 +224,7 @@ def add_tax(cdp, price):
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
+		print("interest", interest)
 		cdp.add_debt(interest * SR // 100)
 		val = -(interest * IR // price)
 		cdp.add_collateral(val)
@@ -273,7 +275,7 @@ def ls(collateral, debt, acr, id):
 	return (MAX * 2 - cd // acr)   * 1_000 + id
 
 def liquidation(price, cr, lf):	
-	# print("liquidation")
+	print("liquidation")
 	global TEC, table
 	if table == []: return
 	# i = 0
@@ -382,7 +384,7 @@ def redemption(amount, price):
 
 	# print_table()
 
-	# print("\n\nredeem", amount)
+	print("\n\nredeem", amount)
 
 	debtors_failed = 0
 	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
@@ -417,7 +419,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			amount = 0
 
-			# print("redeem updating", c, d)
+			print("redeem updating", c, d)
 			# print(cdp)
 		else:
 			d = cdp.debt
@@ -427,7 +429,7 @@ def redemption(amount, price):
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
 
-			# print("redeem removing", c, d)
+			print("redeem removing", c, d)
 			# print(cdp)
 
 			amount -= d
@@ -444,7 +446,7 @@ def reparametrize(id, c, d, price):
 		return
 
 	cdp = table.pop(idx)
-	# print("reparam", cdp)
+	print("reparam", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -454,28 +456,32 @@ def reparametrize(id, c, d, price):
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
-		# else: print("not removing d below min")
+		else: print("not removing d below min")
 
 	if c > 0:
 		cdp.add_collateral(c)
 
 	if c < 0:
-		# print("ccr", calc_ccr(cdp, price))
-		if cdp.collateral + c >= 50000 + epsilon(50000):
-			if cdp.debt == 0:
-				cdp.add_collateral(-c)
+		if cdp.debt == 0:
+			cdp.add_collateral(c)
+			print("change c", c)
+		else:
+			print("ccr", calc_ccr(cdp, price))
+			if calc_ccr(cdp, price) < cr:
+				pass
 			else:
-				if calc_ccr(cdp, price) < cr:
-					pass
-				else:
-					m = (cr-100) * cdp.debt // price
-					cdp.add_collateral(max(c, -m))
-		# else: print("not removing c below min")
+				m = (cr-100) * cdp.debt // price
+				cdp.add_collateral(max(c, -m))
+				print("m1", m)
+				print("change c", max(c, -m))
 
 	if d > 0:
 		if cdp.debt == 0:
+			print("max d", cdp.collateral * price // cr)
+			print("new c", cdp.collateral)
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
+			print("ccr", calc_ccr(cdp, price))
 			if calc_ccr(cdp, price) < cr:
 				pass
 			else:
@@ -497,6 +503,7 @@ def change_acr(id, acr):
 	if acr < CR or acr > 100000:
 		return False
 
+	print("acr...")
 	cdp = table.pop(cdp_index(id))
 
 	if cdp.acr == acr:

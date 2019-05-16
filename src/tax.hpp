@@ -67,6 +67,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
   
+  PRINT("add tax?", cdp_itr->id)
+  PRINT(now == last, cdp_itr->debt.amount == 0)
+  
   if (now == last) return;
   if (cdp_itr->debt.amount == 0) return;
   
@@ -74,6 +77,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
+  PRINT("interest", accrued_amount)
   const int64_t accrued_debt_amount = accrued_amount * SR / 100;
   const int64_t accrued_collateral_amount = to_rex(accrued_amount * IR, 0);
   
@@ -91,6 +95,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.collected_excess += accrued_collateral;
   });
   
+  PRINT("added", accrued_debt)
   update_supply(accrued_debt);
   
   // to-do check ccr for liquidation
