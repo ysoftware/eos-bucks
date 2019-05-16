@@ -68,7 +68,6 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint32_t last = cdp_itr->modified_round;
   
   PRINT("add tax?", cdp_itr->id)
-  PRINT(now == last, cdp_itr->debt.amount == 0)
   
   if (now == last) return;
   if (cdp_itr->debt.amount == 0) return;

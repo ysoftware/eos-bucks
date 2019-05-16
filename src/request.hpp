@@ -44,7 +44,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   }
   
   // start with new request
-  accrue_interest(cdp_itr);
   
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;

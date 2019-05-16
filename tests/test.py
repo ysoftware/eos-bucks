@@ -34,7 +34,7 @@ class CDP:
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
 		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time)
-		
+
 
 	def add_debt(self,new_debt):
 		self.debt = self.debt + int(new_debt)
@@ -466,11 +466,11 @@ def reparametrize(id, c, d, price):
 			cdp.add_collateral(c)
 			print("change c", c)
 		else:
-			print("ccr", calc_ccr(cdp, price))
-			if calc_ccr(cdp, price) < cr:
+			ccr = calc_ccr(cdp, price)
+			if ccr < cr:
 				pass
 			else:
-				m = (cr-100) * cdp.debt // price
+				m = (cr-100) * cdp.collateral * 100 / ccr / 100
 				cdp.add_collateral(max(c, -m))
 				print("m1", m)
 				print("change c", max(c, -m))
@@ -565,7 +565,7 @@ def run_round(balance):
 		k = 10
 		for i in range(0, random.randint(1, length-1)):
 			idx = cdp_index(i) 
-			if idx != False:
+			if idx != -1:
 				c = random.randrange(-1_000_000, 1_000_000)
 				d = random.randrange(-1_000_000, 1_000_000)
 
