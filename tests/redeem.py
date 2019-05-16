@@ -56,83 +56,98 @@ class Test(unittest.TestCase):
 
 	def test(self):
 		SCENARIO("Test buck redeem")
+
+		##############################
+		COMMENT("Initialize")
+
+		time = 0
+		maketime(buck, time)
 		update(buck)
 
-		open(buck, user1, 2.0, 0, "100.0000 EOS", eosio_token) # cdp 0 # rex.eos = 1000
+		transfer(eosio_token, user1, buck, "20.0000 EOS", "deposit")
 
-		sleep(2)
+		time += 3_000_000
+		maketime(buck, time)
 		update(buck)
 
-		open(buck, user1, 2.1, 0, "101.0000 EOS", eosio_token) # cdp 1 # rex.eos = 999
+		open(buck, user1, 200, 0, "10000.0000 REX")
+		open(buck, user1, 200, 0, "10000.0000 REX")
 
-		sleep(2)
+		##############################
+		COMMENT("Redeem")
+
+		balance(buck, user1)
+
+		transfer(buck, user1, user2, "12500.0000 BUCK")
+
+		# remove left over money
+		transfer(buck, user1, master, balance(buck, user1, False))
+
+		redeem(buck, user2, "500.0000 BUCK")
+
+		time += 1
+		maketime(buck, time)
 		update(buck)
 
-		balance(eosio_token, buck)
+		##############################
+		COMMENT("Match")
 
-		# give some bucks to user 2
-		transfer(buck, user1, user2, "150.0000 BUCK")
+		# use col: debt / (price + rf)
 
-		table(buck, "cdp")
-
-		## redeem from 1 cdp
-
-		redeem(buck, user2, "10.0000 BUCK")
-
-		sleep(2)
-		update(buck) # rex.eos = 998
-
-		table(rex, "rexstat")
-
-		# collateral 		100
-		# using col:		4.9752 # debt / (price + rf)
-		# gained			5.0350 # (col * 1.01 / rex.eos)
-		# dividends			0.0598
-
-		table(buck, "redprocess")
+		# collateral 		10000.0000
+		# using deb:		500.0000
+		# using col:		248.7562
 
 		# calculated leftover collateral for cdp 0
-		self.assertEqual(95.0248, amount(table(buck, "cdp", element="collateral")))
-
-		self.assertEqual(0.0598, amount(table(buck, "cdp", element="rex_dividends")))
+		self.assertEqual(9751.2438, amount(table(buck, "cdp", row=0, element="collateral")))
+		self.assertEqual(9500, amount(table(buck, "cdp", row=0, element="debt")))
 
 		# check redeem request gone
 		self.assertEqual(0, len(table(buck, "redeemreq")))
 
 		# check balance taken
-		self.assertAlmostEqual(140, balance(buck, user2))
+		self.assertAlmostEqual(12000, balance(buck, user2))
 
 		# value calculated with formula
-		self.assertAlmostEqual(4.9752, balance(eosio_token, user2))
+		self.assertAlmostEqual(248.7562, fundbalance(buck, user2))
 
-		table(buck, "cdp")
+		##############################
+		COMMENT("Redeem")
 
-		## redeem from 2 cdp
+		redeem(buck, user2, "12000.0000 BUCK")
 
-		redeem(buck, user2, "100.0000 BUCK")
+		# collateral 		9751.2438
+		# using deb:		9500.0000
+		# using col:		4726.3681
+		# return to debtor:	5024.8757
 
-		sleep(2)
-		update(buck) # rex.eos = 997
+		# collateral 		10000.0000
+		# using deb:		2500.0000
+		# using col:		1243.7810
+		# left col:			8756.2190
+		# left deb:			7500.0000
 
-		self.assertAlmostEqual(40, balance(buck, user2))
+		time += 1
+		maketime(buck, time)
+		update(buck)
+
+		# check 1 cdp left
+		self.assertEqual(1, len(table(buck, "cdp", row=None)))
+
+		self.assertEqual(8756.2190, amount(table(buck, "cdp", row=0, element="collateral")))
+		self.assertEqual(7500.0000, amount(table(buck, "cdp", row=0, element="debt")))
+
+		# check redeem request gone
+		self.assertEqual(0, len(table(buck, "redeemreq")))
+
+		# check balance 
+		self.assertAlmostEqual(0, balance(buck, user2))
 
 		# value calculated with formula
-		# 49.7514 + 4.9752 = 54.7266
-		self.assertAlmostEqual(54.7266, balance(eosio_token, user2))
+		self.assertAlmostEqual(6218.9053, fundbalance(buck, user2))
 
-		# check rex dividends
-		table(buck, "cdp")
-
-		# match all other values
-
-
-
-		## test if not enough debtors
-
-
-
-		## test rounding 
-
+		# value calculated with formula
+		self.assertAlmostEqual(5024.8757, fundbalance(buck, user1))
 
 
 # main

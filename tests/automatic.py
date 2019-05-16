@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		for cycle_i in range(1, 1):
+		for cycle_i in range(1, 200):
 
 			##################################
 			COMMENT(f"Cycle {cycle_i}")
@@ -152,7 +152,7 @@ class Test(unittest.TestCase):
 				print("+ Matched insurance pools")
 
 				# match supply
-				supply = amount(table(buck, "stat", element="supply"))
+				supply = amount(table(buck, "stat", "BUCK", element="supply"))
 				user_balance = balance(buck, "user1")
 				scruge_balance = balance(buck, "scrugescruge")
 				collected_savings = amount(taxation["collected_savings"])

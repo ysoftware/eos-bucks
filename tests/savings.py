@@ -75,7 +75,7 @@ class Test(unittest.TestCase):
 		open(buck, user2, 1000, 0, "10000.0000 REX") # 1000.0000 BUCK
 
 		##############################
-		COMMENT("Initial")
+		COMMENT("Initialize")
 
 		maketime(buck, time)
 		update(buck, 100)
