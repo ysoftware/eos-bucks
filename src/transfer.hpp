@@ -72,6 +72,30 @@ void buck::notify_transfer(const name& from, const name& to, const asset& quanti
   run(3);
 }
 
+void buck::freeram(const name& account) {
+  require_auth(account);
+  
+  auto index = _cdp.get_index<"byaccount"_n>();
+  auto cdp_itr = index.find(account.value);
+  check(cdp_itr == index.end(), "you still have cdps opened");
+  
+  const auto fund_itr = _fund.find(account.value);
+  if (fund_itr != _fund.end()) {
+    check(fund_itr->balance.amount == 0, "you still have REX in your funds");
+    check(fund_itr->exchange_balance.amount == 0, "you still have EOS in your exchange funds");
+    _fund.erase(fund_itr);
+  }
+  
+  accounts_i accounts(_self, account.value);
+  const auto account_itr = accounts.find(BUCK.code().raw());
+  if (account_itr != accounts.end()) {
+    check(account_itr->balance.amount == 0, "you still have BUCK in your balance");
+    accounts.erase(account_itr);
+  }
+  
+  run(10);
+}
+
 void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
   require_auth(account);
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
