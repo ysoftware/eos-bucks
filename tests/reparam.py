@@ -67,7 +67,7 @@ class Test(unittest.TestCase):
 		maketime(buck, time)
 		update(buck, 100)
 
-		transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
+		transfer(eosio_token, user1, buck, "102.0000 EOS", "deposit")
 
 		# mature rex
 		time += 3_000_000
@@ -84,8 +84,12 @@ class Test(unittest.TestCase):
 		open(buck, user1, 1000, 0, "10000.0000 REX")
 		open(buck, user1, 1000, 0, "10000.0000 REX")
 		open(buck, user1, 1000, 0, "10000.0000 REX")
-		
-		table(buck, "cdp")
+
+		# remove excess buck
+		transfer(buck, user1, master, "4950.0000 BUCK", "")
+
+		self.assertEqual(2000, fundbalance(buck, user1))
+		self.assertEqual(50, balance(buck, user1))
 
 		##############################
 		COMMENT("Reparam liquidator CDPs")
@@ -114,6 +118,12 @@ class Test(unittest.TestCase):
 		reparam(buck, user1, 8, "0.0000 BUCK", "1000.0000 REX")
 		# both
 		reparam(buck, user1, 9, "50.0000 BUCK", "-1000.0000 REX")
+
+		##############################
+		COMMENT("Oracle")
+
+		self.assertEqual(0, fundbalance(buck, user1))
+		self.assertEqual(0, balance(buck, user1))
 
 		# mature rex
 		time += 1
@@ -151,10 +161,11 @@ class Test(unittest.TestCase):
 		self.assertEqual(1000, amount(cdps[8]["debt"]))
 		self.assertEqual(11000, amount(cdps[8]["collateral"]))
 
-		self.assertEqual(950, amount(cdps[9]["debt"]))
+		self.assertEqual(1050, amount(cdps[9]["debt"]))
 		self.assertEqual(9000, amount(cdps[9]["collateral"]))
 
-
+		self.assertEqual(4000, fundbalance(buck, user1))
+		self.assertEqual(200, balance(buck, user1))
 
 
 
