@@ -295,6 +295,7 @@ CONTRACT buck : public contract {
     void set_excess_collateral(const cdp_i::const_iterator& cdp_itr);
     void remove_excess_collateral(const cdp_i::const_iterator& cdp_itr);
     void update_supply(const asset& quantity);
+    void cancel_previous_requests(const cdp_i::const_iterator& cdp_itr);
     
     void run_requests(uint8_t max);
     void run_liquidation(uint8_t max);
