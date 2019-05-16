@@ -161,12 +161,12 @@ def cdp_index(id):
 	global table
 
 	if len(table) == 0:
-		return False
+		return -1
 
 	for i in range(0, len(table)):
 		if table[i].id == id:
 			return i
-	return False
+	return -1
 
 def print_table(t=None):
 	global table
@@ -419,7 +419,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			amount = 0
 
-			print("redeem updating", c, d)
+			print("redeem updating", cdp.id, c, d)
 			# print(cdp)
 		else:
 			d = cdp.debt
@@ -429,12 +429,12 @@ def redemption(amount, price):
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
 
-			print("redeem removing", c, d)
+			print("redeem removing", cdp.id, c, d)
 			# print(cdp)
 
 			amount -= d
 			i -= 1
-	# print("redeem left over", amount)
+	print("redeem left over", amount)
 	return
 
 def reparametrize(id, c, d, price):
@@ -551,7 +551,7 @@ def run_round(balance):
 	if ACR and length > 1:
 		k = 10
 		for i in range(0, random.randint(1, length-1)):
-			if cdp_index(i) != False:
+			if cdp_index(i) != -1:
 				acr = random.randint(148, 300)
 				failed = change_acr(i, acr)
 				actions.append([["acr", i, acr], failed != False])
@@ -567,7 +567,7 @@ def run_round(balance):
 			idx = cdp_index(i) 
 			if idx != -1:
 				c = random.randrange(-1_000_000, 1_000_000)
-				d = random.randrange(-1_000_000, 1_000_000)
+				d = random.randrange(-1_000_000, 100_000)
 
 				# verify change with old price first (request creation step)
 				cdp = table[idx]
@@ -610,7 +610,7 @@ def run_round(balance):
 		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
-		v1 = random.randrange(100, 10_00_0000)
+		v1 = random.randrange(100, 10_000_0000)
 		success = v1 <= balance
 		if success: redemption(v1, price)
 		actions.append([["redeem", v1], success])
