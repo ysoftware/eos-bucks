@@ -51,10 +51,8 @@ void buck::run_requests(uint8_t max) {
         
         remove_excess_collateral(cdp_itr);
         update_supply(-cdp_itr->debt);
-        
-        _cdp.erase(cdp_itr);
         add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
-      
+        _cdp.erase(cdp_itr);
         close_itr = _closereq.erase(close_itr);
         did_work = true;
       }
