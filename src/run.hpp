@@ -3,6 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint8_t max) {
+  PRINT_("running...")
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   const uint8_t value = std::max(uint8_t(1), std::min(max, uint8_t(70)));
@@ -178,7 +179,7 @@ void buck::run_requests(uint8_t max) {
             break;
           }
           
-          debtor_itr->p();
+          accrue_interest(_cdp.require_find(debtor_itr->id), false);
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
             debtors_failed++;
