@@ -95,7 +95,12 @@ class Test(unittest.TestCase):
 		COMMENT("Reparam liquidator CDPs")
 
 		# remove debt - error
-		# reparam(buck, user1, 0, "-50.0000 BUCK", "0.0000 REX")
+		assertRaises(self, lambda: reparam(buck, user1, 0, "-50.0000 BUCK", "0.0000 REX"))
+
+		# change acr
+		assertRaises(self, lambda: changeacr(buck, user1, 0, 149))
+		changeacr(buck, user1, 0, 150)
+
 		# add debt
 		reparam(buck, user1, 1, "50.0000 BUCK", "0.0000 REX")
 		# remove collateral
@@ -148,6 +153,8 @@ class Test(unittest.TestCase):
 		self.assertEqual(9000, amount(cdps[4]["collateral"]))
 
 		##############################
+
+		self.assertEqual(150, cdps[0]["acr"])
 
 		self.assertEqual(950, amount(cdps[5]["debt"]))
 		self.assertEqual(10000, amount(cdps[5]["collateral"]))
