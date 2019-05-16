@@ -56,7 +56,7 @@ class Test(unittest.TestCase):
 
 	def test(self):
 
-		for cycle_i in range(1, 500):
+		for cycle_i in range(1, 1):
 
 			##################################
 			COMMENT(f"Cycle {cycle_i}")

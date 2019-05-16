@@ -476,11 +476,11 @@ def reparametrize(id, c, d, price):
 			else:
 				m = cdp.collateral - (cdp.debt * cr) // price
 				cdp.add_collateral(max(c, -m))
-				print("deb", cdp.debt)
-				print("col", cdp.collateral)
-				print("price", price)
-				print("m", m)
-				print("change c", max(c, -m))
+				# print("deb", cdp.debt)
+				# print("col", cdp.collateral)
+				# print("price", price)
+				# print("m", m)
+				# print("change c", max(c, -m))
 
 	if d > 0:
 		if cdp.debt == 0:

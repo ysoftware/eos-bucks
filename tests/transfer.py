@@ -59,7 +59,7 @@ class Test(unittest.TestCase):
 		maketime(buck, 0)
 		update(buck)
 
-		transfer(eosio_token, user1, buck, "1000000.0000 EOS", "")
+		transfer(eosio_token, user1, buck, "1000000.0000 EOS", "deposit")
 
 		maketime(buck, 3_000_000)
 		open(buck, user1, 200, 0, "100000.0000 REX")
