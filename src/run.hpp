@@ -178,7 +178,7 @@ void buck::run_requests(uint8_t max) {
         
         set_processing_status(ProcessingStatus::processing_redemption_requests);
         status = ProcessingStatus::processing_redemption_requests;
-        break;
+        continue;
       }
     }
     else if (status == ProcessingStatus::processing_redemption_requests) {
