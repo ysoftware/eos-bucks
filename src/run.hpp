@@ -3,6 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint8_t max) {
+  PRINT_("running...")
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   const uint8_t value = std::max(uint8_t(1), std::min(max, uint8_t(70)));
@@ -72,7 +73,8 @@ void buck::run_requests(uint8_t max) {
         
         cdp_itr->p();
         
-        accrue_interest(cdp_itr);
+        accrue_interest(cdp_itr, false);
+        
         remove_excess_collateral(cdp_itr);
         
         asset change_debt = ZERO_BUCK;
@@ -200,7 +202,7 @@ void buck::run_requests(uint8_t max) {
           }
           
           debtor_itr->p();
-          accrue_interest(_cdp.require_find(debtor_itr->id));
+          accrue_interest(_cdp.require_find(debtor_itr->id), false);
           debtor_itr->p();
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt
@@ -311,7 +313,7 @@ void buck::run_liquidation(uint8_t max) {
     const auto liquidator_itr = liquidator_index.begin();
     const auto debtor_itr = debtor_index.begin();
     
-    accrue_interest(_cdp.require_find(debtor_itr->id));
+    accrue_interest(_cdp.require_find(debtor_itr->id), false);
     
     if (debtor_itr->debt.amount == 0) {
       set_liquidation_status(LiquidationStatus::liquidation_complete);
@@ -337,7 +339,7 @@ void buck::run_liquidation(uint8_t max) {
     
     processed++;
     remove_excess_collateral(_cdp.require_find(liquidator_itr->id));
-    accrue_interest(_cdp.require_find(liquidator_itr->id));
+    accrue_interest(_cdp.require_find(liquidator_itr->id), false);
     
     const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
     const int64_t liquidator_debt = liquidator_itr->debt.amount;

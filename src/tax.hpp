@@ -54,20 +54,18 @@ void buck::collect_taxes(uint32_t max) {
   while (max > processed && accrual_itr != accrual_index.end()
           && now - accrual_itr->modified_round > ACCRUAL_PERIOD) {
   
-    accrue_interest(_cdp.require_find(accrual_itr->id));
+    accrue_interest(_cdp.require_find(accrual_itr->id), false);
     accrual_itr = accrual_index.begin(); // take first element after index updated
     processed++;
   }
 }
 
 // collect interest to insurance pool from this cdp
-void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
+void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min) {
   const auto& tax = *_tax.begin();
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
-  
-  PRINT("add tax?", cdp_itr->id)
   
   if (now == last) return;
   if (cdp_itr->debt.amount == 0) return;
@@ -76,9 +74,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
-  PRINT("interest", accrued_amount)
-  const int64_t accrued_debt_amount = std::max(int64_t(1), int64_t(accrued_amount * SR / 100));
-  const int64_t accrued_collateral_amount = std::max(int64_t(1), to_rex(accrued_amount * IR, 0));
+  const int64_t min = accrue_min ? 1 : 0;
+  const int64_t accrued_debt_amount = std::max(min, int64_t(accrued_amount * SR / 100));
+  const int64_t accrued_collateral_amount = std::max(min, to_rex(accrued_amount * IR, 0));
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);
@@ -93,8 +91,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
     r.collected_savings += accrued_debt;
     r.collected_excess += accrued_collateral;
   });
-  
-  PRINT("added", accrued_debt)
+
   update_supply(accrued_debt);
   
   // to-do check ccr for liquidation

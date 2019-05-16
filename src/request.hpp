@@ -44,6 +44,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   }
   
   // start with new request
+  accrue_interest(cdp_itr, true);
   
   const asset new_debt = cdp_itr->debt + change_debt;
   const asset new_collateral = cdp_itr->collateral + change_collateral;
@@ -103,7 +104,7 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   
   require_auth(cdp_itr->account);
   
-  accrue_interest(cdp_itr);
+  accrue_interest(cdp_itr, true);
   remove_excess_collateral(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
@@ -127,7 +128,7 @@ void buck::close(uint64_t cdp_id) {
 
   require_auth(cdp_itr->account);
   
-  accrue_interest(cdp_itr);
+  accrue_interest(cdp_itr, true);
   sub_balance(cdp_itr->account, cdp_itr->debt);
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
