@@ -77,8 +77,8 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr) {
   const int64_t accrued_amount = cdp_itr->debt.amount * v / DM;
   
   PRINT("interest", accrued_amount)
-  const int64_t accrued_debt_amount = accrued_amount * SR / 100;
-  const int64_t accrued_collateral_amount = to_rex(accrued_amount * IR, 0);
+  const int64_t accrued_debt_amount = std::max(int64_t(1), int64_t(accrued_amount * SR / 100));
+  const int64_t accrued_collateral_amount = std::max(int64_t(1), to_rex(accrued_amount * IR, 0));
   
   const asset accrued_debt = asset(accrued_debt_amount, BUCK);
   const asset accrued_collateral = asset(accrued_collateral_amount, REX);

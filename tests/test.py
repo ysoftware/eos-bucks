@@ -224,14 +224,17 @@ def add_tax(cdp, price):
 		dm = 1000000000000
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
-		print("interest", interest)
-		cdp.add_debt(interest * SR // 100)
-		val = -(interest * IR // price)
-		cdp.add_collateral(val)
-		CIT += interest * IR // price
+
+		accrued_debt = max(1, interest * SR // 100)
+		accrued_col = (max(1, (interest * IR // price)))
+
+		cdp.add_debt(accrued_debt)
+		cdp.add_collateral(-accrued_col)
 		cdp.new_cd(cdp.collateral * 100 / cdp.debt)
 		cdp.new_time(oracle_time)
-		print("add tax", cdp.id, interest * SR // 100)
+		CIT += accrued_col
+
+		print("add tax", cdp.id, accrued_debt, accrued_col)
 	return cdp
 
 def update_tax(cdp, price):
@@ -452,6 +455,7 @@ def reparametrize(id, c, d, price):
 		TEC -= cdp.collateral * 100 // cdp.acr
 
 	cdp = update_tax(cdp, price)
+	print(cdp)
 
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
@@ -470,8 +474,9 @@ def reparametrize(id, c, d, price):
 			if ccr < cr:
 				pass
 			else:
-				m = (cr-100) * cdp.collateral * 100 / ccr / 100
+				m = (cr-100) * cdp.collateral * 100 // ccr // 100
 				cdp.add_collateral(max(c, -m))
+				print("ccr", ccr)
 				print("m1", m)
 				print("change c", max(c, -m))
 
