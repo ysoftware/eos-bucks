@@ -3,7 +3,6 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint8_t max) {
-  PRINT_("running...")
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   const uint8_t value = std::max(uint8_t(1), std::min(max, uint8_t(70)));
@@ -25,11 +24,11 @@ void buck::run_requests(uint8_t max) {
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
   
-  auto debtor_index = _cdp.get_index<"debtor"_n>(); // to-do make sure index is correct here (liquidation debtor)!
+  auto debtor_index = _cdp.get_index<"debtor"_n>();
   
   auto close_itr = _closereq.begin();
   auto reparam_itr = _reparamreq.begin();
-  auto redeem_itr = _redeemreq.begin(); // to-do redeem sorting
+  auto redeem_itr = _redeemreq.begin();
   auto debtor_itr = debtor_index.begin();
   
   // loop until any requests exist and not over limit
@@ -60,7 +59,6 @@ void buck::run_requests(uint8_t max) {
       
       // reparam request
       if (reparam_itr != _reparamreq.end() && reparam_itr->timestamp < oracle_timestamp) {
-        PRINT_("\nreparam")
         
         // find cdp
         const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
@@ -70,10 +68,7 @@ void buck::run_requests(uint8_t max) {
           continue;
         }
         
-        cdp_itr->p();
-        
         accrue_interest(cdp_itr, false);
-        
         remove_excess_collateral(cdp_itr);
         
         asset change_debt = ZERO_BUCK;
@@ -94,9 +89,6 @@ void buck::run_requests(uint8_t max) {
         if (reparam_itr->change_collateral.amount < 0) { 
           const auto new_debt = change_debt + cdp_itr->debt;
 
-          PRINT_("remove collateral")
-          PRINT("new debt", new_debt)
-          
           if (new_debt.amount == 0) {
             change_collateral = reparam_itr->change_collateral;
           }
@@ -107,12 +99,6 @@ void buck::run_requests(uint8_t max) {
               const int64_t m = cdp_itr->collateral.amount - to_rex(CR * new_debt.amount, 0);
               const int64_t change_amount = std::max(-m, reparam_itr->change_collateral.amount); // min out of negatives
               change_collateral = asset(change_amount, REX);
-              
-              PRINT("deb", new_debt)
-              PRINT("col", cdp_itr->collateral)
-              PRINT("ccr", ccr)
-              PRINT("m", m)
-              PRINT("change_collateral", change_collateral)
             }
           }
 
@@ -131,7 +117,6 @@ void buck::run_requests(uint8_t max) {
           if (cdp_itr->debt.amount > 0) {
             
             const int32_t ccr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
-            PRINT("ccr", ccr)
             
             if (ccr >= CR) {
               max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
@@ -140,9 +125,6 @@ void buck::run_requests(uint8_t max) {
           else {
             max_debt = to_buck(new_collateral_amount) / CR;
           }
-          
-          PRINT("new c", new_collateral_amount)
-          PRINT("max d", max_debt)
           
           const int64_t change_amount = std::min(max_debt, reparam_itr->change_debt.amount);
           change_debt = asset(change_amount, BUCK);
@@ -153,15 +135,10 @@ void buck::run_requests(uint8_t max) {
           }
         }
         
-        PRINT("change c", change_collateral)
-        PRINT("change d", change_debt)
-        
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
         });
-        
-        cdp_itr->p();
         
         // sanity check
         check(cdp_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
@@ -186,8 +163,6 @@ void buck::run_requests(uint8_t max) {
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
         PRINT_("redeem")
         
-        // to-do sorting
-        // to-do verify timestamp
         auto redeem_quantity = redeem_itr->quantity;
         asset rex_return = ZERO_REX;
         asset collateral_return = ZERO_REX;
@@ -203,8 +178,6 @@ void buck::run_requests(uint8_t max) {
             break;
           }
           
-          debtor_itr->p();
-          accrue_interest(_cdp.require_find(debtor_itr->id), false);
           debtor_itr->p();
           
           if (debtor_itr->debt < MIN_DEBT) { // don't go below min debt

@@ -9,7 +9,6 @@
 #define RM(x) { x table(_self, _self.value); auto item = table.begin(); while (item != table.end()) item = table.erase(item); }
 
 void buck::zdestroy() {
-  RM(stats_i)
   RM(processing_i)
   RM(redeem_req_i)
   RM(close_req_i)
@@ -18,6 +17,7 @@ void buck::zdestroy() {
   RM(fund_i)
   RM(taxation_i)
   
+  RMS(stats_i, BUCK.code().raw())
   RMS(accounts_i, "yaroslaveroh"_n.value)
   RMS(accounts_i, "scrugeosbuck"_n.value)
   RMS(accounts_i, "testaccountp"_n.value)
