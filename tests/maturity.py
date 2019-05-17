@@ -18,6 +18,7 @@ class Test(unittest.TestCase):
 
 	# setup
 	setup.is_raise_error = True
+	# setup.is_print_command_line = True
 
 	@classmethod
 	def tearDownClass(cls):
@@ -44,7 +45,7 @@ class Test(unittest.TestCase):
 		# Users
 
 		create_account("user1", master, "user1")
-		transfer(eosio_token, master, user1, "2.0000 EOS", "")
+		transfer(eosio_token, master, user1, "10.0000 EOS", "")
 		transfer(eosio_token, master, buck, "10.0000 EOS", "")
 		
 		deploy(Contract(buck, "eos-bucks/src"))
@@ -56,18 +57,129 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		D = 24 * 60 * 60
+		D = 24 * 60 * 60 + 1
 
-		maketime(buck, 0)
+
+		####################################
+		COMMENT("Setup")
+
+		time = 0 # day 1
+		maketime(buck, time)
 		update(buck)
+
+
+		####################################
+		COMMENT("Deposit maturity")
+
 
 		# receive 1000 REX
 		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
-		
-		table(buck, "fund", row=1, element="rex_maturities")
+
+		maturities = table(buck, "fund", row=1, element="rex_maturities")
+		self.assertEqual("1970-01-06T00:00:00", maturities[0]["first"])
+		self.assertEqual(1000_0000, maturities[0]["second"])
+
+		time += D # day 2
+		maketime(buck, time)
+
+		# receive 999 REX
+		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
+
+		maturities = table(buck, "fund", row=1, element="rex_maturities")
+		self.assertEqual("1970-01-06T00:00:00", maturities[0]["first"])
+		self.assertEqual(1000_0000, maturities[0]["second"])
+		self.assertEqual("1970-01-07T00:00:00", maturities[1]["first"])
+		self.assertEqual(999_0000, maturities[1]["second"])
+
+		# receive 998 REX
+		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
+
+		maturities = table(buck, "fund", row=1, element="rex_maturities")
+		self.assertEqual("1970-01-07T00:00:00", maturities[1]["first"])
+		self.assertEqual(1997_0000, maturities[1]["second"])
+
+		time += D * 4 # day 6
+		maketime(buck, time)
+
+		# receive 997 REX
+		transfer(eosio_token, user1, buck, "2.0000 EOS", "deposit")
+
+		# first bucket removed
+		self.assertEqual(1000_0000, table(buck, "fund", row=1, element="matured_rex"))
+
+		maturities = table(buck, "fund", row=1, element="rex_maturities")
+		self.assertEqual("1970-01-07T00:00:00", maturities[0]["first"])
+		self.assertEqual(1997_0000, maturities[0]["second"])
+		self.assertEqual("1970-01-11T00:00:00", maturities[1]["first"])
+		self.assertEqual(1994_0000, maturities[1]["second"])
 
 
+		####################################
+		COMMENT("Withdraw maturity")
+
+
+		assertRaises(self, lambda: withdraw(buck, user1, "1001.0000 REX"))
+
+		time += D * 1 # day 7
+		maketime(buck, time)
+
+		assertRaises(self, lambda: withdraw(buck, user1, "2998.0000 REX"))
+
+		withdraw(buck, user1, "1997.0000 REX")
+
+		self.assertEqual(1000_0000, table(buck, "fund", row=1, element="matured_rex"))
+
+
+		####################################
+		COMMENT("Check CDP maturity")
+
+		open(buck, user1, 200, 0, "997.0000 REX")
+		open(buck, user1, 200, 0, "1000.0000 REX")
+
+		cdp = table(buck, "cdp", row=None)
+		self.assertEqual(997, amount(cdp[0]["collateral"]))
+		self.assertEqual("1970-01-01T00:00:00", cdp[0]["maturity"])
+		self.assertEqual(1000, amount(cdp[1]["collateral"]))
+		self.assertEqual("1970-01-11T00:00:00", cdp[1]["maturity"])
 		
+		####################################
+		COMMENT("Reparam maturity")
+
+		# receive 996 REX
+		transfer(eosio_token, user1, buck, "1.0000 EOS", "deposit")
+
+		time += D * 1 # day 8
+		maketime(buck, time)
+
+		table(buck, "cdp")
+
+		reparam(buck, user1, 0, "0.0000 BUCK", "3.0000 REX")
+
+		# not raised, because only adding collateral
+		reparam(buck, user1, 1, "0.0000 BUCK", "1000.0000 REX")
+
+		# raised because removing collateral (also replaces previous request)
+		assertRaises(self, lambda: reparam(buck, user1, 1, "0.0000 BUCK", "-1000.0000 REX"))
+
+		time += D * 3 # day 11
+		maketime(buck, time)
+
+		table(buck, "testtime")
+
+		reparam(buck, user1, 1, "0.0000 BUCK", "1000.0000 REX")
+
+		self.assertEqual("1970-01-11T00:00:00", table(buck, "reparamreq", row=0, element="maturity"))
+		self.assertEqual("1970-01-12T00:00:00", table(buck, "reparamreq", row=1, element="maturity"))
+
+		time += 100 # day 11
+		maketime(buck, time)
+		update(buck)
+
+		cdp = table(buck, "cdp", row=None)
+		self.assertEqual("1970-01-01T00:00:00", cdp[0]["maturity"])
+		self.assertEqual("1970-01-12T00:00:00", cdp[1]["maturity"])
+		
+
 
 
 # main
