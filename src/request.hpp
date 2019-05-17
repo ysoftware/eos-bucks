@@ -44,7 +44,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   check(cdp_itr->debt.symbol == change_debt.symbol, "debt symbol mismatch");
   check(cdp_itr->collateral.symbol == change_collateral.symbol, "collateral symbol mismatch");
-  check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
 
   cancel_previous_requests(cdp_itr->id);
 
