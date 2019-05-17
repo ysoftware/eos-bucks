@@ -262,7 +262,7 @@ void buck::run_requests(uint8_t max) {
     else { break; }
   }
   
-  const uint8_t m = std::min(uint8_t(30), max);
+  const uint8_t m = std::min(uint8_t(50), max);
   collect_taxes(m);
   run_exchange(m);
 }

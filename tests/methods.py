@@ -47,7 +47,7 @@ def create_issue(contract, to, symbol):
 	except: pass
 
 def destroy(contract):
-	contract.push_action(force_unique=True, max_cpu_usage=30, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
+	contract.push_action(force_unique=True, max_cpu_usage=10000, action="zdestroy", data="[]", permission=[(contract, Permission.ACTIVE)])
 
 def transfer(contract, fromAccount, to, quantity, memo=""):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="transfer",
