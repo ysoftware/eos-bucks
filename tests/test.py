@@ -412,7 +412,7 @@ def redemption(amount, price):
 			continue
 
 		if cdp.debt > amount:
-			c = (amount * 100) // (price+rf)
+			c = (amount * 100) // (price * (100 + rf) // 100)
 			d = amount
 
 			# print(cdp)
@@ -426,7 +426,7 @@ def redemption(amount, price):
 			# print(cdp)
 		else:
 			d = cdp.debt
-			c = (d * 100) // (price+rf)
+			c = (d * 100) // (price * (100 + rf) // 100)
 
 			# print(cdp)
 			cdp.new_debt(0)
