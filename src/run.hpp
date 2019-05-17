@@ -25,17 +25,13 @@ void buck::run_requests(uint8_t max) {
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
   uint8_t status = get_processing_status();
   
-  auto debtor_index = _cdp.get_index<"debtor"_n>();
-  
-  auto close_itr = _closereq.begin();
-  auto reparam_itr = _reparamreq.begin();
-  auto redeem_itr = _redeemreq.begin();
-  auto debtor_itr = debtor_index.begin();
-  
   // loop until any requests exist and not over limit
   for (int i = 0; i < max; i++) {
     
     if (status == ProcessingStatus::processing_cdp_requests) {
+          
+      auto reparam_itr = _reparamreq.begin();
+      auto close_itr = _closereq.begin();
       
       bool did_work = false;
 
@@ -165,7 +161,11 @@ void buck::run_requests(uint8_t max) {
       }
     }
     else if (status == ProcessingStatus::processing_redemption_requests) {
-
+      
+      auto debtor_index = _cdp.get_index<"debtor"_n>();
+      auto debtor_itr = debtor_index.begin();
+      auto redeem_itr = _redeemreq.begin();
+      
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
         PRINT_("redeem")
