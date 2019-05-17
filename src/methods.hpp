@@ -19,6 +19,7 @@ void buck::add_exchange_funds(const name& from, const asset& quantity, const nam
       r.balance = ZERO_REX;
       r.account = from;
       r.exchange_balance = quantity;
+      r.matured_rex = 0;
     });
   }
 }
@@ -73,7 +74,14 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
       r.balance = quantity;
       r.account = from;
       r.exchange_balance = ZERO_EOS;
-      r.matured_rex = 0;
+      
+      if (maturity <= now) {
+        r.matured_rex = quantity.amount;
+      }
+      else {
+        r.matured_rex = 0;
+        r.rex_maturities.emplace_back(maturity, quantity.amount);
+      }
     });
   }
 }
