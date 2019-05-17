@@ -28,7 +28,7 @@ void buck::cancel_previous_requests(const cdp_i::const_iterator& cdp_itr) {
       add_funds(cdp_itr->account, reparam_itr->change_collateral, same_payer);
     }
     
-    _reparamreq.erase(reparam_itr); 
+    _reparamreq.erase(reparam_itr);
   }
 }
 
@@ -44,7 +44,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   require_auth(account);
   
   check(cdp_itr->debt.symbol == change_debt.symbol, "debt symbol mismatch");
-  check(cdp_itr->collateral.symbol == change_collateral.symbol, "debt symbol mismatch");
+  check(cdp_itr->collateral.symbol == change_collateral.symbol, "collateral symbol mismatch");
   check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
 
   cancel_previous_requests(cdp_itr);
@@ -57,7 +57,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   if (new_debt.amount > 0) {
     const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
-    check(ccr >= CR, "can not reparametrize below 150% CCR");
+    check(ccr >= CR, "can not reparametrize CCR below CR");
   }
   
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
