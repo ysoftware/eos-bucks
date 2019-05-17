@@ -2,30 +2,29 @@
 // This file is part of Scruge stable coin project.
 // Created by Yaroslav Erohin.
 
-void buck::cancel_previous_requests(const cdp_i::const_iterator& cdp_itr) {
+void buck::cancel_previous_requests(uint64_t cdp_id) {
   
   // remove close request
-  const auto close_itr = _closereq.find(cdp_itr->id);
+  const auto close_itr = _closereq.find(cdp_id);
+  const auto reparam_itr = _reparamreq.find(cdp_id);
+  
   if (close_itr != _closereq.end()) {
     
     // give back bucks
-    add_balance(cdp_itr->account, cdp_itr->debt, same_payer);
+    add_balance(close_itr->account, close_itr->debt, same_payer);
     
     _closereq.erase(close_itr);
   }
-  
-  // remove reparam request
-  const auto reparam_itr = _reparamreq.find(cdp_itr->id);
-  if (reparam_itr != _reparamreq.end()) {
+  else if (reparam_itr != _reparamreq.end()) {
     
     // give back bucks if was negative change
     if (reparam_itr->change_debt.amount < 0) {
-      add_balance(cdp_itr->account, -reparam_itr->change_debt, same_payer);
+      add_balance(reparam_itr->account, -reparam_itr->change_debt, same_payer);
     }
     
     // give back rex if was positive change
     if (reparam_itr->change_collateral.amount > 0) {
-      add_funds(cdp_itr->account, reparam_itr->change_collateral, same_payer, reparam_itr->maturity);
+      add_funds(reparam_itr->account, reparam_itr->change_collateral, same_payer, reparam_itr->maturity);
     }
     
     _reparamreq.erase(reparam_itr);
@@ -47,7 +46,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   check(cdp_itr->collateral.symbol == change_collateral.symbol, "collateral symbol mismatch");
   check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
 
-  cancel_previous_requests(cdp_itr);
+  cancel_previous_requests(cdp_itr->id);
 
   // start with new request
   accrue_interest(cdp_itr, true);
@@ -80,6 +79,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   
   _reparamreq.emplace(account, [&](auto& r) {
     r.cdp_id = cdp_id;
+    r.account = cdp_itr->account;
     r.timestamp = get_current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
@@ -118,7 +118,7 @@ void buck::close(uint64_t cdp_id) {
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   require_auth(cdp_itr->account);
   
-  cancel_previous_requests(cdp_itr);
+  cancel_previous_requests(cdp_itr->id);
   
   check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
   const auto close_itr = _closereq.find(cdp_id);
@@ -129,6 +129,8 @@ void buck::close(uint64_t cdp_id) {
   
   _closereq.emplace(cdp_itr->account, [&](auto& r) {
     r.cdp_id = cdp_id;
+    r.debt = cdp_itr->debt;
+    r.account = cdp_itr->account;
     r.timestamp = get_current_time_point();
   });
   

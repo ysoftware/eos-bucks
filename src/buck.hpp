@@ -95,6 +95,8 @@ CONTRACT buck : public contract {
     
     TABLE close_req {
       uint64_t    cdp_id;
+      asset       debt;
+      name        account;
       time_point  timestamp;
       
       uint64_t primary_key() const { return cdp_id; }
@@ -124,6 +126,7 @@ CONTRACT buck : public contract {
       uint64_t        cdp_id;
       asset           change_collateral;
       asset           change_debt;
+      name            account;
       time_point      timestamp;
       time_point_sec  maturity;
       
@@ -297,7 +300,7 @@ CONTRACT buck : public contract {
     void set_excess_collateral(const cdp_i::const_iterator& cdp_itr);
     void remove_excess_collateral(const cdp_i::const_iterator& cdp_itr);
     void update_supply(const asset& quantity);
-    void cancel_previous_requests(const cdp_i::const_iterator& cdp_itr);
+    void cancel_previous_requests(uint64_t cdp_id);
     
     void run_requests(uint8_t max);
     void run_liquidation(uint8_t max);

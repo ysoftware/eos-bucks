@@ -45,7 +45,8 @@ void buck::run_requests(uint8_t max) {
         // find cdp
         const auto cdp_itr = _cdp.find(close_itr->cdp_id);
         if (cdp_itr == _cdp.end()) {
-          close_itr = _closereq.erase(close_itr);
+          cancel_previous_requests(reparam_itr->cdp_id);
+          close_itr = _closereq.begin();
           did_work = true;
           continue;
         }
@@ -64,7 +65,8 @@ void buck::run_requests(uint8_t max) {
         // find cdp
         const auto cdp_itr = _cdp.find(reparam_itr->cdp_id);
         if (cdp_itr == _cdp.end()) {
-          reparam_itr = _reparamreq.erase(reparam_itr);
+          cancel_previous_requests(reparam_itr->cdp_id);
+          reparam_itr = _reparamreq.begin();
           did_work = true;
           continue;
         }
