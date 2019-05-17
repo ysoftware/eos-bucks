@@ -76,6 +76,7 @@ asset buck::get_eos_rex_balance() const {
 }
 
 void buck::processrex() {
+  require_auth(_self);
   check(_process.begin() != _process.end(), "this action is not to be executed by a user");
   const auto rexprocess_itr = _process.begin();
   
