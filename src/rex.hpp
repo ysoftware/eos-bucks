@@ -42,7 +42,7 @@ int64_t buck::to_buck(int64_t quantity) const {
 /// buck -> eos -> rex
 int64_t buck::to_rex(int64_t quantity, int64_t tax) const {
   static const int64_t EU = get_eos_usd_price();
-  return convert(quantity, true) / (EU * (100 + tax)) / 100;
+  return convert(quantity, true) / (EU * (100 + tax) / 100);
 }
 
 /// eos -> rex (true)
