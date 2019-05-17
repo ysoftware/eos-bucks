@@ -53,7 +53,7 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
     
     // if actor doesn't have auth to account and want to add another bucket, contract will pay for ram
     name payer = ram_payer;
-    if (!has_auth(fund_itr->account) && fund_itr->rex_maturities.empty() || fund_itr->rex_maturities.back().first != maturity) {
+    if (!has_auth(fund_itr->account) && (!fund_itr->rex_maturities.empty() && fund_itr->rex_maturities.back().first != maturity)) {
       payer = _self;
     }
     
