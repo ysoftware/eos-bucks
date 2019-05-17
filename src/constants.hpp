@@ -10,7 +10,6 @@
 #define TEST_TIME true
 
 static const uint32_t seconds_per_day     = 86'400;
-static const uint32_t BASE_ROUND_DURATION = 1'000;
 static const uint32_t YEAR                = 31'557'600;
 static const uint32_t ACCRUAL_PERIOD      = 2'629'800;
 
