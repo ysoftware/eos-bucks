@@ -52,7 +52,7 @@ void buck::run_requests(uint8_t max) {
         
         remove_excess_collateral(cdp_itr);
         update_supply(-cdp_itr->debt);
-        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer);
+        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer, FAR_PAST);
         _cdp.erase(cdp_itr);
         close_itr = _closereq.erase(close_itr);
         did_work = true;
@@ -105,7 +105,7 @@ void buck::run_requests(uint8_t max) {
 
           // if not 0, add funds
           if (change_collateral.amount < 0) {
-            add_funds(cdp_itr->account, -change_collateral, same_payer);
+            add_funds(cdp_itr->account, -change_collateral, same_payer, FAR_PAST);
           }
         }
         
@@ -139,6 +139,7 @@ void buck::run_requests(uint8_t max) {
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
+          r.maturity = reparam_itr->maturity;
         });
         
         // sanity check
@@ -209,7 +210,7 @@ void buck::run_requests(uint8_t max) {
             const asset left_over_collateral = debtor_itr->collateral - using_collateral;
             
             if (left_over_collateral.amount > 0) {
-              add_funds(debtor_itr->account, left_over_collateral, same_payer);
+              add_funds(debtor_itr->account, left_over_collateral, same_payer, FAR_PAST);
             }
             
             PRINT_("removing")
@@ -247,7 +248,7 @@ void buck::run_requests(uint8_t max) {
           
           // complete and remove redemption request only if anything was redeemed in the process
           update_supply(-burned_debt);
-          add_funds(redeem_itr->account, collateral_return, same_payer);
+          add_funds(redeem_itr->account, collateral_return, same_payer, FAR_PAST);
           redeem_itr = _redeemreq.erase(redeem_itr);
         }
         

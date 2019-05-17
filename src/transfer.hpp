@@ -31,10 +31,8 @@ void buck::withdraw(const name& account, const asset& quantity) {
 	check(quantity.amount > 0, "must transfer positive quantity");
   
   if (quantity.symbol == REX) {
-    time_point_sec maturity_time = get_amount_maturity(account, quantity);
+    time_point_sec maturity_time = sub_funds(account, quantity);
     check(current_time_point_sec() > maturity_time, "insufficient matured rex");
-    
-    sub_funds(account, quantity);
     sell_rex(account, quantity);
   }
   else if (quantity.symbol == EOS) {
@@ -126,11 +124,11 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     check(issue_debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
   
-  sub_funds(account, quantity);
+  const auto maturity = sub_funds(account, quantity);
   
   // open account if doesn't exist and update ram payer
   add_balance(account, ZERO_BUCK, account);
-  add_funds(account, ZERO_REX, account);
+  add_funds(account, ZERO_REX, account, FAR_PAST);
   
   const auto id = _cdp.available_primary_key();
   _cdp.emplace(account, [&](auto& r) {
@@ -140,7 +138,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
     r.collateral = quantity;
     r.debt = issue_debt;
     r.modified_round = now;
-    r.maturity = get_amount_maturity(account, quantity);
+    r.maturity = maturity;
   });
   
   if (issue_debt.amount == 0) {

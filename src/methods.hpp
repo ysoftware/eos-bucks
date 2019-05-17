@@ -40,16 +40,30 @@ void buck::sub_exchange_funds(const name& from, const asset& quantity) {
   });
 }
 
-void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer) {
+void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer, time_point_sec maturity) {
   #if DEBUG
   if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
   #endif
   
+  const time_point_sec now = current_time_point_sec();
   auto fund_itr = _fund.find(from.value);
   if (fund_itr != _fund.end()) {
     process_maturities(fund_itr);
     
     _fund.modify(fund_itr, ram_payer, [&](auto& r) {
+      
+      if (maturity <= now) {
+        r.matured_rex += quantity.amount;
+      }
+      else {
+        if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
+          r.rex_maturities.back().second += quantity.amount;
+        } 
+        else {
+          r.rex_maturities.emplace_back(maturity, quantity.amount);
+        }
+      }
+    
       r.balance += quantity;
     });
   }
@@ -59,15 +73,17 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
       r.balance = quantity;
       r.account = from;
       r.exchange_balance = ZERO_EOS;
+      r.matured_rex = 0;
     });
   }
 }
 
-void buck::sub_funds(const name& from, const asset& quantity) {
+/// returns maturity time
+time_point_sec buck::sub_funds(const name& from, const asset& quantity) {
   auto fund_itr = _fund.require_find(from.value, "no fund balance found");
   process_maturities(fund_itr);
   
-  if (quantity.amount == 0) return;
+  if (quantity.amount == 0) return FAR_PAST;
   
   #if DEBUG
   eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
@@ -75,9 +91,39 @@ void buck::sub_funds(const name& from, const asset& quantity) {
   
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
   
+  auto amount_maturity = time_point_sec(0);
+  
   _fund.modify(fund_itr, from, [&](auto& r) {
+    if (r.matured_rex < quantity.amount) {
+      auto amount = r.matured_rex;
+      
+      while (!r.rex_maturities.empty()) {
+      	auto maturity = r.rex_maturities.front();
+        auto use = std::min(quantity.amount - amount, maturity.second);
+        amount += use;
+        
+        if (maturity.second == use) {
+        	r.rex_maturities.pop_front();
+        }
+        else {
+          r.rex_maturities.front().second -= use;
+        }
+        
+        if (amount >= quantity.amount) {
+        	amount_maturity = maturity.first;
+       		break;
+        }
+      }
+      
+      // sanity check
+      check(amount == 0, "programmer error, overdrawn immature rex");
+    }
+  
+    r.matured_rex -= std::min(quantity.amount, r.matured_rex);
     r.balance -= quantity;
   });
+  
+  return amount_maturity;
 }
 
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer) {

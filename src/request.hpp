@@ -25,7 +25,7 @@ void buck::cancel_previous_requests(const cdp_i::const_iterator& cdp_itr) {
     
     // give back rex if was positive change
     if (reparam_itr->change_collateral.amount > 0) {
-      add_funds(cdp_itr->account, reparam_itr->change_collateral, same_payer);
+      add_funds(cdp_itr->account, reparam_itr->change_collateral, same_payer, reparam_itr->maturity);
     }
     
     _reparamreq.erase(reparam_itr);
@@ -70,8 +70,9 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     sub_balance(account, -change_debt);
   }
 
+  auto amount_maturity = FAR_PAST;
   if (change_collateral.amount > 0) {
-    sub_funds(cdp_itr->account, change_collateral);
+    amount_maturity = sub_funds(cdp_itr->account, change_collateral);
   }
   
   const auto now = get_current_time_point();
@@ -82,16 +83,7 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     r.timestamp = get_current_time_point();
     r.change_collateral = change_collateral;
     r.change_debt = change_debt;
-    
-    const auto maturity = get_amount_maturity(cdp_itr->account, change_collateral);
-    
-    // if adding collateral and amount is not matured yet
-    if (change_collateral.amount > 0 && maturity > now) {
-      r.maturity = maturity;
-    }
-    else {
-      r.maturity = time_point(microseconds(0));
-    }
+    r.maturity = amount_maturity;
   });
   
   run_requests(10);
@@ -153,7 +145,7 @@ void buck::redeem(const name& account, const asset& quantity) {
   check(quantity >= MIN_REDEMPTION, "not enough quantity to redeem");
   
   // open account if doesn't exist
-  add_funds(account, ZERO_REX, account);
+  add_funds(account, ZERO_REX, account, FAR_PAST);
   
   // find previous request
   const auto redeem_itr = _redeemreq.find(account.value);

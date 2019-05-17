@@ -104,8 +104,9 @@ CONTRACT buck : public contract {
       name      account;
       asset     balance;          // REX
       asset     exchange_balance; // EOS
-      uint64_t  savings_balance;  // virtual toke
+      int64_t  savings_balance;  // virtual toke
       
+      int64_t  matured_rex;
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities;
       
       uint64_t primary_key() const { return account.value; }
@@ -120,11 +121,11 @@ CONTRACT buck : public contract {
     };
     
     TABLE reparam_req {
-      uint64_t    cdp_id;
-      asset       change_collateral;
-      asset       change_debt;
-      time_point  timestamp;
-      time_point  maturity;
+      uint64_t        cdp_id;
+      asset           change_collateral;
+      asset           change_debt;
+      time_point      timestamp;
+      time_point_sec  maturity;
       
       uint64_t primary_key() const { return cdp_id; }
     };
@@ -156,13 +157,13 @@ CONTRACT buck : public contract {
     };
     
     TABLE cdp {
-      uint64_t    id;
-      uint16_t    acr;
-      name        account;
-      asset       debt;
-      asset       collateral;
-      uint32_t    modified_round; // accrual round
-      time_point  maturity;       // maturity of REX collateral
+      uint64_t        id;
+      uint16_t        acr;
+      name            account;
+      asset           debt;
+      asset           collateral;
+      uint32_t        modified_round; // accrual round
+      time_point_sec  maturity;       // maturity of REX collateral
       
       #if DEBUG
       void p() const {
@@ -285,8 +286,8 @@ CONTRACT buck : public contract {
     bool init();
     void add_balance(const name& owner, const asset& value, const name& ram_payer);
     void sub_balance(const name& owner, const asset& value);
-    void add_funds(const name& from, const asset& quantity, const name& ram_payer);
-    void sub_funds(const name& from, const asset& quantity);
+    void add_funds(const name& from, const asset& quantity, const name& ram_payer, time_point_sec maturity);
+    time_point_sec sub_funds(const name& from, const asset& quantity);
     void add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer);
     void sub_exchange_funds(const name& from, const asset& quantity);
     
@@ -325,7 +326,6 @@ CONTRACT buck : public contract {
     time_point get_current_time_point() const;
     time_point_sec current_time_point_sec() const;
     time_point_sec get_maturity() const;
-    time_point_sec get_amount_maturity(const name& account, const asset& quantity) const;
     
     // tables
     cdp_i               _cdp;

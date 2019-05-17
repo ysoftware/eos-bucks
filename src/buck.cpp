@@ -67,7 +67,7 @@ bool buck::init() {
   });
   
   add_balance(SCRUGE, ZERO_BUCK, _self);
-  add_funds(SCRUGE, ZERO_REX, _self);
+  add_funds(SCRUGE, ZERO_REX, _self, FAR_PAST);
   
   return true;
 }

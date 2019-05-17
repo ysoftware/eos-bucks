@@ -6,26 +6,12 @@ void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
   const time_point_sec now = current_time_point_sec();
   _fund.modify(fund_itr, same_payer, [&](auto& r) {
     while (!r.rex_maturities.empty() && r.rex_maturities.front().first <= now) {
+      r.matured_rex += r.rex_maturities.front().second;
       r.rex_maturities.pop_front();
     }
   });
 }
 
-
-// to-do rework, 
-time_point_sec buck::get_amount_maturity(const name& account, const asset& quantity) const {
-  // const time_point_sec now = current_time_point_sec();
-  // const auto fund_itr = _fund.require_find(account.value);
-  
-  // int64_t i = 0;
-  // for (auto maturity: fund_itr->rex_maturities) {
-  //   i += maturity.second;
-  //   if (i >= quantity.amount) {
-  //     return maturity.first;
-  //   }
-  // }
-  // return time_point_sec(0);
-}
 
 time_point_sec buck::get_maturity() const {
   const uint32_t num_of_maturity_buckets = 5;
@@ -85,20 +71,7 @@ void buck::processrex() {
     const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_rex_balance();
     const auto diff = current_balance - previos_balance; // REX
-    add_funds(rexprocess_itr->account, diff, same_payer);
-    
-    const time_point_sec maturity = get_maturity();
-    auto fund_itr = _fund.require_find(rexprocess_itr->account.value);
-    _fund.modify(fund_itr, same_payer, [&](auto& r) {
-        if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
-          r.rex_maturities.back().second += diff.amount;
-        } 
-        else {
-          r.rex_maturities.emplace_back(maturity, diff.amount);
-        }
-    });
-    
-    process_maturities(fund_itr);
+    add_funds(rexprocess_itr->account, diff, same_payer, get_maturity());
   }
   
   // user sold rex. transfer eos

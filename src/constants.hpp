@@ -21,6 +21,8 @@ static const asset& ZERO_BUCK  = asset(0, BUCK);
 static const asset& ZERO_REX   = asset(0, REX);
 static const asset& ZERO_EOS   = asset(0, EOS);
 
+static const time_point_sec FAR_PAST = time_point_sec(0);
+
 /// max % of price change available to oracle
 static const uint8_t ORACLE_MAX_PERCENT = 8;
 

@@ -11,7 +11,7 @@ void buck::process_taxes() {
   const int64_t insurance_amount = tax.collected_excess.amount - scruge_insurance_amount;
   const auto scruge_insurance = asset(scruge_insurance_amount, REX);
   if (scruge_insurance_amount > 0) {
-    add_funds(SCRUGE, scruge_insurance, same_payer);
+    add_funds(SCRUGE, scruge_insurance, same_payer, FAR_PAST);
   }
   
   // send part of collected savings to Scruge
@@ -159,7 +159,7 @@ void buck::save(const name& account, const asset& quantity) {
   check(received_amount > 0, "not enough quantity to receive minimum amount of savings");
   
   // create funds if doesn't exist
-  add_funds(account, ZERO_REX, account);
+  add_funds(account, ZERO_REX, account, FAR_PAST);
   const auto fund_itr = _fund.require_find(account.value);
   
   _fund.modify(fund_itr, account, [&](auto& r) {
