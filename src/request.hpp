@@ -101,13 +101,13 @@ void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   check(acr >= CR || acr == 0, "acr value is too small");
-  check(acr < 1000'00, "acr value is too high");
+  check(acr < 1000, "acr value is too high");
   
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   require_auth(cdp_itr->account);
   
   check(cdp_itr->acr != acr, "acr is already set to this value");
-  check(cdp_itr->debt.amount != 0 || acr != 0, "can not change acr for cdp with 0 debt");
+  check(cdp_itr->debt.amount != 0 || acr != 0, "can not set 0 acr for cdp with 0 debt");
   
   accrue_interest(cdp_itr, true);
   remove_excess_collateral(cdp_itr);
