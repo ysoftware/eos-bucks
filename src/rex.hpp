@@ -152,6 +152,12 @@ void buck::sell_rex(const name& account, const asset& quantity) {
 		std::make_tuple(_self, quantity)
   ).send();
 	
+  // withdraw
+  action(permission_level{ _self, "active"_n },
+		REX_ACCOUNT, "withdraw"_n,
+		std::make_tuple(_self, quantity)
+	).send();
+	
   action(permission_level{ _self, "active"_n }, 
     _self, "processrex"_n, 
     std::make_tuple()
