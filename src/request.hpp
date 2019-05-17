@@ -35,8 +35,8 @@ void buck::cancel_previous_requests(const cdp_i::const_iterator& cdp_itr) {
 void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral) {
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
-  check(change_debt.symbol.is_valid(), "invalid debt quantity");
-  check(change_collateral.symbol.is_valid(), "invalid collateral quantity");
+  check(change_debt.is_valid(), "invalid debt quantity");
+  check(change_collateral.is_valid(), "invalid collateral quantity");
   check(change_debt.amount != 0 || change_collateral.amount != 0, "empty request does not make sense");
   
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
