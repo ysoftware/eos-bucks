@@ -141,7 +141,10 @@ void buck::run_requests(uint8_t max) {
         _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
           r.collateral += change_collateral;
           r.debt += change_debt;
-          r.maturity = reparam_itr->maturity;
+          
+          if (reparam_itr->maturity >= oracle_timestamp) {
+            r.maturity = reparam_itr->maturity;
+          }
         });
         
         // sanity check
