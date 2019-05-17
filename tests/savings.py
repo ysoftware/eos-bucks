@@ -59,6 +59,7 @@ class Test(unittest.TestCase):
 	# tests 
 	
 	def test(self):
+		SCENARIO("Testing savings")
 
 		time = 0
 		maketime(buck, time)

@@ -55,7 +55,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		SCENARIO("Test buck redeem")
+		SCENARIO("Testing redemption")
 
 		##############################
 		COMMENT("Initialize")

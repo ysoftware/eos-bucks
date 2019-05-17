@@ -61,7 +61,7 @@ class Test(unittest.TestCase):
 	### check rex values when selling rex
 
 	def test(self):
-		SCENARIO("Test cdp reparametrization")
+		SCENARIO("Testing cdp reparametrization")
 
 		time = 0
 		maketime(buck, time)

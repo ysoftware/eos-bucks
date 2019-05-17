@@ -55,6 +55,7 @@ class Test(unittest.TestCase):
 	# tests 
 	
 	def test(self):
+		SCENARIO("Testing BUCK transfer")
 
 		maketime(buck, 0)
 		update(buck)

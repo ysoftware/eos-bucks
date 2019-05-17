@@ -55,6 +55,8 @@ class Test(unittest.TestCase):
 	
 	def test(self):
 
+		SCENARIO("Testing requests collision")
+
 		###################################
 		COMMENT("Setup")
 

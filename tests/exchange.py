@@ -60,6 +60,7 @@ class Test(unittest.TestCase):
 	# tests 
 	
 	def test(self):
+		SCENARIO("Testing exchange")
 
 		###################################
 		COMMENT("Setup")

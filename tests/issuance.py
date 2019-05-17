@@ -54,7 +54,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
-		SCENARIO("Test init and open cdp")
+		SCENARIO("Test open and close cdp")
 
 		time = 0
 		maketime(buck, time)

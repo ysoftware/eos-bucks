@@ -57,6 +57,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
+		SCENARIO("Testing maturity")
 		D = 24 * 60 * 60 + 1
 
 

@@ -55,6 +55,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
+		SCENARIO("Testing cdp logic")
 
 		for cycle_i in range(1, 200):
 

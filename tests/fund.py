@@ -56,6 +56,7 @@ class Test(unittest.TestCase):
 	# tests
 
 	def test(self):
+		SCENARIO("Testing funds")
 		D = 24 * 60 * 60
 
 		maketime(buck, 0)
