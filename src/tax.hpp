@@ -60,15 +60,16 @@ void buck::collect_taxes(uint32_t max) {
   }
 }
 
-// collect interest to insurance pool from this cdp
+// collect interest to debtors
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min) {
-  const auto& tax = *_tax.begin();
+  if (cdp_itr->debt.amount == 0) return;
+  
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t last = cdp_itr->modified_round;
   
   if (now == last) return;
-  if (cdp_itr->debt.amount == 0) return;
+  const auto& tax = *_tax.begin();
   
   static const uint128_t DM = 1000000000000;
   const uint128_t v = (exp(AR * double(now - last) / double(YEAR)) - 1) * DM;
@@ -96,9 +97,9 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min
 }
 
 void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  const auto& tax = *_tax.begin();
   if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
   
+  const auto& tax = *_tax.begin();
   const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
@@ -113,9 +114,8 @@ void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
 }
 
 void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  const auto& tax = *_tax.begin();
-  
   if (cdp_itr->acr == 0 || cdp_itr->debt.amount > 0) return;
+  const auto& tax = *_tax.begin();
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
