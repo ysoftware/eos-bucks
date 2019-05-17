@@ -106,6 +106,13 @@ void buck::processrex() {
     const auto previos_balance = rexprocess_itr->current_balance;
     const auto current_balance = get_eos_rex_balance();
     const auto diff = current_balance - previos_balance; // EOS
+      
+    // withdraw
+    action(permission_level{ _self, "active"_n },
+    	REX_ACCOUNT, "withdraw"_n,
+    	std::make_tuple(_self, current_balance)
+    ).send();
+	
     inline_transfer(rexprocess_itr->account, diff, "buck: withdraw eos (+ rex dividends)", EOSIO_TOKEN);
   }
   
@@ -151,12 +158,6 @@ void buck::sell_rex(const name& account, const asset& quantity) {
 		REX_ACCOUNT, "sellrex"_n,
 		std::make_tuple(_self, quantity)
   ).send();
-	
-  // withdraw
-  action(permission_level{ _self, "active"_n },
-		REX_ACCOUNT, "withdraw"_n,
-		std::make_tuple(_self, quantity)
-	).send();
 	
   action(permission_level{ _self, "active"_n }, 
     _self, "processrex"_n, 
