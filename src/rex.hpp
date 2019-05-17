@@ -11,18 +11,20 @@ void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
   });
 }
 
+
+// to-do rework, 
 time_point_sec buck::get_amount_maturity(const name& account, const asset& quantity) const {
-  const time_point_sec now = current_time_point_sec();
-  const auto fund_itr = _fund.require_find(account.value);
+  // const time_point_sec now = current_time_point_sec();
+  // const auto fund_itr = _fund.require_find(account.value);
   
-  int64_t i = 0;
-  for (auto maturity: fund_itr->rex_maturities) {
-    i += maturity.second;
-    if (i >= quantity.amount) {
-      return maturity.first;
-    }
-  }
-  return time_point_sec(0);
+  // int64_t i = 0;
+  // for (auto maturity: fund_itr->rex_maturities) {
+  //   i += maturity.second;
+  //   if (i >= quantity.amount) {
+  //     return maturity.first;
+  //   }
+  // }
+  // return time_point_sec(0);
 }
 
 time_point_sec buck::get_maturity() const {
