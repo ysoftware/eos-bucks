@@ -619,7 +619,7 @@ def run_round(balance):
 		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
-		v1 = random.randrange(100, 10_000_0000)
+		v1 = random.randrange(25_0000, 10_000_0000)
 		success = v1 <= balance
 		if success: redemption(v1, price)
 		actions.append([["redeem", v1], success])
