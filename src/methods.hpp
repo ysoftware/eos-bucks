@@ -51,15 +51,20 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
   if (fund_itr != _fund.end()) {
     process_maturities(fund_itr);
     
-    _fund.modify(fund_itr, ram_payer, [&](auto& r) {
-      
+    // if actor doesn't have auth to account and want to add another bucket, contract will pay for ram
+    name payer = ram_payer;
+    if (!has_auth(fund_itr->account) && fund_itr->rex_maturities.empty() || fund_itr->rex_maturities.back().first != maturity) {
+      payer = _self;
+    }
+    
+    _fund.modify(fund_itr, payer, [&](auto& r) {
       if (maturity <= now) {
         r.matured_rex += quantity.amount;
       }
       else {
         if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
           r.rex_maturities.back().second += quantity.amount;
-        } 
+        }
         else {
           r.rex_maturities.emplace_back(maturity, quantity.amount);
         }
@@ -117,14 +122,14 @@ time_point_sec buck::sub_funds(const name& from, const asset& quantity) {
           r.rex_maturities.front().second -= use;
         }
         
-        if (amount >= quantity.amount) {
+        if (amount == quantity.amount) {
         	amount_maturity = maturity.first;
        		break;
         }
       }
       
       // sanity check
-      check(amount == 0, "programmer error, overdrawn immature rex");
+      check(amount != 0, "programmer error, overdrawn immature rex");
     }
   
     r.matured_rex -= std::min(quantity.amount, r.matured_rex);
@@ -176,7 +181,6 @@ void buck::sub_balance(const name& owner, const asset& value) {
 }
 
 void buck::update_supply(const asset& quantity) {
-  PRINT("supply", quantity.amount)
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.supply += quantity;
     
