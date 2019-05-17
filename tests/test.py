@@ -234,7 +234,7 @@ def add_tax(cdp, price):
 		cdp.new_time(oracle_time)
 		CIT += accrued_col
 
-		print("add tax", cdp.id, accrued_debt, accrued_col)
+		# print("add tax", cdp.id, accrued_debt, accrued_col)
 	return cdp
 
 def update_tax(cdp, price):
@@ -278,7 +278,7 @@ def ls(collateral, debt, acr, id):
 	return (MAX * 2 - cd // acr)   * 1_000 + id
 
 def liquidation(price, cr, lf):	
-	print("liquidation")
+	# print("liquidation")
 	global TEC, table
 	if table == []: return
 	# i = 0
@@ -387,7 +387,7 @@ def redemption(amount, price):
 
 	# print_table()
 
-	print("\n\nredeem", amount)
+	# print("\n\nredeem", amount)
 
 	debtors_failed = 0
 	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
@@ -422,7 +422,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			amount = 0
 
-			print("redeem updating", cdp.id, c, d)
+			# print("redeem updating", cdp.id, c, d)
 			# print(cdp)
 		else:
 			d = cdp.debt
@@ -432,12 +432,12 @@ def redemption(amount, price):
 			cdp.new_debt(0)
 			cdp.add_collateral(-c)
 
-			print("redeem removing", cdp.id, c, d)
+			# print("redeem removing", cdp.id, c, d)
 			# print(cdp)
 
 			amount -= d
 			i -= 1
-	print("redeem left over", amount)
+	# print("redeem left over", amount)
 	return
 
 def reparametrize(id, c, d, price):
@@ -449,18 +449,18 @@ def reparametrize(id, c, d, price):
 		return
 
 	cdp = table.pop(idx)
-	print("reparam", cdp)
+	# print("reparam", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
 
 	cdp = update_tax(cdp, price)
-	print(cdp)
+	# print(cdp)
 
 	if d < 0:
 		if cdp.debt + d >= 50000 + epsilon(50000):
 			cdp.add_debt(d)
-		else: print("not removing d below min")
+		# else: print("not removing d below min")
 
 	if c > 0:
 		cdp.add_collateral(c)
@@ -468,7 +468,7 @@ def reparametrize(id, c, d, price):
 	if c < 0:
 		if cdp.debt == 0:
 			cdp.add_collateral(c)
-			print("change c", c)
+			# print("change c", c)
 		else:
 			ccr = calc_ccr(cdp, price)
 			if ccr < cr:
@@ -484,11 +484,11 @@ def reparametrize(id, c, d, price):
 
 	if d > 0:
 		if cdp.debt == 0:
-			print("max d", cdp.collateral * price // cr)
-			print("new c", cdp.collateral)
+			# print("max d", cdp.collateral * price // cr)
+			# print("new c", cdp.collateral)
 			cdp.add_debt(min(d, cdp.collateral * price // cr))
 		else:
-			print("ccr", calc_ccr(cdp, price))
+			# print("ccr", calc_ccr(cdp, price))
 			if calc_ccr(cdp, price) < cr:
 				pass
 			else:
@@ -503,14 +503,14 @@ def reparametrize(id, c, d, price):
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-	print("done", cdp, "\n")
+	# print("done", cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
 	if acr < CR or acr > 100000:
 		return False
 
-	print("acr...")
+	# print("acr...")
 	cdp = table.pop(cdp_index(id))
 
 	if cdp.acr == acr:
@@ -552,7 +552,7 @@ def run_round(balance):
 	length = len(table)
 	if length == 0: return [time, actions]
 
-	print(f"time: {time}")
+	# print(f"time: {time}")
 
 	# acr requests get processed immediately
 	if ACR and length > 1:
@@ -573,8 +573,8 @@ def run_round(balance):
 		for i in range(0, random.randint(1, length-1)):
 			idx = cdp_index(i) 
 			if idx != -1:
-				c = random.randrange(-1_000_000, 1_000_000)
-				d = random.randrange(-1_000_000, 100_000)
+				c = random.randrange(-100_0000, 1000_0000)
+				d = random.randrange(-100_0000, 1000_0000)
 
 				# verify change with old price first (request creation step)
 				cdp = table.pop(idx)
@@ -586,6 +586,7 @@ def run_round(balance):
 				if not success:
 					print("--- was d. c", cdp.debt, cdp.collateral)
 					print("reparam values:", new_ccr, new_col, new_debt)
+					pass
 				else: cdp = add_tax(cdp, price)
 				reparam_values.append([i, c, d, success])
 				cdp_insert(cdp)
@@ -600,7 +601,7 @@ def run_round(balance):
 	time_now()
 	update_round()
 
-	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
+	# print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
 	# other requests get processed after oracle update
 
@@ -646,7 +647,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 200
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
@@ -654,4 +655,4 @@ def init():
 
 	gen(x, l)
 
-	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
+	# print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

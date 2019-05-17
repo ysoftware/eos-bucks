@@ -134,12 +134,12 @@ class Test(unittest.TestCase):
 							else: redeem(buck, user1, quantity)
 
 				maketime(buck, round_time)
-				update(buck, test.price)
+				update(buck, test.price, 40)
 				
 				##################################
 				COMMENT(f"Matching after round {round_i+1}")
 
-				test.print_table()
+				# test.print_table()
 
 				# match cdps
 				self.compare(buck, test.table)
@@ -187,7 +187,7 @@ class Test(unittest.TestCase):
 		return tokens
 
 	def compare(self, buck, cdp_table):
-		top_debtors = get_debtors(buck, limit=100)
+		top_debtors = get_debtors(buck, limit=20)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
@@ -195,7 +195,7 @@ class Test(unittest.TestCase):
 			self.match(cdp, debtor)
 
 		test_liquidators = sorted(test.table, key=test.liq_sort)
-		top_liquidators = get_liquidators(buck, limit=100)
+		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["acr"] == 0: break # unsorted end of the table
@@ -203,8 +203,8 @@ class Test(unittest.TestCase):
 			self.match(cdp, liquidator)
 
 	def match(self, cdp, row):
-		print(cdp)
-		print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"])
+		# print(cdp)
+		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		

@@ -4,7 +4,7 @@
 
 void buck::add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer) {
   #if DEBUG
-  if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
+  // if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
   #endif
   
   auto fund_itr = _fund.find(from.value);
@@ -31,7 +31,7 @@ void buck::sub_exchange_funds(const name& from, const asset& quantity) {
   if (quantity.amount == 0) return;
   
   #if DEBUG
-  eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
+  // eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
   #endif
   
   check(fund_itr->exchange_balance >= quantity, "overdrawn exchange fund balance");
@@ -43,7 +43,7 @@ void buck::sub_exchange_funds(const name& from, const asset& quantity) {
 
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer, time_point_sec maturity) {
   #if DEBUG
-  if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
+  // if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
   #endif
   
   const time_point_sec now = current_time_point_sec();
@@ -99,7 +99,7 @@ time_point_sec buck::sub_funds(const name& from, const asset& quantity) {
   if (quantity.amount == 0) return FAR_PAST;
   
   #if DEBUG
-  eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
+  // eosio::print("-"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n");
   #endif
   
   check(fund_itr->balance >= quantity, "overdrawn fund balance");
@@ -141,7 +141,7 @@ time_point_sec buck::sub_funds(const name& from, const asset& quantity) {
 
 void buck::add_balance(const name& owner, const asset& value, const name& ram_payer) {
   #if DEBUG
-  if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
+  // if (value.amount != 0) { eosio::print("+"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n"); }
   #endif
   
   accounts_i accounts(_self, owner.value);
@@ -164,7 +164,7 @@ void buck::sub_balance(const name& owner, const asset& value) {
   if (value.amount == 0) return;
   
   #if DEBUG
-  eosio::print("-"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
+  // eosio::print("-"); eosio::print(value); eosio::print(" @ "); eosio::print(owner); eosio::print("\n");
   #endif
   
   accounts_i accounts(_self, owner.value);

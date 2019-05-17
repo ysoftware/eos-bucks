@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin.
 
 void buck::run(uint8_t max) {
-  PRINT_("running...")
+
   check(_stat.begin() != _stat.end(), "contract is not yet initiated");
   
   const uint8_t value = std::max(uint8_t(1), std::min(max, uint8_t(70)));
@@ -16,7 +16,6 @@ void buck::run(uint8_t max) {
 }
 
 void buck::run_requests(uint8_t max) {
-  PRINT("run req", max)
   
   // check if request processing have been frozen
   if (!check_operation_status(0)) return;
@@ -168,7 +167,6 @@ void buck::run_requests(uint8_t max) {
       
       // redeem request
       if (redeem_itr != _redeemreq.end() && redeem_itr->timestamp < oracle_timestamp) {
-        PRINT_("redeem")
         
         auto redeem_quantity = redeem_itr->quantity;
         asset rex_return = ZERO_REX;
@@ -218,7 +216,6 @@ void buck::run_requests(uint8_t max) {
               add_funds(debtor_itr->account, left_over_collateral, same_payer, FAR_PAST);
             }
             
-            PRINT_("removing")
             debtor_index.erase(debtor_itr); 
           }
           else {
@@ -226,15 +223,11 @@ void buck::run_requests(uint8_t max) {
               r.debt -= using_debt;
               r.collateral -= using_collateral;
             });
-            PRINT_("updating")
             
             // sanity check
             check(debtor_itr->debt.amount >= 0, "programmer error, debt can't go below 0");
             check(debtor_itr->collateral.amount >= 0, "programmer error, collateral can't go below 0");
           }
-          
-          PRINT("using debt", using_debt)
-          PRINT("using col", using_collateral)
           
           // next best debtor will be the first in table (after this one changed)
           debtor_itr = debtor_index.begin();
@@ -275,8 +268,7 @@ void buck::run_requests(uint8_t max) {
 }
 
 void buck::run_liquidation(uint8_t max) {
-  PRINT("run liq", max)
-  
+
   // check if liquidation processing have been frozen
   if (!check_operation_status(1)) return;
   
