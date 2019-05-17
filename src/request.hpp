@@ -147,8 +147,10 @@ void buck::redeem(const name& account, const asset& quantity) {
   require_auth(account);
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
-  // validate
+  check(quantity.is_valid(), "invalid quantity");
+  check(quantity.amount > 0, "must transfer positive quantity");
   check(quantity.symbol == BUCK, "symbol mismatch");
+  check(quantity >= MIN_REDEMPTION, "not enough quantity to redeem");
   
   // open account if doesn't exist
   add_funds(account, ZERO_REX, account);
