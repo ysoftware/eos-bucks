@@ -43,7 +43,7 @@ void buck::sub_exchange_funds(const name& from, const asset& quantity) {
 
 void buck::add_funds(const name& from, const asset& quantity, const name& ram_payer, time_point_sec maturity) {
   #if DEBUG
-  // if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
+  if (quantity.amount != 0) { eosio::print("+"); eosio::print(quantity); eosio::print(" @ "); eosio::print(from); eosio::print("\n"); }
   #endif
   
   const time_point_sec now = current_time_point_sec();
@@ -53,8 +53,31 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
     
     // if actor doesn't have auth to account and want to add another bucket, contract will pay for ram
     name payer = ram_payer;
-    if (!has_auth(fund_itr->account) && (!fund_itr->rex_maturities.empty() && fund_itr->rex_maturities.back().first != maturity)) {
-      payer = _self;
+    auto rm = fund_itr->rex_maturities;
+    int size = rm.size();  
+    
+    if (maturity > now) {
+      if (size > 0 && rm.back().first < maturity) {
+        
+        // emplace back, pay ourselves
+        payer = _self;
+        rm.emplace_back(maturity, quantity.amount);
+      }
+      else if (size == 0 || rm.front().first > maturity) {
+        
+        // emplace front, pay ourselves
+        payer = _self;
+        rm.emplace_front(maturity, quantity.amount);
+      }
+      else {
+        
+        // modify, keep the payer
+        int i=0;
+        while (size > i) {
+          if (rm[i].first == maturity) { rm[i].second += quantity.amount; break; }
+          i++;
+        }
+      }
     }
     
     _fund.modify(fund_itr, payer, [&](auto& r) {
@@ -62,12 +85,7 @@ void buck::add_funds(const name& from, const asset& quantity, const name& ram_pa
         r.matured_rex += quantity.amount;
       }
       else {
-        if (!r.rex_maturities.empty() && r.rex_maturities.back().first == maturity) {
-          r.rex_maturities.back().second += quantity.amount;
-        }
-        else {
-          r.rex_maturities.emplace_back(maturity, quantity.amount);
-        }
+        r.rex_maturities = rm;
       }
     
       r.balance += quantity;
