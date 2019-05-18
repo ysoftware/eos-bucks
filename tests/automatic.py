@@ -193,8 +193,8 @@ class Test(unittest.TestCase):
 		return tokens
 
 	def compare(self, buck, cdp_table):
-		print("debtors")
-		test.print_table()
+		# print("debtors")
+		# test.print_table()
 		top_debtors = get_debtors(buck, limit=20)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
@@ -202,9 +202,9 @@ class Test(unittest.TestCase):
 			cdp = test.table[i * -1 - 1]
 			self.match(cdp, debtor)
 
-		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
-		test.print_table(test_liquidators)
+		# print("liquidators")
+		# test.print_table(test_liquidators)
 		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
