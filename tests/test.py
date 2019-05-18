@@ -183,7 +183,7 @@ def add_tax(cdp, price, m=False):
 		cdp.new_time(oracle_time)
 		CIT += accrued_col
 
-		print("add tax", cdp.id, accrued_debt, accrued_col)
+		# print("add tax", cdp.id, accrued_debt, accrued_col)
 	return cdp
 
 def update_tax(cdp, price, m=False):

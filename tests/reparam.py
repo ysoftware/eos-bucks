@@ -175,8 +175,28 @@ class Test(unittest.TestCase):
 		self.assertEqual(200, balance(buck, user1))
 
 
+		##############################
+		COMMENT("Reparam debtor CDP to insurer")
+		
+		transfer(eosio_token, user1, buck, "10.0000 EOS", "deposit")
+		
+		# mature rex
+		time += 500_000
+		maketime(buck, time)
+		update(buck, 100)
 
+		open(buck, user1, 1000, 0, "10000.0000 REX")
 
+		assertRaises(self, lambda: reparam(buck, user1, 10, "-1000.0001 BUCK", "0.0000 REX"))
+
+		reparam(buck, user1, 10, "-1000.0000 BUCK", "0.0000 REX")
+
+		# mature rex
+		time += 100
+		maketime(buck, time)
+		update(buck, 100)
+
+		table(buck, "cdp", limit=11)
 
 # main
 
