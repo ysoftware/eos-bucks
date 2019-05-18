@@ -72,10 +72,10 @@ def open(contract, user, ccr, acr, quantity):
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
-def update(contract, eos=200, runs=4):
+def update(contract, eos=200, runs=1):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="forceupdate", data={ "eos_price": eos }, permission=[(contract, "admin")])
 
-	for i in range(0, runs):
+	for i in range(0, runs + 2):
 		run(contract)
 
 def exchange(contract, user, quantity):

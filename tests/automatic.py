@@ -63,14 +63,16 @@ class Test(unittest.TestCase):
 			COMMENT(f"Cycle {cycle_i}")
 
 			try:
-				transfer(eosio_token, buck, user1, "1000000000.0000 EOS", "")
+				transfer(eosio_token, buck, user1, "100000000.0000 EOS", "")
 			except: pass
 
 			destroy(buck)
 			maketime(buck, 0)
 			update(buck, 1)
 
-			transfer(eosio_token, user1, buck, "1000000000.0000 EOS", "deposit")
+			transfer(eosio_token, user1, buck, "100000000.0000 EOS", "deposit")
+
+			initial_funds = fundbalance(buck, user1)
 
 			# mature rex
 			test.init()
@@ -134,12 +136,10 @@ class Test(unittest.TestCase):
 							else: redeem(buck, user1, quantity)
 
 				maketime(buck, round_time)
-				update(buck, test.price, 40)
+				update(buck, test.price, 3)
 				
 				##################################
-				COMMENT(f"Matching after round {round_i+1}")
-
-				# test.print_table()
+				COMMENT(f"Matching after round {round_i}")
 
 				# match cdps
 				self.compare(buck, test.table)
@@ -152,7 +152,7 @@ class Test(unittest.TestCase):
 				# self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["aggregated_excess"]), 0, "aggregated excesses don't match") # uint128 doesn't parse
 				print("+ Matched insurance pools")
 
-				# match supply
+				# match buck supply
 				supply = amount(table(buck, "stat", "BUCK", element="supply"))
 				user_balance = balance(buck, "user1")
 				scruge_balance = balance(buck, "scrugescruge")
@@ -160,16 +160,22 @@ class Test(unittest.TestCase):
 				savings_pool = amount(taxation["savings_pool"])
 				locked_in_requests = self.get_locked_in_requests_tokens()
 				circulation = scruge_balance + user_balance + collected_savings + savings_pool + locked_in_requests
-
-				print(supply, ":")
-				print(user_balance)
-				print(scruge_balance)
-				print(savings_pool)
-				print(collected_savings)
-				print(locked_in_requests)
-
 				self.assertAlmostEqual(supply, circulation, 4, "supply doesn't match total buck")
-				print("+ Matched total supply")
+				print("+ Matched buck supply")
+
+				# match funds + collateral
+				total_collateral = 0
+				for cdp in test.table:
+					total_collateral += cdp.collateral / 10000
+
+				insurance_pool = amount(taxation["insurance_pool"])
+				collected_insurance = amount(taxation["collected_excess"])
+				scruge_funds = fundbalance(buck, "scrugescruge")
+				current_balance = fundbalance(buck, "user1")
+				calculated_funds = insurance_pool + scruge_funds + total_collateral + current_balance + collected_insurance
+				self.assertAlmostEqual(initial_funds, calculated_funds, 4, "total funds don't match")
+				print("+ Matched rex supply")
+
 
 				##################################
 				COMMENT(f"Round {round_i} / {rounds} of cycle {cycle_i} complete.")
@@ -187,6 +193,8 @@ class Test(unittest.TestCase):
 		return tokens
 
 	def compare(self, buck, cdp_table):
+		print("debtors")
+		test.print_table()
 		top_debtors = get_debtors(buck, limit=20)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
@@ -194,7 +202,9 @@ class Test(unittest.TestCase):
 			cdp = test.table[i * -1 - 1]
 			self.match(cdp, debtor)
 
+		print("liquidators")
 		test_liquidators = sorted(test.table, key=test.liq_sort)
+		test.print_table(test_liquidators)
 		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
