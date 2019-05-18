@@ -17,7 +17,7 @@ oracle_time = 0
 
 def time_now():
 	global time
-	time += random.randint(1, 30 * 1440) * 60 # minutes
+	time += random.randint(1, 1440) * 60 # minutes
 	return time
 
 def epsilon(value): return 0 # value / 500
@@ -95,7 +95,7 @@ def gen(k, n):
 	global table, time, price
 	liquidators = generate_liquidators(k)
 	debtors = generate_debtors(k, n)
-	table = liquidators + debtors
+	table = sorted(liquidators + debtors, key=deb_sort)
 
 # Function for inserting CDP into the table
 
@@ -103,58 +103,6 @@ def cdp_insert(cdp): # add id primary sorting to all debtors
 	global table
 	table.append(cdp)
 	table = sorted(table, key=deb_sort)
-
-	# if table == []:
-	# 	table = [cdp]
-	# 	return
-	# c = cdp.collateral
-	# d = cdp.debt
-	# acr = cdp.acr
-	# cd = cdp.cd
-	# len_table = len(table)
-	# id = cdp.id / 100_000 # cdp id to the end of the index to match multi_index
-
-	# if (d <= epsilon(d)) and acr == 0:
-	# 	return
-	# elif (d <= epsilon(d)) and acr != 0:
-	# 	for i in range(0, len_table):
-	# 		cdp2 = table[i]
-	# 		id2 = cdp2.id / 100_000 # cdp id to the end of the index to match multi_index
-	# 		c2 = cdp2.collateral
-	# 		d2 = cdp2.debt
-	# 		if d2 > epsilon(d2):
-	# 			if (c * 100_000_000 // d) // acr + id > (c2 * 100_000_000 // d2) // acr2 + id2:
-	# 				table.insert(i, cdp)
-	# 				return
-	# 		acr2 = cdp2.acr
-	# 		cd2 = cdp2.cd
-	# 		if acr2 == 0:
-	# 			table.insert(i, cdp)
-	# 			return
-	# 		else:
-	# 			if c * 100_000_000 // acr + id > c2 * 100_000_000 // acr2 + id2:
-	# 				table.insert(i, cdp)
-	# 				return
-	# 	table.append(cdp)
-	# 	return
-	# else:
-	# 	# debtors
-	# 	for i in range(len(table)-1, -1, -1):
-	# 		cdp2 = table[i]
-	# 		d2 = cdp2.debt
-	# 		if d2 <= epsilon(d2): # debt 0
-	# 			table.insert(i+1, cdp)
-	# 			return
-	# 		c2 = cdp2.collateral
-	# 		d2 = cdp2.debt
-
-	# 		id2 = cdp2.id / 100_000 # cdp id to the end of the index to match multi_index
-
-	# 		if c * 100_000_000 // d + id <  c2 * 100_000_000 // d2 + id2:
-	# 			table.insert(i+1, cdp)
-	# 			return 
-	# 	table.insert(0, cdp)
-	# 	return 
 
 # Function for pulling out CDP from the table by querying its ID
 def cdp_index(id):
@@ -217,7 +165,7 @@ def calc_val(cdp, liquidator, price, cr, lf):
 
 # Taxes
 
-def add_tax(cdp, price):
+def add_tax(cdp, price, m=False):
 	global IDP, CIT, TEC, oracle_time
 
 	if cdp.debt > epsilon(cdp.debt) and oracle_time > cdp.time:
@@ -225,8 +173,9 @@ def add_tax(cdp, price):
 		v = int((exp((r*(oracle_time-cdp.time))/31_557_600) -1) * dm)
 		interest = int(cdp.debt * v) // dm
 
-		accrued_debt = max(1, interest * SR // 100)
-		accrued_col = (max(1, (interest * IR // price)))
+		minimum = 0 if m == False else 1
+		accrued_debt = max(minimum, interest * SR // 100)
+		accrued_col = (max(minimum, (interest * IR // price)))
 
 		cdp.add_debt(accrued_debt)
 		cdp.add_collateral(-accrued_col)
@@ -234,11 +183,11 @@ def add_tax(cdp, price):
 		cdp.new_time(oracle_time)
 		CIT += accrued_col
 
-		# print("add tax", cdp.id, accrued_debt, accrued_col)
+		print("add tax", cdp.id, accrued_debt, accrued_col)
 	return cdp
 
-def update_tax(cdp, price):
-	cdp = add_tax(cdp, price)
+def update_tax(cdp, price, m=False):
+	cdp = add_tax(cdp, price, m)
 	global IDP, AEC, CIT, TEC, oracle_time
 	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
@@ -587,7 +536,7 @@ def run_round(balance):
 					print("--- was d. c", cdp.debt, cdp.collateral)
 					print("reparam values:", new_ccr, new_col, new_debt)
 					pass
-				else: cdp = add_tax(cdp, price)
+				else: cdp = add_tax(cdp, price, True)
 				reparam_values.append([i, c, d, success])
 				cdp_insert(cdp)
 				k -= 1
@@ -655,4 +604,4 @@ def init():
 
 	gen(x, l)
 
-	# print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
+	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")
