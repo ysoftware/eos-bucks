@@ -142,9 +142,9 @@ class Test(unittest.TestCase):
 		# check balance 
 		self.assertAlmostEqual(0, balance(buck, user2))
 
-		self.assertAlmostEqual(6218.9053, fundbalance(buck, user2))
+		self.assertAlmostEqual(6188.1187, fundbalance(buck, user2))
 
-		self.assertAlmostEqual(5049.5051, fundbalance(buck, user1))
+		self.assertAlmostEqual(5049.505, fundbalance(buck, user1))
 
 
 # main
