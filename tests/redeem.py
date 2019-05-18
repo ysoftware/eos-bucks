@@ -92,14 +92,14 @@ class Test(unittest.TestCase):
 		##############################
 		COMMENT("Match")
 
-		# use col: debt / (price + rf)
+		# use col: debt / (price * (100 + rf) / 100)
 
 		# collateral 		10000.0000
 		# using deb:		500.0000
-		# using col:		248.7562
+		# using col:		247.5247
 
 		# calculated leftover collateral for cdp 0
-		self.assertEqual(9751.2438, amount(table(buck, "cdp", row=0, element="collateral")))
+		self.assertEqual(9752.4753, amount(table(buck, "cdp", row=0, element="collateral")))
 		self.assertEqual(9500, amount(table(buck, "cdp", row=0, element="debt")))
 
 		# check redeem request gone
@@ -108,23 +108,22 @@ class Test(unittest.TestCase):
 		# check balance taken
 		self.assertAlmostEqual(12000, balance(buck, user2))
 
-		# value calculated with formula
-		self.assertAlmostEqual(248.7562, fundbalance(buck, user2))
+		self.assertAlmostEqual(247.5247, fundbalance(buck, user2))
 
 		##############################
 		COMMENT("Redeem")
 
 		redeem(buck, user2, "12000.0000 BUCK")
 
-		# collateral 		9751.2438
+		# collateral 		9752.4753
 		# using deb:		9500.0000
-		# using col:		4726.3681
-		# return to debtor:	5024.8757
+		# using col:		4702.9702
+		# return to debtor:	5049.5051
 
 		# collateral 		10000.0000
 		# using deb:		2500.0000
-		# using col:		1243.7810
-		# left col:			8756.2190
+		# using col:		1237.6237
+		# left col:			8762.3763
 		# left deb:			7500.0000
 
 		time += 1
@@ -134,7 +133,7 @@ class Test(unittest.TestCase):
 		# check 1 cdp left
 		self.assertEqual(1, len(table(buck, "cdp", row=None)))
 
-		self.assertEqual(8756.2190, amount(table(buck, "cdp", row=0, element="collateral")))
+		self.assertEqual(8762.3763, amount(table(buck, "cdp", row=0, element="collateral")))
 		self.assertEqual(7500.0000, amount(table(buck, "cdp", row=0, element="debt")))
 
 		# check redeem request gone
@@ -143,11 +142,9 @@ class Test(unittest.TestCase):
 		# check balance 
 		self.assertAlmostEqual(0, balance(buck, user2))
 
-		# value calculated with formula
 		self.assertAlmostEqual(6218.9053, fundbalance(buck, user2))
 
-		# value calculated with formula
-		self.assertAlmostEqual(5024.8757, fundbalance(buck, user1))
+		self.assertAlmostEqual(5049.5051, fundbalance(buck, user1))
 
 
 # main
