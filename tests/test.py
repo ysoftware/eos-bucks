@@ -143,13 +143,10 @@ def calc_lf(cdp, price, cr, lf):
 		l = ccr - 100
 	return l
 
-def x_value(d, l, c, p):
-		x = int((100+l)*(750*d-5*c*p) // (50000-1500*l))
-		return x
 
 def calc_bad_debt(cdp, price, cr, lf):
 	ccr = calc_ccr(cdp, price)
-	val = (cr-ccr) * cdp.debt // 100 + x_value(cdp.debt, lf, cdp.collateral, price)
+	val = (cr*cdp.debt-cdp.collateral * price) // (cr - 100 - lf)
 	return int(val)
 
 def calc_val(cdp, liquidator, price, cr, lf):
@@ -289,7 +286,7 @@ def liquidation(price, cr, lf):
 
 		l = calc_lf(debtor, price, cr, lf)
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
-		use_c = min(use_d * 10000 // (price*(100-l)), debtor.collateral) # use col
+		use_c = min(use_d * (100+lf) // price), debtor.collateral) # use col
 
 		# print("use d", use_d)
 		# print("use c", use_c, "\n")
