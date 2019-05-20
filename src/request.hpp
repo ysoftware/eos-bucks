@@ -73,9 +73,6 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
     amount_maturity = sub_funds(cdp_itr->account, change_collateral);
   }
   
-  const auto now = get_current_time_point();
-  check(cdp_itr->maturity <= now || change_collateral.amount >= 0, "can not remove immature cdp collateral");
-  
   _reparamreq.emplace(account, [&](auto& r) {
     r.cdp_id = cdp_id;
     r.account = cdp_itr->account;
@@ -119,7 +116,6 @@ void buck::close(uint64_t cdp_id) {
   
   cancel_previous_requests(cdp_itr->id);
   
-  check(cdp_itr->maturity <= get_current_time_point(), "can not close immature cdp");
   const auto close_itr = _closereq.find(cdp_id);
   check(close_itr == _closereq.end(), "close request already exists");
   
