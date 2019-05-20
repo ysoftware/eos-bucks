@@ -286,7 +286,7 @@ def liquidation(price, cr, lf):
 
 		l = calc_lf(debtor, price, cr, lf)
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
-		use_c = min(use_d * (100+lf) // price), debtor.collateral) # use col
+		use_c = min((use_d * (100+lf) // price), debtor.collateral) # use col
 
 		# print("use d", use_d)
 		# print("use c", use_c, "\n")
@@ -593,7 +593,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 30
+	x = 10
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
