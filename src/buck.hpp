@@ -198,7 +198,7 @@ CONTRACT buck : public contract {
         if (debt.amount == 0) return double icr / c // descending c/icr
 
         const double cd = uint128_t(collateral.amount) * 100 / debt.amount;
-        return MAX_ICR / MIN_COLLATERAL.amount +  cd / icr; // descending cd/icr
+        return MAX_ICR / MIN_COLLATERAL.amount + 1 +  cd / icr; // descending cd/icr
       }
       
       // index to search for debtors with highest dcr
