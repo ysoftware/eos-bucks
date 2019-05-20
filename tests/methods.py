@@ -145,8 +145,8 @@ def fundexbalance(buck, user):
 	return amount(table(buck, "fund", field="account", value=user, element="exchange_balance"))
 
 def get_cdp(buck, id, element=None): return table(buck, "cdp", buck, lower=id, upper=id, limit=1, element=element)
-def get_debtors(buck, limit=1): return table(buck, "cdp", index=2, limit=limit, row=None)
-def get_liquidators(buck, limit=1): return table(buck, "cdp", index=3, limit=limit, row=None)
+def get_debtors(buck, limit=1): return table(buck, "cdp", index=2, limit=limit, row=None, keytype="float64")
+def get_liquidators(buck, limit=1): return table(buck, "cdp", index=3, limit=limit, row=None, keytype="float64")
 
 # requests
 
