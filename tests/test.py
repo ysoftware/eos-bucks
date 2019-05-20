@@ -211,22 +211,22 @@ def ds(collateral, debt, id): # in reverse
 	MAX = 100_000_000_000_000_000_000
 
 	if debt == 0 or collateral == 0:
-		return -id
+		return - id / 10000
 
 	cd = collateral * 10_000_000_000_000 // debt
-	return (MAX - cd)    * 1_000 - id
+	return (MAX - cd)    + id / 10000
 
 def ls(collateral, debt, acr, id):
 	MAX = 100_000_000_000_000_000_000
 
 	if acr == 0 or collateral == 0:
-		return (MAX * 3)    * 1_000 + id
+		return (MAX * 3)    + id / 10000
 
 	if debt == 0:
-		return (MAX - collateral * 10_000 // acr)   * 1_000 - id
+		return (MAX - collateral * 10_000 // acr)   - id / 10000
 
 	cd = collateral * 10_000_000_000_000 // debt
-	return (MAX * 2 - cd // acr)   * 1_000 + id
+	return (MAX * 2 - cd // acr)   + id / 10000
 
 def liquidation(price, cr, lf):	
 	# print("liquidation")
