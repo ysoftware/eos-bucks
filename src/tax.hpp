@@ -97,10 +97,10 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min
 }
 
 void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->debt.amount > 0 || cdp_itr->acr == 0) return;
+  if (cdp_itr->debt.amount > 0 || cdp_itr->icr == 0) return;
   
   const auto& tax = *_tax.begin();
-  const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
+  const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->icr;
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   
@@ -114,14 +114,14 @@ void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
 }
 
 void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->acr == 0 || cdp_itr->debt.amount > 0) return;
+  if (cdp_itr->icr == 0 || cdp_itr->debt.amount > 0) return;
   const auto& tax = *_tax.begin();
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t delta_t = now - cdp_itr->modified_round;
   
-  const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->acr;
+  const uint64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->icr;
   const uint128_t agec = uint128_t(excess) * delta_t;
   
   int64_t dividends_amount = 0;

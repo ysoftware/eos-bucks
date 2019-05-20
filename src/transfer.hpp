@@ -94,7 +94,7 @@ void buck::freeram(const name& account) {
   run(10);
 }
 
-void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr) {
+void buck::open(const name& account, const asset& quantity, uint16_t dcr, uint16_t icr) {
   require_auth(account);
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
@@ -102,12 +102,12 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   check(quantity.amount > 0, "can not use negative value");
   check(quantity.symbol == REX, "can not use asset with different symbol");
   
-  check(ccr >= CR || ccr == 0, "ccr value is too small");
-  check(acr >= CR || acr == 0, "acr value is too small");
-  check(acr != 0 || ccr != 0, "acr and ccr can not be both 0");
+  check(dcr >= CR || dcr == 0, "dcr value is too small");
+  check(icr >= CR || icr == 0, "icr value is too small");
+  check(icr != 0 || dcr != 0, "icr and dcr can not be both 0");
   
-  check(ccr < 1'000'00, "ccr value is too high");
-  check(acr < 1'000'00, "acr value is too high");
+  check(dcr < 1'000'00, "dcr value is too high");
+  check(icr < 1'000'00, "icr value is too high");
   
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
@@ -116,10 +116,10 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   const auto min_collateral = convert(MIN_COLLATERAL.amount, true);
   check(quantity.amount >= min_collateral, "not enough collateral");
   
-  if (ccr > 0) {
+  if (dcr > 0) {
     
     // check if debt amount is above the limit (actual amount is calculated at maturity)
-    const auto debt_amount = to_buck(quantity.amount) / ccr;
+    const auto debt_amount = to_buck(quantity.amount) / dcr;
     issue_debt = asset(debt_amount, BUCK);
     check(issue_debt >= MIN_DEBT, "not enough collateral to receive minimum debt");
   }
@@ -134,7 +134,7 @@ void buck::open(const name& account, const asset& quantity, uint16_t ccr, uint16
   _cdp.emplace(account, [&](auto& r) {
     r.id = id;
     r.account = account;
-    r.acr = acr;
+    r.icr = icr;
     r.collateral = quantity;
     r.debt = issue_debt;
     r.modified_round = now;

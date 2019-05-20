@@ -54,8 +54,8 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   const asset new_collateral = cdp_itr->collateral + change_collateral;
   
   if (new_debt.amount > 0) {
-    const auto ccr = to_buck(new_collateral.amount) / new_debt.amount;
-    check(ccr >= CR, "can not reparametrize CCR below CR");
+    const auto dcr = to_buck(new_collateral.amount) / new_debt.amount;
+    check(dcr >= CR, "can not reparametrize dcr below CR");
   }
   
   check(new_debt >= MIN_DEBT || new_debt.amount == 0, "can not reparametrize debt below the limit");
@@ -85,23 +85,23 @@ void buck::change(uint64_t cdp_id, const asset& change_debt, const asset& change
   run_requests(10);
 }
 
-void buck::changeacr(uint64_t cdp_id, uint16_t acr) {
+void buck::changeicr(uint64_t cdp_id, uint16_t icr) {
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
-  check(acr >= CR || acr == 0, "acr value is too small");
-  check(acr < 1000, "acr value is too high");
+  check(icr >= CR || icr == 0, "icr value is too small");
+  check(icr < 1000, "icr value is too high");
   
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   require_auth(cdp_itr->account);
   
-  check(cdp_itr->acr != acr, "acr is already set to this value");
-  check(cdp_itr->debt.amount != 0 || acr != 0, "can not set 0 acr for cdp with 0 debt");
+  check(cdp_itr->icr != icr, "icr is already set to this value");
+  check(cdp_itr->debt.amount != 0 || icr != 0, "can not set 0 icr for cdp with 0 debt");
   
   accrue_interest(cdp_itr, true);
   remove_excess_collateral(cdp_itr);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
-    r.acr = acr;
+    r.icr = icr;
   });
   
   set_excess_collateral(cdp_itr);

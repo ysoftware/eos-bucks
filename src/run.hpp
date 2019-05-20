@@ -92,8 +92,8 @@ void buck::run_requests(uint8_t max) {
           }
           else {
             
-            int32_t ccr = to_buck(cdp_itr->collateral.amount) / new_debt.amount;
-            if (ccr >= CR) {
+            int32_t dcr = to_buck(cdp_itr->collateral.amount) / new_debt.amount;
+            if (dcr >= CR) {
               const int64_t m = cdp_itr->collateral.amount - to_rex(CR * new_debt.amount, 0);
               const int64_t change_amount = std::max(-m, reparam_itr->change_collateral.amount); // min out of negatives
               change_collateral = asset(change_amount, REX);
@@ -114,9 +114,9 @@ void buck::run_requests(uint8_t max) {
           
           if (cdp_itr->debt.amount > 0) {
             
-            const int32_t ccr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
+            const int32_t dcr = to_buck(new_collateral_amount) / cdp_itr->debt.amount;
             
-            if (ccr >= CR) {
+            if (dcr >= CR) {
               max_debt = (to_buck(new_collateral_amount * 100) / (CR * cdp_itr->debt.amount) - 100) * cdp_itr->debt.amount / 100;
             }
           }
@@ -191,10 +191,10 @@ void buck::run_requests(uint8_t max) {
             continue;
           }
           
-          const int32_t ccr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
+          const int32_t dcr = to_buck(debtor_itr->collateral.amount) / debtor_itr->debt.amount;
           
-          // all further debtors have even worse ccr
-          if (ccr < 100 - RF) { 
+          // all further debtors have even worse dcr
+          if (dcr < 100 - RF) { 
             debtors_failed++;
             debtor_itr++;
             continue;
@@ -296,16 +296,16 @@ void buck::run_liquidation(uint8_t max) {
     
     const int64_t debt_amount = debtor_itr->debt.amount;
     const int64_t collateral_amount = debtor_itr->collateral.amount;
-    const int64_t debtor_ccr = to_buck(collateral_amount) / debt_amount;
+    const int64_t debtor_dcr = to_buck(collateral_amount) / debt_amount;
     
-    if (debtor_ccr >= CR) {
+    if (debtor_dcr >= CR) {
       
       set_liquidation_status(LiquidationStatus::liquidation_complete);
       return;
     }
     
-    // check acr
-    if (liquidator_itr->acr == 0) {
+    // check icr
+    if (liquidator_itr->icr == 0) {
       
       set_liquidation_status(LiquidationStatus::failed);
       return;
@@ -317,27 +317,27 @@ void buck::run_liquidation(uint8_t max) {
     
     const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
     const int64_t liquidator_debt = liquidator_itr->debt.amount;
-    const int64_t liquidator_acr = liquidator_itr->acr;
+    const int64_t liquidator_icr = liquidator_itr->icr;
     
-    int64_t liquidator_ccr = 9999999;
+    int64_t liquidator_dcr = 9999999;
     if (liquidator_debt > 0) {
-      liquidator_ccr = to_buck(liquidator_collateral) / liquidator_debt;
+      liquidator_dcr = to_buck(liquidator_collateral) / liquidator_debt;
     }
     
-    if (liquidator_ccr < CR || liquidator_debt > 0 && liquidator_ccr <= liquidator_acr) {
+    if (liquidator_dcr < CR || liquidator_debt > 0 && liquidator_dcr <= liquidator_icr) {
       set_liquidation_status(LiquidationStatus::failed);
       return;
     }
     
     int64_t liquidation_fee = LF;
-    if (debtor_ccr >= 100 + LF) { liquidation_fee = LF; }
-    else if (debtor_ccr < 75) { liquidation_fee = -25; }
-    else { liquidation_fee = debtor_ccr - 100; }
+    if (debtor_dcr >= 100 + LF) { liquidation_fee = LF; }
+    else if (debtor_dcr < 75) { liquidation_fee = -25; }
+    else { liquidation_fee = debtor_dcr - 100; }
     
     const int64_t bad_debt = (CR * debt_amount - to_buck(collateral_amount)) / (CR - 100 - liquidation_fee);
     
-    const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
-        * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
+    const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_icr)) 
+        * (100 - liquidation_fee) / (liquidator_icr * (100 - liquidation_fee) - 10'000);
     
     const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
     const int64_t value2 = to_rex(used_debt_amount * 100, 0) * (100 + liquidation_fee) / 100;

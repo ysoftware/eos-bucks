@@ -9,9 +9,9 @@ CONTRACT buck : public contract {
     
     // user
     ACTION withdraw(const name& account, const asset& quantity);
-    ACTION open(const name& account, const asset& quantity, uint16_t ccr, uint16_t acr);
+    ACTION open(const name& account, const asset& quantity, uint16_t dcr, uint16_t icr);
     ACTION change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral);
-    ACTION changeacr(uint64_t cdp_id, uint16_t acr);
+    ACTION changeicr(uint64_t cdp_id, uint16_t icr);
     ACTION close(uint64_t cdp_id);
     ACTION redeem(const name& account, const asset& quantity);
     ACTION transfer(const name& from, const name& to, const asset& quantity, const std::string& memo);
@@ -161,11 +161,11 @@ CONTRACT buck : public contract {
     
     TABLE cdp {
       uint64_t        id;
-      uint16_t        acr;
+      uint16_t        icr;
       name            account;
       asset           debt;
       asset           collateral;
-      uint32_t        modified_round; // accrual round
+      uint32_t        modified_round; // adcrual round
       time_point_sec  maturity;       // maturity of REX collateral
       
       #if DEBUG
@@ -173,7 +173,7 @@ CONTRACT buck : public contract {
         eosio::print("#");eosio::print(id);
         eosio::print(" c: ");eosio::print(collateral);
         eosio::print(" d: ");eosio::print(debt);
-        eosio::print(" acr: ");eosio::print(acr);
+        eosio::print(" icr: ");eosio::print(icr);
         eosio::print(" time: ");eosio::print(modified_round);
         eosio::print("\n");
       }
@@ -194,15 +194,15 @@ CONTRACT buck : public contract {
         
         static const uint64_t MAX = 1'000'000'000'000'000'000; // almost uint64max
         
-        if (acr == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
+        if (icr == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
         
-        if (debt.amount == 0) return MAX - uint128_t(collateral.amount) * 10'000 / acr; // descending c/acr
+        if (debt.amount == 0) return MAX - uint128_t(collateral.amount) * 10'000 / icr; // descending c/icr
 
         const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000 / debt.amount;
-        return MAX * 2 - cd / acr; // descending cd/acr
+        return MAX * 2 - cd / icr; // descending cd/icr
       }
       
-      // index to search for debtors with highest ccr
+      // index to search for debtors with highest dcr
       uint64_t debtor() const {
         
         if (debt.amount == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
