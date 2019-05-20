@@ -21,7 +21,7 @@ void buck::zdestroy() {
   RMS(accounts_i, "yaroslaveroh"_n.value)
   RMS(accounts_i, "scrugeosbuck"_n.value)
   RMS(accounts_i, "testaccountp"_n.value)
-  RMS(accounts_i, "scrugescruge"_n.value)
+  RMS(accounts_i, "equityscruge"_n.value)
   RMS(accounts_i, "user1"_n.value)
   RMS(accounts_i, "user2"_n.value)
   RMS(accounts_i, "user3"_n.value)
