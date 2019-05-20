@@ -1,5 +1,5 @@
 // Copyright © Scruge 2019.
-// This file is part of Scruge stable coin project.
+// This file is part of Buck Protocol.
 // Created by Yaroslav Erohin.
 
 inline void buck::inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract) {

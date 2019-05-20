@@ -1,5 +1,5 @@
 // Copyright © Scruge 2019.
-// This file is part of Scruge stable coin project.
+// This file is part of Buck Protocol.
 // Created by Yaroslav Erohin.
 
 void buck::cancel_previous_requests(uint64_t cdp_id) {

@@ -1,3 +1,8 @@
+# coding: utf8
+# Copyright © Scruge 2019.
+# This file is part of Buck Protocol.
+# Created by Yaroslav Erohin.
+
 import random
 from math import exp
 

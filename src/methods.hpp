@@ -1,5 +1,5 @@
 // Copyright © Scruge 2019.
-// This file is part of Scruge stable coin project.
+// This file is part of Buck Protocol.
 // Created by Yaroslav Erohin.
 
 void buck::add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer) {

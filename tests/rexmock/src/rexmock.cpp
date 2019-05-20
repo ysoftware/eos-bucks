@@ -1,3 +1,7 @@
+// Copyright © Scruge 2019.
+// This file is part of Buck Protocol.
+// Created by Yaroslav Erohin.
+
 #include <rexmock.hpp>
 
 const uint64_t eos_price = 1000; // in REX
