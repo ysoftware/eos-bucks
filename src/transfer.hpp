@@ -106,8 +106,8 @@ void buck::open(const name& account, const asset& quantity, uint16_t dcr, uint16
   check(icr >= CR || icr == 0, "icr value is too small");
   check(icr != 0 || dcr != 0, "icr and dcr can not be both 0");
   
-  check(dcr < MAX_ICR, "dcr value is too high");
-  check(icr < MAX_ICR, "icr value is too high");
+  check(dcr <= MAX_ICR, "dcr value is too high");
+  check(icr <= MAX_ICR, "icr value is too high");
   
   const time_point oracle_timestamp = _stat.begin()->oracle_timestamp;
   const uint32_t now = time_point_sec(oracle_timestamp).utc_seconds;
