@@ -334,14 +334,13 @@ void buck::run_liquidation(uint8_t max) {
     else if (debtor_ccr < 75) { liquidation_fee = -25; }
     else { liquidation_fee = debtor_ccr - 100; }
     
-    
-    const int64_t bad_debt = (CR*debt_amount-to_buck(collateral.amount))/(CR-100-liquidation_fee)
+    const int64_t bad_debt = (CR * debt_amount - to_buck(collateral_amount)) / (CR - 100 - liquidation_fee);
     
     const int64_t bailable = (to_buck(liquidator_collateral) - (liquidator_debt * liquidator_acr)) 
         * (100 - liquidation_fee) / (liquidator_acr * (100 - liquidation_fee) - 10'000);
     
     const int64_t used_debt_amount = std::min(std::min(bad_debt, bailable), debt_amount);
-    const int64_t value2 = to_rex(used_debt_amount  * 100) * (100+liquidation_fee) / 100
+    const int64_t value2 = to_rex(used_debt_amount * 100, 0) * (100 + liquidation_fee) / 100;
     
     const int64_t used_collateral_amount = std::min(collateral_amount, value2);
     
