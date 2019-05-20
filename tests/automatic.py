@@ -146,7 +146,7 @@ class Test(unittest.TestCase):
 
 				# match taxes
 				taxation = table(buck, "taxation")
-				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 4, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 3, "insurance pools don't match")
 				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["total_excess"]), 0, "total excesses don't match")
 				self.assertAlmostEqual(unpack(test.CIT), amount(taxation["collected_excess"]), 0, "collected insurances don't match")
 				# self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["aggregated_excess"]), 0, "aggregated excesses don't match") # uint128 doesn't parse
@@ -173,7 +173,7 @@ class Test(unittest.TestCase):
 				scruge_funds = fundbalance(buck, "scrugescruge")
 				current_balance = fundbalance(buck, "user1")
 				calculated_funds = insurance_pool + scruge_funds + total_collateral + current_balance + collected_insurance
-				self.assertAlmostEqual(initial_funds, calculated_funds, 4, "total funds don't match")
+				self.assertAlmostEqual(initial_funds, calculated_funds, 3, "total funds don't match")
 				print("+ Matched rex supply")
 
 
@@ -193,9 +193,9 @@ class Test(unittest.TestCase):
 		return tokens
 
 	def compare(self, buck, cdp_table):
-		# print("debtors")
-		# test.print_table()
-		top_debtors = get_debtors(buck, limit=20)
+		print("debtors")
+		test.print_table()
+		top_debtors = get_debtors(buck, limit=100)
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
@@ -203,9 +203,9 @@ class Test(unittest.TestCase):
 			self.match(cdp, debtor)
 
 		test_liquidators = sorted(test.table, key=test.liq_sort)
-		# print("liquidators")
-		# test.print_table(test_liquidators)
-		top_liquidators = get_liquidators(buck, limit=20)
+		print("liquidators")
+		test.print_table(test_liquidators)
+		top_liquidators = get_liquidators(buck, limit=100)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["icr"] == 0: break # unsorted end of the table
@@ -218,8 +218,8 @@ class Test(unittest.TestCase):
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["icr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 4, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 4, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
 
 		print(f"+ Matched cdp #{cdp.id}")

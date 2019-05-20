@@ -88,7 +88,7 @@ def exchange(contract, user, quantity):
 def close(contract, user, cdp_id):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="close", data={ "cdp_id": cdp_id }, permission=[(user, Permission.ACTIVE)])
 
-def run(contract, max=100):
+def run(contract, max=50):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="run", data={ "max": max }, permission=[(contract, Permission.ACTIVE)])
 
 def reparam(contract, user, cdp_id, change_debt, change_collat):
