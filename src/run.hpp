@@ -213,7 +213,7 @@ void buck::run_requests(uint8_t max) {
             const asset left_over_collateral = debtor_itr->collateral - using_collateral;
             
             if (left_over_collateral.amount > 0) {
-              add_funds(debtor_itr->account, left_over_collateral, same_payer, FAR_PAST);
+              add_funds(debtor_itr->account, left_over_collateral, same_payer, debtor_itr->maturity);
             }
             
             debtor_index.erase(debtor_itr); 
