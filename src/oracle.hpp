@@ -3,7 +3,7 @@
 // Created by Yaroslav Erohin and Dmitry Morozov.
 
 void buck::setoperation(uint8_t level) {
-  require_auth(permission_level(_self, "admin"_n));
+  require_auth(_self);
   _stat.modify(_stat.begin(), same_payer, [&](auto& r) {
     r.operation_status = level;
   });
