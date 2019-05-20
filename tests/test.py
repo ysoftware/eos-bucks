@@ -580,7 +580,7 @@ def run_round(balance):
 	new_table = table.copy()
 	table = []
 	for cdp in new_table:
-		if oracle_time - cdp.time > 2629800:
+		if oracle_time - cdp.time > 1314900:
 			cdp = add_tax(cdp, price)
 		cdp_insert(cdp)
 
