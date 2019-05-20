@@ -598,7 +598,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 10
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
