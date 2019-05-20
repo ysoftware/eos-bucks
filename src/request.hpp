@@ -89,7 +89,7 @@ void buck::changeicr(uint64_t cdp_id, uint16_t icr) {
   check(check_operation_status(0), "cdp operations have been temporarily frozen");
   
   check(icr >= CR || icr == 0, "icr value is too small");
-  check(icr < 1000, "icr value is too high");
+  check(icr < MAX_ICR, "icr value is too high");
   
   const auto cdp_itr = _cdp.require_find(cdp_id, "debt position does not exist");
   require_auth(cdp_itr->account);

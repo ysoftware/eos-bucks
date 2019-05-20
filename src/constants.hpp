@@ -54,4 +54,5 @@ const uint64_t RF = 1;   /// redemption fee
 const uint64_t SP = 20;  /// part of taxes for scruge
 const uint64_t SR = 80;   /// savings ratio
 const uint64_t IR = 20;   /// insurance ratio
+const uint64_t MAX_ICR = 1000;   /// maximum ratio for ICR
 const double AR = 0.05;   /// annual interest rate
