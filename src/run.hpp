@@ -48,7 +48,7 @@ void buck::run_requests(uint8_t max) {
         
         remove_excess_collateral(cdp_itr);
         update_supply(-cdp_itr->debt);
-        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer, FAR_PAST);
+        add_funds(cdp_itr->account, cdp_itr->collateral, same_payer, cdp_itr->maturity);
         _cdp.erase(cdp_itr);
         close_itr = _closereq.erase(close_itr);
         did_work = true;
@@ -102,7 +102,7 @@ void buck::run_requests(uint8_t max) {
 
           // if not 0, add funds
           if (change_collateral.amount < 0) {
-            add_funds(cdp_itr->account, -change_collateral, same_payer, FAR_PAST);
+            add_funds(cdp_itr->account, -change_collateral, same_payer, cdp_itr->maturity);
           }
         }
         
