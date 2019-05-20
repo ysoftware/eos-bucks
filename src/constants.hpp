@@ -40,7 +40,7 @@ static const asset& MIN_DEBT       = asset(50'0000, BUCK);
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;
 static const name& EOSIO       = "eosio"_n;
-static const name& SCRUGE      = "scrugescruge"_n;
+static const name& SCRUGE      = "equityscruge"_n;
 
 #if REX_TESTING
 /// account on jungle/local test net
