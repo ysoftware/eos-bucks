@@ -185,7 +185,8 @@ def add_tax(cdp, price, m=False):
 		cdp.new_time(oracle_time)
 		CIT += accrued_col
 
-		# print("add tax", cdp.id, accrued_debt, accrued_col)
+		print("add tax", cdp.id, accrued_debt, accrued_col)
+		print(cdp)
 	return cdp
 
 def update_tax(cdp, price, m=False):
@@ -338,14 +339,14 @@ def redemption(amount, price):
 
 	# print_table()
 
-	# print("\n\nredeem", amount)
+	print("\n\nredeem", amount)
 
 	debtors_failed = 0
 	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
 		cdp = table.pop(i)
 		cdp = add_tax(cdp, price)
 
-		# print(cdp)
+		print(cdp)
 
 		if cdp.debt < 500000 + epsilon(500000):
 			cdp_insert(cdp)
@@ -388,7 +389,7 @@ def redemption(amount, price):
 
 			amount -= d
 			i -= 1
-	# print("redeem left over", amount)
+	print("redeem left over", amount)
 	return
 
 def reparametrize(id, c, d, price):
@@ -400,7 +401,7 @@ def reparametrize(id, c, d, price):
 		return
 
 	cdp = table.pop(idx)
-	# print("reparam", cdp)
+	print("reparam", cdp)
 
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC -= cdp.collateral * 100 // cdp.acr
@@ -454,14 +455,14 @@ def reparametrize(id, c, d, price):
 	if cdp.acr != 0 and cdp.debt <= epsilon(cdp.debt):
 		TEC += cdp.collateral * 100 // cdp.acr
 	cdp_insert(cdp)
-	# print("done", cdp, "\n")
+	print("done", cdp, "\n")
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
 	if acr < CR or acr > 100000:
 		return False
 
-	# print("acr...")
+	print("acr...")
 	cdp = table.pop(cdp_index(id))
 
 	if cdp.acr == acr:
@@ -503,7 +504,7 @@ def run_round(balance):
 	length = len(table)
 	if length == 0: return [time, actions]
 
-	# print(f"time: {time}")
+	print(f"time: {time}")
 
 	# acr requests get processed immediately
 	if ACR and length > 1:
@@ -552,7 +553,7 @@ def run_round(balance):
 	time_now()
 	update_round()
 
-	# print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
+	print(f"<<<<<<<<\nnew time: {time}, price: {price} (last price: {old_price})\n")
 
 	# other requests get processed after oracle update
 
@@ -598,7 +599,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 10
+	x = 4
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
