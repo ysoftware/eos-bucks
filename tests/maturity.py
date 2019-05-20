@@ -156,11 +156,7 @@ class Test(unittest.TestCase):
 
 		reparam(buck, user1, 0, "0.0000 BUCK", "3.0000 REX")
 
-		# not raised, because only adding collateral
 		reparam(buck, user1, 1, "0.0000 BUCK", "1000.0000 REX")
-
-		# raised because removing collateral (also replaces previous request)
-		assertRaises(self, lambda: reparam(buck, user1, 1, "0.0000 BUCK", "-1000.0000 REX"))
 
 		time += D * 3 # day 11
 		maketime(buck, time)
@@ -180,6 +176,40 @@ class Test(unittest.TestCase):
 		self.assertEqual("1970-01-01T00:00:00", cdp[0]["maturity"])
 		self.assertEqual("1970-01-12T00:00:00", cdp[1]["maturity"])
 		
+
+		####################################
+		COMMENT("Maturity returns with cdp close/reparam")
+
+
+		time += D * 100 # day 1 for new cycle (1970-04-26T00:00:00)
+		maketime(buck, time)
+		update(buck)
+		
+		withdraw(buck, user1, "989.0000 REX")
+
+		# new funds, receive 1986 REX
+		transfer(eosio_token, user1, buck, "2.0000 EOS", "deposit")
+
+		# use all for cdp
+		open(buck, user1, 200, 0, "1986.0000 REX")
+
+		# check funds
+		self.assertEqual(0, fundbalance(buck, user1))
+		self.assertEqual(0, len(table(buck, "fund", row=1, element="rex_maturities")))
+
+		# close request
+		close(buck, user1, 2)
+
+		time += 600
+		maketime(buck, time)
+		update(buck)
+		
+		# check funds
+		self.assertEqual(1986, fundbalance(buck, user1))
+		self.assertEqual("1970-04-26T00:00:00", table(buck, "fund", row=1, element="rex_maturities")[0]["first"])
+		self.assertEqual(1986_0000, table(buck, "fund", row=1, element="rex_maturities")[0]["second"])
+
+
 
 
 
