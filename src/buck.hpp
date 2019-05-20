@@ -192,12 +192,11 @@ CONTRACT buck : public contract {
       // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {
         
-        
         if (icr == 0 || collateral.amount == 0) return 999999999999; // end of the table
         
-        if (debt.amount == 0) return double icr / c // descending c/icr
+        if (debt.amount == 0) return double(icr) / double(collateral.amount); // descending c/icr
 
-        const double cd = uint128_t(collateral.amount) * 100 / debt.amount;
+        const double cd = double(collateral.amount) / debt.amount;
         return MAX_ICR / MIN_COLLATERAL.amount + 1 +  cd / icr; // descending cd/icr
       }
       
@@ -223,8 +222,8 @@ CONTRACT buck : public contract {
     typedef multi_index<"process"_n, processing> processing_i;
     
     typedef multi_index<"cdp"_n, cdp,
-      indexed_by<"debtor"_n, const_mem_fun<cdp, uint64_t, &cdp::debtor>>,
-      indexed_by<"liquidator"_n, const_mem_fun<cdp, uint64_t, &cdp::liquidator>>,
+      indexed_by<"debtor"_n, const_mem_fun<cdp, double, &cdp::debtor>>,
+      indexed_by<"liquidator"_n, const_mem_fun<cdp, double, &cdp::liquidator>>,
       indexed_by<"accrued"_n, const_mem_fun<cdp, uint64_t, &cdp::by_accrued_time>>,
       indexed_by<"byaccount"_n, const_mem_fun<cdp, uint64_t, &cdp::by_account>>
         > cdp_i;
