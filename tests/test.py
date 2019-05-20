@@ -213,7 +213,7 @@ def ds(collateral, debt, id): # in reverse
 	if debt == 0 or collateral == 0:
 		return -id
 
-	cd = collateral * 10_000_000_000_000_000 // debt
+	cd = collateral * 10_000_000_000_000 // debt
 	return (MAX - cd)    * 1_000 - id
 
 def ls(collateral, debt, acr, id):

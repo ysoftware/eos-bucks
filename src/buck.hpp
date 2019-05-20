@@ -207,7 +207,7 @@ CONTRACT buck : public contract {
         
         if (debt.amount == 0 || collateral.amount == 0) return UINT64_MAX; // end of the table
         
-        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000'000 / debt.amount;
+        const uint64_t cd = uint128_t(collateral.amount) * 10'000'000'000'000 / debt.amount;
         return cd; // ascending cd
       }
     };
