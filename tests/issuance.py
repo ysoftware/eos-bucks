@@ -98,9 +98,6 @@ class Test(unittest.TestCase):
 		open(buck, user1, 165, 0, "10000.0000 REX")
 		self.assertEqual(24242.4242, balance(buck, user1))
 
-		# not matured yet
-		assertRaises(self, lambda: close(buck, user1, 0))
-
 		self.assertEqual(0, fundbalance(buck, user1))
 
 		time += 500_000
