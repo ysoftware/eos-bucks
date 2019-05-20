@@ -87,7 +87,7 @@ class Test(unittest.TestCase):
 		cdp = table(buck, "cdp")
 		self.assertEqual(10000, amount(cdp["collateral"]))
 		self.assertEqual(debt, amount(cdp["debt"]))
-		self.assertAlmostEqual(0, float(cdp["acr"]))
+		self.assertAlmostEqual(0, float(cdp["icr"]))
 		self.assertEqual("user1", cdp["account"])
 		self.assertEqual("1970-01-06T00:00:00", cdp["maturity"]) # in 5 days
 

@@ -154,7 +154,7 @@ class Test(unittest.TestCase):
 
 		##############################
 
-		self.assertEqual(150, cdps[0]["acr"])
+		self.assertEqual(150, cdps[0]["icr"])
 
 		self.assertEqual(950, amount(cdps[5]["debt"]))
 		self.assertEqual(10000, amount(cdps[5]["collateral"]))

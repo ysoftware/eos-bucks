@@ -67,8 +67,8 @@ def open(contract, user, ccr, acr, quantity):
 	contract.push_action(force_unique=True, max_cpu_usage=30, action="open",
 		data={
 			"account": user,
-			"ccr": ccr,
-			"acr": acr,
+			"dcr": ccr,
+			"icr": acr,
 			"quantity": quantity
 		}, permission=[(user, Permission.ACTIVE)])
 
@@ -100,10 +100,10 @@ def reparam(contract, user, cdp_id, change_debt, change_collat):
 		}, permission=[(user, Permission.ACTIVE)])
 
 def changeacr(contract, user, cdp_id, acr):
-	contract.push_action(force_unique=True, max_cpu_usage=30, action="changeacr",
+	contract.push_action(force_unique=True, max_cpu_usage=30, action="changeicr",
 		data={
 			"cdp_id": cdp_id,
-			"acr": acr
+			"icr": acr
 		}, permission=[(user, Permission.ACTIVE)])
 
 def redeem(contract, user, quantity):

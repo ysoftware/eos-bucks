@@ -208,7 +208,7 @@ class Test(unittest.TestCase):
 		top_liquidators = get_liquidators(buck, limit=20)
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
-			if liquidator["acr"] == 0: break # unsorted end of the table
+			if liquidator["icr"] == 0: break # unsorted end of the table
 			cdp = test_liquidators[i]
 			self.match(cdp, liquidator)
 
@@ -217,7 +217,7 @@ class Test(unittest.TestCase):
 		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["acr"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
-		self.assertEqual(cdp.acr, row["acr"], "ACRs don't match")		
+		self.assertEqual(cdp.acr, row["icr"], "ACRs don't match")		
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 4, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 4, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
