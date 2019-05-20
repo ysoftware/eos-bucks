@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Buck Protocol.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 void buck::add_exchange_funds(const name& from, const asset& quantity, const name& ram_payer) {
   #if DEBUG

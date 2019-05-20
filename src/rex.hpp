@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Buck Protocol.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 void buck::process_maturities(const fund_i::const_iterator& fund_itr) {
   const time_point_sec now = current_time_point_sec();

@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Buck Protocol.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 void buck::exchange(const name& account, const asset quantity) {
   require_auth(account);

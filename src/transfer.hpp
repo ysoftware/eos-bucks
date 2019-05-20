@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Buck Protocol.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 void buck::transfer(const name& from, const name& to, const asset& quantity, const std::string& memo) {
   require_auth(from);

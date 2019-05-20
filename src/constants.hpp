@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Buck Protocol.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 /// defines if contract will print logs and enable debug features
 #define DEBUG false
@@ -22,6 +22,9 @@ static const asset& ZERO_REX   = asset(0, REX);
 static const asset& ZERO_EOS   = asset(0, EOS);
 
 static const time_point_sec FAR_PAST = time_point_sec(0);
+
+/// maximum ratio for ICR (%)
+const uint64_t MAX_ICR = 1000;   
 
 /// max % of price change available to oracle
 static const uint8_t ORACLE_MAX_PERCENT = 8;
@@ -54,5 +57,4 @@ const uint64_t RF = 1;   /// redemption fee
 const uint64_t SP = 20;  /// part of taxes for scruge
 const uint64_t SR = 80;   /// savings ratio
 const uint64_t IR = 20;   /// insurance ratio
-const uint64_t MAX_ICR = 1000;   /// maximum ratio for ICR
 const double AR = 0.05;   /// annual interest rate

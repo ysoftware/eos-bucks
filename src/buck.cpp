@@ -1,6 +1,6 @@
 // Copyright © Scruge 2019.
-// This file is part of Scruge stable coin project.
-// Created by Yaroslav Erohin.
+// This file is part of BUCK Protocol.
+// Created by Yaroslav Erohin and Dmitry Morozov.
 
 #include <cmath>
 #include <eosio/eosio.hpp>
