@@ -29,6 +29,9 @@ const uint64_t MAX_ICR = 1000;
 /// max % of price change available to oracle
 static const uint8_t ORACLE_MAX_PERCENT = 8;
 
+/// minimam collateral to become an insurer (~15 EOS)
+static const asset MIN_INSURER_REX = asset(15'0000'0000, REX);
+
 /// minimal collateral is 5 EOS
 static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 
