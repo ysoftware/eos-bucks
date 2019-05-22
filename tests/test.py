@@ -236,7 +236,9 @@ def ls(collateral, debt, acr, id):
 	if debt <= MIN_DEBT and collateral > MIN_INSURER_REX:
 		return (MAX - collateral * 10_000 // acr)   - id / 10000
 
-	cd = collateral * 10_000_000_000_000 / max(0.00000000000000000001, debt)
+	if debt == 0: return MAX * 4
+
+	cd = collateral * 10_000_000_000_000 / debt
 	return (MAX * 2 - cd // acr)   + id / 10000
 
 def is_insurer(cdp):
