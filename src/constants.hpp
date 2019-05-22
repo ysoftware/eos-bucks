@@ -3,11 +3,11 @@
 // Created by Yaroslav Erohin and Dmitry Morozov.
 
 /// defines if contract will print logs and enable debug features
-#define DEBUG false
+#define DEBUG true
 /// defines if contract uses test rex environment
-#define REX_TESTING false
+#define REX_TESTING true
 /// defines if testing of time points is enabled
-#define TEST_TIME false
+#define TEST_TIME true
 
 static const uint32_t seconds_per_day     = 86'400;
 static const uint32_t YEAR                = 31'557'600;
