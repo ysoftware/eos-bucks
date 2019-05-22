@@ -11,7 +11,7 @@ CR = 150 # collateral ratio
 LF = 10 # Liquidation Fee
 IR = 20 # insurance ratio
 SR = 100 - IR # savings ratio
-r = 0.05 # interest rate
+r = 0.095 # interest rate
 IDP = 0 # insurance dividend pool
 TEC = 0 # total excess collateral
 AEC = 0 # aggregated excess collateral
@@ -42,7 +42,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "acr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "icr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time)
 
 
 	def add_debt(self,new_debt):
@@ -174,8 +174,6 @@ def calc_val(cdp, liquidator, price, cr, lf):
 def add_tax(cdp, price, m=False):
 	global IDP, CIT, TEC, oracle_time
 
-	print("add tax?", cdp.id)
-	print("dt", oracle_time, cdp.time)
 	if cdp.debt == 0 or cdp.collateral > MIN_INSURER_REX and cdp.debt <= MIN_DEBT: 
 		return cdp
 
@@ -197,8 +195,8 @@ def add_tax(cdp, price, m=False):
 	cdp.new_time(oracle_time)
 	CIT += accrued_col
 
-	print("force", m, accrued_debt, accrued_col)
-	print(cdp, "\n--")
+	print(accrued_debt, accrued_col)
+	print(cdp)
 	return cdp
 
 def update_tax(cdp, price, m=False):
@@ -236,14 +234,13 @@ def ls(collateral, debt, acr, id):
 		return (MAX * 3)    + id / 10000
 
 	if debt <= MIN_DEBT and collateral > MIN_INSURER_REX:
-		print("idx", id, collateral, debt, (MAX - collateral * 10_000 // acr)   - id / 10000)
 		return (MAX - collateral * 10_000 // acr)   - id / 10000
 
 	cd = collateral * 10_000_000_000_000 / max(0.00000000000000000001, debt)
 	return (MAX * 2 - cd // acr)   + id / 10000
 
 def is_insurer(cdp):
-	return not (cdp.acr == 0 or cdp.debt > MIN_DEBT or (cdp.debt > 0 and cdp.debt < MIN_DEBT and cdp.collateral < MIN_INSURER_REX))
+	return not (cdp.acr == 0 or cdp.debt > MIN_DEBT or (cdp.debt < MIN_DEBT and cdp.collateral < MIN_INSURER_REX))
 
 def liquidation(price, cr, lf):	
 	print("liquidation")
@@ -347,6 +344,7 @@ def redemption(amount, price):
 	debtors_failed = 0
 	while amount > epsilon(amount) and i != -1 and debtors_failed < 30:
 		cdp = table.pop(i)
+		print(cdp)
 		cdp = add_tax(cdp, price)
 
 		print(cdp)
@@ -355,7 +353,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			# print("debtor failed debt", debtors_failed)
+			print("debtor failed debt", debtors_failed)
 			continue
 
 		rf = 1
@@ -363,7 +361,7 @@ def redemption(amount, price):
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			# print("debtor failed ccr", debtors_failed)
+			print("debtor failed ccr", debtors_failed)
 			continue
 
 		if cdp.debt > amount:
@@ -599,7 +597,7 @@ def init():
 
 	price = random.randint(500, 1000)
 
-	x = 1
+	x = 10
 	d = random.randint(x, x * 3)
 	l = random.randint(int(d * 2), int(d * 5))
 	time = 3000000
