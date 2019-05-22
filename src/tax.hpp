@@ -62,7 +62,7 @@ void buck::collect_taxes(uint32_t max) {
 
 // collect interest to debtors
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min) {
-  if (cdp_itr->debt.amount == 0 || cdp_itr->collateral.amount > 15'0000'0000 && cdp_itr->debt.amount <= MIN_DEBT.amount) return;
+  if (cdp_itr->debt.amount == 0 || cdp_itr->collateral.amount > safe_collateral && cdp_itr->debt.amount <= MIN_DEBT.amount) return;
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
@@ -97,7 +97,7 @@ void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min
 }
 
 void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->debt.amount > 0 && cdp_itr->debt.amount < MIN_DEBT.amount && cdp_itr->collateral.amount < 15'0000'0000 || cdp_itr->icr == 0 || cdp_itr->debt.amount > MIN_DEBT.amount) return;
+  if (cdp_itr->debt.amount > 0 && cdp_itr->debt.amount < MIN_DEBT.amount && cdp_itr->collateral.amount < safe_collateral || cdp_itr->icr == 0 || cdp_itr->debt.amount > MIN_DEBT.amount) return;
   
   const auto& tax = *_tax.begin();
   const int64_t excess = cdp_itr->collateral.amount * 100 / cdp_itr->icr;
@@ -114,7 +114,7 @@ void buck::set_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
 }
 
 void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
-  if (cdp_itr->debt.amount > 0 && cdp_itr->debt.amount < MIN_DEBT.amount && cdp_itr->collateral.amount < 15'0000'0000 || cdp_itr->icr == 0 || cdp_itr->debt.amount > MIN_DEBT.amount) return;
+  if (cdp_itr->debt.amount > 0 && cdp_itr->debt.amount < MIN_DEBT.amount && cdp_itr->collateral.amount < safe_collateral || cdp_itr->icr == 0 || cdp_itr->debt.amount > MIN_DEBT.amount) return;
   const auto& tax = *_tax.begin();
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;

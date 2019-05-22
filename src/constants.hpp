@@ -57,4 +57,5 @@ const uint64_t RF = 1;   /// redemption fee
 const uint64_t SP = 20;  /// part of taxes for scruge
 const uint64_t SR = 80;   /// savings ratio
 const uint64_t IR = 20;   /// insurance ratio
+const uint64_t safe_collateral = 15'0000'0000 
 const double AR = 0.05;   /// annual interest rate
