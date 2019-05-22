@@ -19,6 +19,7 @@ CONTRACT buck : public contract {
     ACTION unsave(const name& account, const uint64_t quantity);
     ACTION exchange(const name& account, const asset quantity);
     ACTION freeram(const name& account);
+    ACTION cancelorder(const name& account);
     ACTION run(uint8_t max);
     
     // admin
