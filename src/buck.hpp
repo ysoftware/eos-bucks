@@ -20,6 +20,7 @@ CONTRACT buck : public contract {
     ACTION exchange(const name& account, const asset quantity);
     ACTION freeram(const name& account);
     ACTION cancelorder(const name& account);
+    ACTION removedebt(uint64_t cdp_id);
     ACTION run(uint8_t max);
     
     // admin
@@ -306,6 +307,7 @@ CONTRACT buck : public contract {
     void set_liquidation_status(LiquidationStatus status);
     void set_processing_status(ProcessingStatus status);
     
+    void change(uint64_t cdp_id, const asset& change_debt, const asset& change_collateral, bool force_accrue);
     inline void inline_transfer(const name& account, const asset& quantity, const std::string& memo, const name& contract);
     
     void buy_rex(const name& account, const asset& quantity);
