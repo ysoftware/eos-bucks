@@ -194,7 +194,7 @@ CONTRACT buck : public contract {
       // index to search for liquidators with the highest ability to bail out bad debt
       double liquidator() const {
         
-        if (icr == 0 || collateral.amount == 0) return 999999999999; // end of the table
+        if (icr == 0 || collateral.amount == 0) return std::numeric_limits<double>::infinity(); // end of the table
         
         if (debt <= MIN_DEBT && collateral > MIN_INSURER_REX) 
           return double(icr) / double(collateral.amount); // descending c/icr
@@ -206,7 +206,7 @@ CONTRACT buck : public contract {
       // index to search for debtors with lowest dcr
       double debtor() const {
         
-        if (debt.amount == 0 || collateral.amount == 0) return 999999999999; // end of the table
+        if (debt.amount == 0 || collateral.amount == 0) return std::numeric_limits<double>::infinity(); // end of the table
         
         const double cd = double(collateral.amount) / double(debt.amount);
         return cd; // ascending cd
