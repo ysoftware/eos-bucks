@@ -1,0 +1,7 @@
+---
+spec_version: 0.1.1
+title: Open CDP
+summary: Create a CDP by submitting collateral of {{quantity}} REX with Insurance Collateralization Ratio of {{ICR}} and Debt Collateralization Ratio of {{DCR}}
+icon: https://www.dropbox.com/s/ptfih8efz0d2yab/Unknown.png?dl=0#84189bc6c389ffc829b70c15d2030bc90c259ea95e6ffe47784ca5aed4622dc1
+---
+I, {{from}}, certify that I aware that BUCK Protocol is an experimental softwareand I may lose all my funds. I understand that the founding team of the BUCK Protocol assumes no liabilities that may arise in the process of me using the protocol. Should my actions be deemed illegal in any jurisdiction, I take full responsibility over my actions.
