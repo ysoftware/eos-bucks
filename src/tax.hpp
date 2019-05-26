@@ -136,6 +136,8 @@ void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
   }
   
   _tax.modify(tax, same_payer, [&](auto& r) {
+    check(r.total_excess >= excess, "programmer error, total excess underflow")
+    
     r.total_excess -= excess;
     r.aggregated_excess -= agec;
     r.insurance_pool -= asset(dividends_amount, REX);
