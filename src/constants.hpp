@@ -38,7 +38,7 @@ static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 /// minimal amount to redeem
 static const asset& MIN_REDEMPTION = asset(10'0000, BUCK);
 
-/// minimal cdp debt is 50 BUCK
+/// minimal cdp debt is 10 BUCK
 static const asset& MIN_DEBT       = asset(10'0000, BUCK);
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;

@@ -123,7 +123,6 @@ void buck::remove_excess_collateral(const cdp_i::const_iterator& cdp_itr) {
       cdp_itr->debt < MIN_DEBT && cdp_itr->collateral < MIN_INSURER_REX) return;
   
   const auto& tax = *_tax.begin();
-  
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
   const uint32_t delta_t = now - cdp_itr->modified_round;
