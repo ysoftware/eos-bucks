@@ -314,9 +314,11 @@ void buck::run_liquidation(uint8_t max) {
       return;
     }
     
+    const auto liquidator_cdp_itr = _cdp.require_find(liquidator_itr->id);
+    
     processed++;
-    remove_excess_collateral(_cdp.require_find(liquidator_itr->id));
-    accrue_interest(_cdp.require_find(liquidator_itr->id), false);
+    remove_excess_collateral(liquidator_cdp_itr);
+    accrue_interest(liquidator_cdp_itr, false);
     
     const int64_t liquidator_collateral = liquidator_itr->collateral.amount;
     const int64_t liquidator_debt = liquidator_itr->debt.amount;
@@ -361,6 +363,7 @@ void buck::run_liquidation(uint8_t max) {
       }
     });
     
+    set_excess_collateral(liquidator_cdp_itr);
     const bool removed = debtor_itr->debt == used_debt;
     if (removed) {
       debtor_index.erase(debtor_itr);
