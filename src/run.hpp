@@ -353,6 +353,14 @@ void buck::run_liquidation(uint8_t max) {
     const asset used_debt = asset(used_debt_amount, BUCK);
     const asset used_collateral = asset(used_collateral_amount, REX);
     
+    // check if using debt is 0
+    if (used_debt.amount == 0) {
+      
+      set_liquidation_status(LiquidationStatus::liquidation_complete);
+      run_requests(max - processed);
+      return;
+    }
+    
     liquidator_index.modify(liquidator_itr, same_payer, [&](auto& r) {
       r.collateral += used_collateral;
       r.debt += used_debt;
