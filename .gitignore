@@ -45,3 +45,4 @@ src/buck.abi
 src/buck.wasm
 src/b
 .DS_Store
+src/build/__deploy
