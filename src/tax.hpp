@@ -157,7 +157,7 @@ void buck::save(const name& account, const asset& quantity) {
   check(quantity.is_valid(), "invalid quantity");
   check(quantity.amount > 0, "can not use negative value");
   check(quantity.symbol == BUCK, "can not use asset with different symbol");
-  check(quantity.amount >= 1'0000, "not enough value to put in savings");
+  check(quantity >= MIN_SAVINGS, "not enough value to put in savings");
   
   uint64_t received_amount = quantity.amount;
   if (tax.savings_supply > 0) {
