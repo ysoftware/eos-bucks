@@ -1,7 +1,7 @@
 # coding: utf8
 # Copyright © Scruge 2019.
 # This file is part of Buck Protocol.
-# Created by Yaroslav Erohin.
+# Created by Yaroslav Erohin and Dmitry Morozov.
 
 import unittest
 from eosfactory.eosf import *
