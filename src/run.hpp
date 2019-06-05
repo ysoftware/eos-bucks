@@ -277,14 +277,13 @@ void buck::run_liquidation(uint8_t max) {
   
   auto debtor_index = _cdp.get_index<"debtor"_n>();
   auto liquidator_index = _cdp.get_index<"liquidator"_n>();
-  auto liquidator_itr = liquidator_index.begin();
   
   // no cdp exist, quit
-  if (liquidator_itr == liquidator_index.end()) return; 
+  if (liquidator_index.begin() == liquidator_index.end()) return; 
   
   // loop through liquidators
   while (max > processed) {
-    liquidator_itr = liquidator_index.begin();
+    const auto liquidator_itr = liquidator_index.begin();
     const auto debtor_itr = debtor_index.begin();
     
     accrue_interest(_cdp.require_find(debtor_itr->id), false);
