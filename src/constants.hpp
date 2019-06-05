@@ -36,6 +36,12 @@ static const asset MIN_EXCHANGE_BUCK = asset(5'0000, BUCK);
 /// minimum amount to put in savings
 static const asset MIN_SAVINGS = asset(1'0000, BUCK);
 
+/// minimal amount to redeem
+static const asset& MIN_REDEMPTION = asset(10'0000, BUCK);
+
+
+/// UPDATING THESE CONSTANTS MIGHT BREAK TAXES
+
 /// minimam collateral to become an insurer (~5 EOS)
 static const asset MIN_INSURER_REX = asset(5'0000'0000, REX);
 
@@ -45,8 +51,8 @@ static const asset& MIN_DEBT       = asset(10'0000, BUCK);
 /// minimal collateral is 5 EOS
 static const asset& MIN_COLLATERAL = asset(5'0000, EOS);
 
-/// minimal amount to redeem
-static const asset& MIN_REDEMPTION = asset(10'0000, BUCK);
+
+// account names
 
 static const name& EOSIO_TOKEN = "eosio.token"_n;
 static const name& EOSIO       = "eosio"_n;
