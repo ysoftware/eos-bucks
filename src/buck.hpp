@@ -108,7 +108,7 @@ CONTRACT buck : public contract {
       name      account;
       asset     balance;          // REX
       asset     exchange_balance; // EOS
-      int64_t  savings_balance;  // virtual toke
+      int64_t  savings_balance;  // virtual token
       
       int64_t  matured_rex;
       std::deque<std::pair<time_point_sec, int64_t>> rex_maturities;
