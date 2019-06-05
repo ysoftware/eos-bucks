@@ -64,7 +64,7 @@ void buck::collect_taxes(uint32_t max) {
 void buck::accrue_interest(const cdp_i::const_iterator& cdp_itr, bool accrue_min) {
   
   if (cdp_itr->debt == ZERO_BUCK ||
-      cdp_itr->collateral > MIN_INSURER_REX && cdp_itr->debt <= MIN_DEBT) return;
+      cdp_itr->collateral > MIN_INSURER_REX && cdp_itr->debt < MIN_DEBT) return;
   
   const auto oracle_time = _stat.begin()->oracle_timestamp;
   static const uint32_t now = time_point_sec(oracle_time).utc_seconds;
