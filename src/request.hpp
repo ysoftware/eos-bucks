@@ -107,8 +107,8 @@ void buck::changeicr(uint64_t cdp_id, uint16_t icr) {
   check(cdp_itr->icr != icr, "icr is already set to this value");
   check(cdp_itr->debt.amount != 0 || icr != 0, "can not set 0 icr for cdp with 0 debt");
   
-  accrue_interest(cdp_itr, true);
   remove_excess_collateral(cdp_itr);
+  accrue_interest(cdp_itr, true);
   
   _cdp.modify(cdp_itr, same_payer, [&](auto& r) {
     r.icr = icr;

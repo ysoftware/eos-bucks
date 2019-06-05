@@ -66,8 +66,8 @@ void buck::run_requests(uint8_t max) {
           continue;
         }
         
-        accrue_interest(cdp_itr, false);
         remove_excess_collateral(cdp_itr);
+        accrue_interest(cdp_itr, false);
         
         asset change_debt = ZERO_BUCK;
         asset change_collateral = ZERO_REX;
