@@ -20,9 +20,11 @@ commission = 20 # our commission
 time = 0 # initial time
 oracle_time = 0
 
+ACCRUAL_PERIOD = 1314900
 MIN_DEBT = 10_0000
 MIN_COLLATERAL = 5_0000
 MIN_INSURER_REX = 5_0000_0000
+MAX_ICR = 1000
 
 def time_now():
 	global time
@@ -355,21 +357,13 @@ def redemption(amount, price):
 		print(cdp)
 		cdp = add_tax(cdp, price)
 
-		print(cdp)
-
-		if cdp.debt < 500000 + epsilon(500000):
-			cdp_insert(cdp)
-			i -= 1
-			debtors_failed += 1
-			print("debtor failed debt", debtors_failed)
-			continue
-
 		rf = 1
-		if cdp.collateral * price // cdp.debt < 100 - rf:
+		if cdp.debt < MIN_DEBT or cdp.collateral * price // cdp.debt < 100 - rf:
 			cdp_insert(cdp)
 			i -= 1
 			debtors_failed += 1
-			print("debtor failed ccr", debtors_failed)
+			print("debtor failed")
+			print(cdp)
 			continue
 
 		if cdp.debt > amount:
@@ -419,7 +413,7 @@ def reparametrize(id, c, d, price):
 	# print(cdp)
 
 	if d < 0:
-		if cdp.debt + d >= 50000 + epsilon(50000):
+		if cdp.debt + d >= MIN_DEBT:
 			cdp.add_debt(d)
 		# else: print("not removing d below min")
 
@@ -468,7 +462,7 @@ def reparametrize(id, c, d, price):
 
 def change_acr(id, acr):
 	global TEC, table, oracle_time, price
-	if acr < CR or acr > 100000:
+	if acr < CR or acr > MAX_ICR:
 		return False
 
 	print("acr...")
@@ -587,7 +581,7 @@ def run_round(balance):
 	new_table = table.copy()
 	table = []
 	for cdp in new_table:
-		if oracle_time - cdp.time > 1314900:
+		if oracle_time - cdp.time > ACCRUAL_PERIOD:
 			cdp = add_tax(cdp, price)
 		cdp_insert(cdp)
 
