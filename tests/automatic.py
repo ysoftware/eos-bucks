@@ -184,7 +184,7 @@ class Test(unittest.TestCase):
 				# print(current_balance)
 				# print(calculated_funds)
 
-				self.assertAlmostEqual(initial_funds, calculated_funds, 3, "total funds don't match")
+				self.assertAlmostEqual(initial_funds, calculated_funds, 2, "total funds don't match")
 				print("+ Matched total funds")
 
 
@@ -226,7 +226,7 @@ class Test(unittest.TestCase):
 			self.match(cdp, liquidator)
 
 	def match(self, cdp, row):
-		print(cdp)
+		# print(cdp)
 		print("#" + str(row["id"]), row["collateral"], row["debt"], row["icr"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
