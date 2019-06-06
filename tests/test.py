@@ -42,7 +42,7 @@ class CDP:
 	def __repr__(self):
 		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
 		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "icr: " + str(self.acr) + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) + "\ttime: " + str(self.time)
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "icr: " + f"{self.acr:03}" + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) # + "\ttime: " + str(self.time)
 
 
 	def add_debt(self,new_debt):
@@ -64,13 +64,13 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(5_0000_0000, 1000_0000_0000, 1)
+	rand = random.randrange(15_0000_0000, 1500_0000_0000, 1)
 	rand2 = random.randint(150, 500)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
 	for i in range (0,k):
-		rand = random.randrange(5_0000_0000, 1000_0000_0000, 1)
+		rand = random.randrange(15_0000_0000, 1500_0000_0000, 1)
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
@@ -80,19 +80,21 @@ def generate_liquidators(k):
 
 def generate_debtors(k, n):
 	global time, price
-	rand = random.randrange(5_0000_0000, 1000_0000_0000, 1) # collateral
-	rand2 = random.randint(150, 500) # cd
+	rand = random.randrange(5_0000, 100_0000, 1) # collateral
+	rand2 = random.randint(150, 300) # cd
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
 	debtor.new_cd(debtor.collateral * price / debtor.debt)
+	if debtor.debt < MIN_DEBT:
+		print(debtor)
 	debtors = [debtor]
 	for i in range (k+1,n):
-		rand = random.randrange(5_0000_0000, 1000_0000_0000, 1)
+		rand = random.randrange(5_0000, 100_0000, 1)
 		helper = ccr
-		acr = random.randint(100, 160)
-		if acr < 150: acr = 0
-		rand2 = random.randint(helper+1, helper + 2)
+		acr = random.randint(100, 200)
+		if acr < 155: acr = 0
+		rand2 = random.randint(helper+1, helper+2)
 		ccr = rand2
 		debtor = CDP(rand, 0, rand2, acr, i+1, time)
 		debtor.add_debt(debtor.collateral * price // debtor.cd)	
@@ -100,6 +102,8 @@ def generate_debtors(k, n):
 		debtors.insert(0, debtor)
 	return debtors
 
+# k - number of liquidators
+# n - number of debtors
 def gen(k, n):
 	global table, time, price
 	liquidators = generate_liquidators(k)
@@ -258,6 +262,8 @@ def liquidation(price, cr, lf):
 
 		debtor = table.pop(len(table)-1)
 		idx = cdp_index(liquidators[0].id)
+
+		if idx == -1: return
 
 		# if i >= len(table) or debtor.id == table[idx].id: 
 		# 	cdp_insert(debtor)
@@ -546,9 +552,9 @@ def run_round(balance):
 			if k == 0:
 				break
 
-	new_price = random.randint(-price // 10, price // 10) if LIQUIDATION else 1
-	if new_price == 0: new_price = 100
-	price += new_price
+	add_price = random.randint(-price // 10, price // 10) if LIQUIDATION else 1
+	if add_price == 0: add_price = 100
+	price += add_price
 
 	time_now()
 	update_round()
@@ -572,7 +578,7 @@ def run_round(balance):
 		actions.append([["reparam", i, c, d], success])
 
 	if REDEMPTION:
-		v1 = random.randrange(25_0000, 10_000_0000)
+		v1 = random.randrange(10_0000, 1_000_0000)
 		success = v1 <= balance
 		if success: redemption(v1, price)
 		actions.append([["redeem", v1], success])
@@ -597,14 +603,14 @@ def init():
 	CIT = 0 # collected insurance tax
 	time = 0 # initial time
 
-	price = random.randint(500, 1000)
+	price = 1000 # random.randint(500, 1000)
 
-	x = 10
-	d = random.randint(x, x * 3)
-	l = random.randint(int(d * 2), int(d * 5))
+	x = 1
+	l = random.randint(x, x * 3)
+	d = random.randint(int(l * 2), int(l * 5))
 	time = 3000000
 	oracle_time = time
 
-	gen(x, l)
+	gen(l, d) # (liquidators, debtors)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

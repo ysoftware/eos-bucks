@@ -152,6 +152,9 @@ class Test(unittest.TestCase):
 				# self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["aggregated_excess"]), 0, "aggregated excesses don't match") # uint128 doesn't parse
 				print("+ Matched insurance pools")
 
+				# make pool values match exactly
+				test.IDP = int(amount(taxation["insurance_pool"]) * 10000)
+
 				# match buck supply
 				supply = amount(table(buck, "stat", "BUCK", element="supply"))
 				user_balance = balance(buck, "user1")
@@ -166,15 +169,23 @@ class Test(unittest.TestCase):
 				# match funds + collateral
 				total_collateral = 0
 				for cdp in test.table:
-					total_collateral += cdp.collateral / 10000
+					total_collateral += int(cdp.collateral) / 10000
 
 				insurance_pool = amount(taxation["insurance_pool"])
 				collected_insurance = amount(taxation["collected_excess"])
-				scruge_funds = fundbalance(buck, "scrugescruge")
+				scruge_funds = fundbalance(buck, "equityscruge")
 				current_balance = fundbalance(buck, "user1")
 				calculated_funds = insurance_pool + scruge_funds + total_collateral + current_balance + collected_insurance
+
+				# print(insurance_pool)
+				# print(scruge_funds)
+				# print(total_collateral)
+				# print(collected_insurance)
+				# print(current_balance)
+				# print(calculated_funds)
+
 				self.assertAlmostEqual(initial_funds, calculated_funds, 3, "total funds don't match")
-				print("+ Matched rex supply")
+				print("+ Matched total funds")
 
 
 				##################################
@@ -195,7 +206,8 @@ class Test(unittest.TestCase):
 	def compare(self, buck, cdp_table):
 		print("debtors")
 		test.print_table()
-		top_debtors = get_debtors(buck, limit=100)
+		top_debtors = get_debtors(buck, limit=1000)
+		self.assertEqual(len(top_debtors), len(test.table), "cdp missing")
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
 			if amount(debtor["debt"]) == 0: break # unsorted end of the table
@@ -205,7 +217,8 @@ class Test(unittest.TestCase):
 		test_liquidators = sorted(test.table, key=test.liq_sort)
 		print("liquidators")
 		test.print_table(test_liquidators)
-		top_liquidators = get_liquidators(buck, limit=100)
+		top_liquidators = get_liquidators(buck, limit=1000)
+		self.assertEqual(len(top_debtors), len(test_liquidators), "cdp missing")
 		for i in range(0, len(top_liquidators)):
 			liquidator = top_liquidators[i]
 			if liquidator["icr"] == 0: break # unsorted end of the table
@@ -221,6 +234,10 @@ class Test(unittest.TestCase):
 		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
 		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
+
+		# make values match exactly
+		cdp.debt = int(amount(row["debt"]) * 10000)
+		cdp.collateral = int(amount(row["collateral"]) * 10000)
 
 		print(f"+ Matched cdp #{cdp.id}")
 
