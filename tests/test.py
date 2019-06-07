@@ -302,7 +302,7 @@ def liquidation(price, cr, lf):
 
 		l = calc_lf(debtor, price, cr, lf)
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
-		use_c = min((use_d * (100+lf) // price), debtor.collateral) # use col
+		use_c = min(use_d * 100 // price * (100+lf) // 100, debtor.collateral) # use col
 
 		debtor.add_debt(-use_d)
 		debtor.add_collateral(-use_c)
