@@ -42,9 +42,9 @@ class CDP:
 		self.id = id
 		self.time = time
 	def __repr__(self):
-		string = "c: " + str(int(self.collateral // 10000)) + "."  + str(int(self.collateral % 10000))
-		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + str(int(self.debt % 10000))))
-		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "icr: " + f"{self.acr:03}" + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + str(self.acr) # + "\ttime: " + str(self.time)
+		string = "c: " + str(int(self.collateral // 10000)) + "."  + f"{int(self.collateral % 10000):04}"
+		string2 = "d: " + ("0\t" if self.debt == 0 else (str(int(self.debt // 10000)) + "." + f"{int(self.debt % 10000):04}"))
+		return "#" + str(self.id)  + "\t" + string + "\t" + string2  + "\t" + "icr: " + f"{self.acr:03}" + "\tcd: " + str(self.cd) + "\t" + "\tacr:" + f"{self.acr:03}" + "\ttime: " + str(self.time) + "\tliq" + str(liq_sort(self))
 
 
 	def add_debt(self,new_debt):
@@ -66,13 +66,13 @@ class CDP:
 
 def generate_liquidators(k):
 	global TEC, time
-	rand = random.randrange(15_0000_0000, 1500_0000_0000, 1)
+	rand = random.randrange(15_0000_0000, 1500_0000_0000, 1000)
 	rand2 = random.randint(150, 500)
 	liquidator = CDP(rand, 0, 9999999, rand2, 0, time)
 	TEC += liquidator.collateral * 100 // liquidator.acr
 	liquidators = [liquidator]
 	for i in range (0,k):
-		rand = random.randrange(15_0000_0000, 1500_0000_0000, 1)
+		rand = random.randrange(15_0000_0000, 1500_0000_0000, 1000)
 		helper = liquidators[i].acr
 		rand2 = random.randint(helper+1,helper+2)
 		liquidators.append(CDP(rand, 0, 9999999, rand2,i+1, time))
@@ -82,8 +82,8 @@ def generate_liquidators(k):
 
 def generate_debtors(k, n):
 	global time, price
-	rand = random.randrange(5_0000, 100_0000, 1) # collateral
-	rand2 = random.randint(150, 300) # cd
+	rand = random.randrange(5_0000, 1_000_0000, 1000) # collateral
+	rand2 = random.randint(150, 170) # cd
 	ccr = rand2
 	debtor = CDP(rand, 0, rand2, 0, k+1, time)
 	debtor.add_debt(debtor.collateral * price // debtor.cd)
@@ -92,7 +92,7 @@ def generate_debtors(k, n):
 		print(debtor)
 	debtors = [debtor]
 	for i in range (k+1,n):
-		rand = random.randrange(5_0000, 100_0000, 1)
+		rand = random.randrange(5_0000, 1_000_0000, 1000)
 		helper = ccr
 		acr = random.randint(100, 200)
 		if acr < 155: acr = 0
@@ -208,7 +208,7 @@ def add_tax(cdp, price, m=False):
 def update_tax(cdp, price, m=False):
 	cdp = add_tax(cdp, price, m)
 	global IDP, AEC, CIT, TEC, oracle_time
-	if AEC > 0 and cdp.debt <= epsilon(cdp.debt):
+	if AEC > 0 and is_insurer(cdp): # cdp.debt <= epsilon(cdp.debt):
 		if oracle_time != cdp.time:
 			ec = cdp.collateral * 100 // cdp.acr 
 			AGEC = ec * (oracle_time-cdp.time) # aggregated by this user
@@ -269,9 +269,6 @@ def liquidation(price, cr, lf):
 
 		debtor = add_tax(debtor, price)
 
-		print("\nliquidator\n", table[idx])
-		print("debtor\n", debtor)
-
 		if debtor.debt <= epsilon(debtor.debt):
 			cdp_insert(debtor)
 			return # done
@@ -304,6 +301,12 @@ def liquidation(price, cr, lf):
 		use_d = calc_val(debtor, liquidator, price, cr,l) # use debt
 		use_c = min(use_d * 100 // price * (100+lf) // 100, debtor.collateral) # use col
 
+		if use_d == 0:
+			if is_insurer(liquidator): TEC += liquidator.collateral * 100 // liquidator.acr
+			cdp_insert(liquidator)
+			cdp_insert(debtor)
+			return
+
 		debtor.add_debt(-use_d)
 		debtor.add_collateral(-use_c)
 		liquidator.add_debt(use_d)
@@ -324,9 +327,6 @@ def liquidation(price, cr, lf):
 
 		if debtor.debt > 0:
 			cdp_insert(debtor)
-			print("updating cdp")
-		else:
-			print("removing cdp", debtor)
 
 def redemption(amount, price):
 	global time, table
@@ -564,7 +564,7 @@ def run_round(balance):
 
 	return [time, actions]
 
-def init():
+def init(x=10):
 	global table, IDP, TEC, AEC, CIT, time, oracle_time, price
 	
 	table = []
@@ -576,12 +576,11 @@ def init():
 
 	price = 1000 # random.randint(500, 1000)
 
-	x = 2
 	l = random.randint(x, x * 3)
 	d = random.randint(int(l * 2), int(l * 5))
 	time = 3000000
 	oracle_time = time
 
-	gen(x, d) # (liquidators, debtors)
+	gen(l, d) # (liquidators, debtors)
 
 	print(f"<<<<<<<<\nstart time: {time}, price: {price}\n")

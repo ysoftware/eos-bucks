@@ -75,7 +75,7 @@ class Test(unittest.TestCase):
 			initial_funds = fundbalance(buck, user1)
 
 			# mature rex
-			test.init()
+			test.init(random.randint(2, 20))
 			maketime(buck, test.time)
 			update(buck, test.price)
 
@@ -89,7 +89,7 @@ class Test(unittest.TestCase):
 			##################################
 			COMMENT("Initial matching")
 			
-			self.compare(buck, test.table)
+			# self.compare(buck, test.table)
 
 			##################################
 			COMMENT("Start rounds")
@@ -146,14 +146,13 @@ class Test(unittest.TestCase):
 
 				# match taxes
 				taxation = table(buck, "taxation")
-				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 3, "insurance pools don't match")
+				self.assertAlmostEqual(unpack(test.IDP), amount(taxation["insurance_pool"]), 4, "insurance pools don't match")
 				self.assertAlmostEqual(unpack(test.TEC), unpack(taxation["total_excess"]), 0, "total excesses don't match")
 				self.assertAlmostEqual(unpack(test.CIT), amount(taxation["collected_excess"]), 0, "collected insurances don't match")
 				# self.assertAlmostEqual(unpack(test.AEC), unpack(taxation["aggregated_excess"]), 0, "aggregated excesses don't match") # uint128 doesn't parse
-				print("+ Matched insurance pools")
+				print("tec", unpack(test.TEC), unpack(taxation["total_excess"]))
 
-				# make pool values match exactly
-				test.IDP = int(amount(taxation["insurance_pool"]) * 10000)
+				print("+ Matched insurance pools")
 
 				# match buck supply
 				supply = amount(table(buck, "stat", "BUCK", element="supply"))
@@ -177,19 +176,15 @@ class Test(unittest.TestCase):
 				current_balance = fundbalance(buck, "user1")
 				calculated_funds = insurance_pool + scruge_funds + total_collateral + current_balance + collected_insurance
 
-				# print(insurance_pool)
-				# print(scruge_funds)
-				# print(total_collateral)
-				# print(collected_insurance)
-				# print(current_balance)
-				# print(calculated_funds)
-
-				self.assertAlmostEqual(initial_funds, calculated_funds, 2, "total funds don't match")
+				self.assertAlmostEqual(initial_funds, calculated_funds, 4, "total funds don't match")
 				print("+ Matched total funds")
-
 
 				##################################
 				COMMENT(f"Round {round_i} / {rounds} of cycle {cycle_i} complete.")
+
+				if len(test.table) < 2: 
+					COMMENT("Ran out of cdps")
+					continue
 
 
 	def get_locked_in_requests_tokens(self):
@@ -210,7 +205,7 @@ class Test(unittest.TestCase):
 		self.assertEqual(len(top_debtors), len(test.table), "cdp missing")
 		for i in range(0, len(top_debtors)):
 			debtor = top_debtors[i]
-			if amount(debtor["debt"]) == 0: break # unsorted end of the table
+			if amount(debtor["debt"]) < 10_0000: break # unsorted end of the table
 			cdp = test.table[i * -1 - 1]
 			self.match(cdp, debtor)
 
@@ -227,17 +222,13 @@ class Test(unittest.TestCase):
 
 	def match(self, cdp, row):
 		# print(cdp)
-		print("#" + str(row["id"]), row["collateral"], row["debt"], row["icr"])
+		# print("#" + str(row["id"]), row["collateral"], row["debt"], row["icr"])
 
 		self.assertEqual(cdp.id, row["id"], "attempt to match different CDPs")
 		self.assertEqual(cdp.acr, row["icr"], "ACRs don't match")		
-		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 3, "debts don't match")
-		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 3, "collaterals don't match")
+		self.assertAlmostEqual(unpack(cdp.debt), amount(row["debt"]), 4, "debts don't match")
+		self.assertAlmostEqual(unpack(cdp.collateral), amount(row["collateral"]), 4, "collaterals don't match")
 		self.assertEqual(cdp.time, row["modified_round"], "rounds modified don't match")
-
-		# make values match exactly
-		cdp.debt = int(amount(row["debt"]) * 10000)
-		cdp.collateral = int(amount(row["collateral"]) * 10000)
 
 		print(f"+ Matched cdp #{cdp.id}")
 
